@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+@theme {
+    --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+[x-cloak] { display: none !important; }
+
+body {
+    background: #f7f9fc;
+    color: #111827;
+}
+
+.fi-card {
+    border: 1px solid #e8edf5;
+    background: white;
+    border-radius: 14px;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, .035);
+}
+
+.fi-input {
+    width: 100%;
+    border: 1px solid #dbe2ea;
+    border-radius: 10px;
+    padding: .65rem .8rem;
+    outline: none;
+    transition: .15s ease;
+    background: #fff;
+}
+
+.fi-input:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37,99,235,.10);
+}
+
+.fi-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+.fi-scroll::-webkit-scrollbar-thumb { background: #d5dce7; border-radius: 999px; }

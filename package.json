@@ -1,0 +1,16 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.12",
+    "axios": "^1.11.0",
+    "chart.js": "^4.5.0",
+    "laravel-vite-plugin": "^2.0.0",
+    "tailwindcss": "^4.1.12",
+    "vite": "^7.0.6"
+  }
+}
