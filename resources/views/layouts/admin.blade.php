@@ -28,7 +28,7 @@
                 @php
                     $menus = [
                         ['Dashboard', route('admin.dashboard'), false],
-                        ['Vendors', '#', true],
+                        ['Vendors', route('admin.vendors'), true],
                         ['Transactions', '#', true],
                         ['Wallet', '#', true],
                         ['Settlements', '#', true],

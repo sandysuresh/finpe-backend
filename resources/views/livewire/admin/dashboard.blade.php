@@ -19,11 +19,21 @@
                 Export
             </button>
 
-            <button
-                type="button"
-                class="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-violet-700">
-                + Add Vendor
-            </button>
+            <a
+                href="{{ route('admin.vendors') }}"
+                class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-violet-50 hover:text-violet-600"
+            >
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M17 20h5v-2a4 4 0 00-4-4h-1M9 20H4v-2a4 4 0 014-4h1m8-5a4 4 0 11-8 0 4 4 0 018 0z"
+                    />
+                </svg>
+
+                <span>Vendors</span>
+            </a>
         </div>
     </div>
 
