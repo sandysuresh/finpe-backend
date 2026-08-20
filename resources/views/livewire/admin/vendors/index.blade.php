@@ -340,12 +340,17 @@
                             {{-- Action --}}
                             <td class="px-6 py-4 text-right">
 
-                                <a
-                                    href="#"
-                                    class="text-sm font-semibold text-violet-600 hover:text-violet-700"
-                                >
-                                    View
-                                </a>
+                               
+                                @if($vendor->registration_step < 7)
+                                    <a href="{{ route('admin.vendors.create', ['vendor' => $vendor->id]) }}">
+                                        Continue Registration
+                                    </a>
+                                @else
+                                    <a href="{{ route('admin.vendors.show', $vendor) }}">
+                                        View
+                                    </a>
+                                @endif
+                                
 
                             </td>
 

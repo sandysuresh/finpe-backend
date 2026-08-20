@@ -12,10 +12,12 @@ return new class extends Migration
             $table->id();
 
             $table->string('vendor_code', 30)->unique();
+            $table->string('pmt_code', 20)->unique()->nullable();
 
             $table->string('business_name');
             $table->string('contact_name');
             $table->string('email')->unique();
+            $table->string('password');
             $table->string('phone', 20);
 
             $table->text('address')->nullable();
@@ -36,16 +38,19 @@ return new class extends Migration
 
             $table->boolean('api_enabled')->default(false);
 
-            $table->decimal('transaction_limit', 15, 2)
-                ->default(0);
+            $table->decimal('transaction_limit', 15, 2)->default(0);
 
             $table->enum('commission_type', [
                 'percentage',
                 'fixed',
             ])->default('percentage');
 
-            $table->decimal('commission_value', 10, 2)
-                ->default(0);
+            $table->decimal('commission_value', 10, 2)->default(0);
+
+            $table->unsignedTinyInteger('registration_step')->default(1);
+            $table->timestamp('registration_completed_at')->nullable();
+            $table->timestamp('email_verified_at')->nullable();
+            $table->rememberToken();
 
             $table->timestamps();
 

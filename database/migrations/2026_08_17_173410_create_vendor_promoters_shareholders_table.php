@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('vendor_promoters_shareholders', function (Blueprint $table) {
+        Schema::create('vendor_promoter_shareholders', function (Blueprint $table) {
             $table->id();
 
             $table->foreignId('vendor_id')

@@ -27,14 +27,13 @@
             <nav class="hidden flex-1 items-center gap-1 xl:flex">
                 @php
                     $menus = [
-                        ['Dashboard', route('admin.dashboard'), false],
-                        ['Vendors', route('admin.vendors'), true],
-                        ['Transactions', '#', true],
-                        ['Wallet', '#', true],
-                        ['Settlements', '#', true],
-                        ['Reports', '#', true],
-                        ['API', '#', true],
-                        ['More', '#', true],
+                        ['Dashboard',       route('admin.dashboard'),       false],
+                        ['Vendors',         route('admin.vendors'),         false],
+                        ['Wallet Requests', route('admin.wallet-requests'), false],
+                        ['Transactions',    '#',                            false],
+                        ['Settlements',     '#',                            false],
+                        ['Reports',         '#',                            false],
+                        ['API Logs',        '#',                            false],
                     ];
                 @endphp
                 @foreach ($menus as [$label, $url, $dropdown])

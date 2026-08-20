@@ -9,6 +9,7 @@ use App\Models\VendorBusinessPlan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
+use Illuminate\Support\Facades\Hash;
 
 class Create extends Component
 {
@@ -21,6 +22,7 @@ class Create extends Component
     public int $step = 1;
 
     public ?int $vendorId = null;
+    public ?Vendor $vendor = null;
 
     /*
     |--------------------------------------------------------------------------
@@ -148,9 +150,71 @@ class Create extends Component
     |--------------------------------------------------------------------------
     */
 
-    public function mount(): void
+    public function mount(?Vendor $vendor = null): void
     {
         $this->initializeBusinessPlan();
+
+        // Support both route-model binding (/vendors/create/1)
+        // and query-string (/vendors/create?vendor=1).
+        if (!$vendor || !$vendor->exists) {
+            $vendorId = request()->query('vendor');
+            if ($vendorId) {
+                $vendor = Vendor::find($vendorId);
+            }
+        }
+
+        if ($vendor && $vendor->exists) {
+            // Set vendorId FIRST — loadStepData() bails early without it.
+            $this->vendorId = $vendor->id;
+            $this->vendor   = $vendor;
+
+            // registration_step stores the NEXT pending step (e.g. 2 means
+            // Step 1 is done). Clamp to valid range 1-7.
+            $savedStep  = (int) $vendor->registration_step;
+            $this->step = ($savedStep >= 1 && $savedStep <= 7) ? $savedStep : 1;
+
+            // Populate form fields for the restored step.
+            $this->loadStepData($this->step);
+        }
+    }
+
+    private function getPendingStep(): int
+    {
+        // Step 1: Basic registration
+        if (empty($this->vendor->business_name)
+            || empty($this->vendor->contact_name)
+            || empty($this->vendor->email)
+            || empty($this->vendor->phone)) {
+            return 1;
+        }
+
+        // Step 2: Legal details
+        if (!$this->vendor->legalDetails) {
+            return 2;
+        }
+
+        // Step 3: Promoters / Shareholders
+        if (!$this->vendor->promoters()->exists()) {
+            return 3;
+        }
+
+        // Step 4: Directors / IT
+        if (!$this->vendor->directors()->exists()) {
+            return 4;
+        }
+
+        // Step 5: Business plan
+        if (!$this->vendor->businessPlan) {
+            return 5;
+        }
+
+        // Step 6: Evaluation
+        if (!$this->vendor->evaluation) {
+            return 6;
+        }
+
+        // Step 7: Review — everything completed
+        return 7;
     }
 
     /*
@@ -324,7 +388,7 @@ class Create extends Component
                 ];
 
                 if (!empty($validated['password'])) {
-                    $vendorData['password'] = $validated['password'];
+                    $vendorData['password'] = Hash::make($validated['password']);
                 }
 
                 $vendor->update($vendorData);
