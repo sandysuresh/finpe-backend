@@ -1,4 +1,4 @@
-<div class="min-h-full bg-slate-50 p-6">
+<div>
 
     {{-- Page Header --}}
     <div class="mb-6 flex items-center justify-between">
@@ -21,7 +21,7 @@
 
             <a
                 href="{{ route('admin.vendors') }}"
-                class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-violet-50 hover:text-violet-600"
+                class="flex items-center gap-3 rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-blue-400 hover:text-blue-700"
             >
                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
@@ -48,7 +48,7 @@
     >
 
         {{-- Total Balance --}}
-        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div class="fi-card p-5">
 
             <div class="flex items-start justify-between">
 
@@ -67,7 +67,7 @@
                     </div>
                 </div>
 
-                <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-100 text-violet-600">
+                <div class="fi-stat-icon fi-stat-icon-blue">
                     ₹
                 </div>
 
@@ -77,7 +77,7 @@
 
 
         {{-- Total Vendors --}}
-        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div class="fi-card p-5">
 
             <div class="flex items-start justify-between">
 
@@ -96,7 +96,7 @@
                     </div>
                 </div>
 
-                <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
+                <div class="fi-stat-icon fi-stat-icon-slate">
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M17 20h5v-2a4 4 0 00-4-4h-1M9 20H4v-2a4 4 0 014-4h1m8-5a4 4 0 11-8 0 4 4 0 018 0zm-2 7a4 4 0 00-4-4 4 4 0 00-4 4"/>
@@ -109,7 +109,7 @@
 
 
         {{-- Transactions --}}
-        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div class="fi-card p-5">
 
             <div class="flex items-start justify-between">
 
@@ -127,7 +127,7 @@
                     </div>
                 </div>
 
-                <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
+                <div class="fi-stat-icon fi-stat-icon-amber">
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M9 5h6M9 9h6M9 13h4m-7 8h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
@@ -140,7 +140,7 @@
 
 
         {{-- Today's Volume --}}
-        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div class="fi-card p-5">
 
             <div class="flex items-start justify-between">
 
@@ -159,7 +159,7 @@
                     </div>
                 </div>
 
-                <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+                <div class="fi-stat-icon fi-stat-icon-emerald">
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M12 8c-2.21 0-4 1.343-4 3s1.79 3 4 3 4 1.343 4 3-1.79 3-4 3m0-15v2m0 13v2"/>
@@ -181,7 +181,7 @@
 
 
         {{-- Transaction Overview --}}
-        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm lg:col-span-2">
+        <div class="fi-card lg:col-span-2">
 
             <div class="flex items-center justify-between border-b border-slate-100 px-6 py-5">
 
@@ -214,7 +214,7 @@
                         <div class="flex flex-1 flex-col items-center justify-end gap-2">
 
                             <div
-                                class="w-full rounded-t-lg bg-violet-500 opacity-90"
+                                class="w-full rounded-t-lg bg-blue-600"
                                 style="height: {{ $height }}%;"
                             ></div>
 
@@ -239,7 +239,7 @@
 
 
         {{-- Quick Summary --}}
-        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div class="fi-card">
 
             <div class="border-b border-slate-100 px-6 py-5">
                 <h2 class="text-base font-semibold text-slate-900">
@@ -343,7 +343,7 @@
     {{-- RECENT TRANSACTIONS --}}
     {{-- ========================================================= --}}
 
-    <div class="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <div class="fi-card mt-6 overflow-hidden">
 
         <div class="flex items-center justify-between border-b border-slate-100 px-6 py-5">
 
@@ -357,9 +357,9 @@
                 </p>
             </div>
 
-            <button class="text-sm font-medium text-violet-600 hover:text-violet-700">
+            <a href="{{ route('admin.transactions') }}" class="text-sm font-semibold text-blue-700 hover:text-blue-800">
                 View All →
-            </button>
+            </a>
 
         </div>
 

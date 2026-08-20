@@ -1,18 +1,20 @@
 <?php
 namespace App\Models;
 
+use App\Models\Concerns\HasEncryptedRouteKey;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\{HasOne, HasMany};
 
 class Vendor extends Authenticatable
 {
-    use Notifiable;
+    use Notifiable, HasEncryptedRouteKey;
 
     protected $fillable = [
         'vendor_code','pmt_code','business_name','contact_name',
         'email','password','phone','address','country',
-        'kyc_status','status','api_enabled','transaction_limit',
+        'kyc_status','kyc_comment','kyc_reviewed_at','kyc_reviewed_by',
+        'status','api_enabled','transaction_limit',
         'commission_type','commission_value','registration_step',
         'registration_completed_at','email_verified_at',
     ];
@@ -28,7 +30,13 @@ class Vendor extends Authenticatable
             'registration_step'         => 'integer',
             'registration_completed_at' => 'datetime',
             'email_verified_at'         => 'datetime',
+            'kyc_reviewed_at'           => 'datetime',
         ];
+    }
+
+    public function kycReviewer(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Admin::class, 'kyc_reviewed_by');
     }
 
     public function wallet(): HasOne               { return $this->hasOne(Wallet::class); }
@@ -48,4 +56,5 @@ class Vendor extends Authenticatable
     public function teamItDetails(): HasOne        { return $this->hasOne(VendorTeamItDetail::class); }
     public function businessPlans(): HasMany       { return $this->hasMany(VendorBusinessPlan::class); }
     public function evaluation(): HasOne           { return $this->hasOne(VendorEvaluation::class); }
+    public function kycReviews(): HasMany          { return $this->hasMany(VendorKycReview::class)->latest(); }
 }

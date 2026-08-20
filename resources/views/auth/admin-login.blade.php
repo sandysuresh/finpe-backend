@@ -6,9 +6,9 @@
     <title>Admin Login - FinPay Gateway</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="min-h-screen bg-slate-50">
+<body class="min-h-screen bg-[#c5d0e0]">
     <div class="grid min-h-screen lg:grid-cols-2">
-        <div class="hidden bg-blue-700 p-12 text-white lg:flex lg:flex-col lg:justify-between">
+        <div class="hidden bg-slate-900 p-12 text-white lg:flex lg:flex-col lg:justify-between">
             <div>
                 <div class="flex items-center gap-3">
                     <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-white/15">
@@ -16,16 +16,16 @@
                     </div>
                     <div>
                         <div class="text-2xl font-bold">FinPay</div>
-                        <div class="text-xs text-blue-100">Gateway</div>
+                        <div class="text-xs text-slate-300">Gateway</div>
                     </div>
                 </div>
                 <div class="mt-24 max-w-lg">
-                    <p class="text-sm font-semibold uppercase tracking-[.2em] text-blue-100">FinTech Platform</p>
+                    <p class="text-sm font-semibold uppercase tracking-[.2em] text-blue-300">FinTech Platform</p>
                     <h1 class="mt-4 text-5xl font-bold leading-tight">One secure platform for your payment ecosystem.</h1>
-                    <p class="mt-6 text-base leading-7 text-blue-100">Manage vendors, wallets, transactions, settlements and APIs from one professional control center.</p>
+                    <p class="mt-6 text-base leading-7 text-slate-300">Manage vendors, wallets, transactions, settlements and APIs from one professional control center.</p>
                 </div>
             </div>
-            <div class="text-sm text-blue-100">© {{ date('Y') }} FinPay Gateway</div>
+            <div class="text-sm text-slate-400">© {{ date('Y') }} FinPay Gateway</div>
         </div>
 
         <div class="flex items-center justify-center p-6">
@@ -64,7 +64,7 @@
                             <input type="checkbox" name="remember" class="h-4 w-4 rounded border-slate-300 text-blue-600">
                             Remember me
                         </label>
-                        <button class="w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100">
+                        <button class="w-full rounded-xl bg-blue-700 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-200">
                             Sign In
                         </button>
                     </form>

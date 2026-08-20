@@ -15,10 +15,10 @@
     {{-- Summary cards --}}
     <div class="mb-5 grid grid-cols-2 gap-4 lg:grid-cols-5">
         @foreach([
-            ['Total',   $summary['total'],   'text-slate-900',   'bg-blue-100',   'text-blue-600'],
-            ['Success', $summary['success'], 'text-emerald-600', 'bg-emerald-100','text-emerald-600'],
-            ['Failed',  $summary['failed'],  'text-red-500',     'bg-red-100',    'text-red-500'],
-            ['Pending', $summary['pending'], 'text-amber-600',   'bg-amber-100',  'text-amber-600'],
+            ['Total',   $summary['total'],   'text-slate-900',   'bg-slate-800',   'text-white'],
+            ['Success', $summary['success'], 'text-emerald-700', 'bg-emerald-700','text-white'],
+            ['Failed',  $summary['failed'],  'text-red-700',     'bg-red-600',    'text-white'],
+            ['Pending', $summary['pending'], 'text-amber-700',   'bg-amber-600',  'text-white'],
         ] as [$l,$v,$vc,$bg,$ic])
             <div class="fi-card flex items-center gap-4 p-4">
                 <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl {{ $bg }}">
@@ -31,8 +31,8 @@
             </div>
         @endforeach
         <div class="fi-card flex items-center gap-4 p-4">
-            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-100">
-                <svg class="h-5 w-5 text-violet-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-700 text-white">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
             </div>

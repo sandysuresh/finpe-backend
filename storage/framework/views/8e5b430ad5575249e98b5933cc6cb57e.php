@@ -8,7 +8,7 @@
         </div>
         <div class="flex items-center gap-2">
             <a href="<?php echo e(route('vendor.send-money')); ?>"
-               class="flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700">
+               class="flex items-center gap-2 rounded-xl bg-violet-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-800">
                 <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
                 </svg>
@@ -33,8 +33,8 @@
                 <h2 class="mt-3 text-[28px] font-bold leading-none text-slate-900">₹<?php echo e($availableBalance); ?></h2>
                 <p class="mt-2 text-xs text-slate-400">Ready to transact</p>
             </div>
-            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-violet-100">
-                <svg class="h-5 w-5 text-violet-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-violet-700 text-white">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
                 </svg>
             </div>
@@ -46,8 +46,8 @@
                 <h2 class="mt-3 text-[28px] font-bold leading-none text-slate-900">₹<?php echo e($holdBalance); ?></h2>
                 <p class="mt-2 text-xs text-slate-400">Pending settlement</p>
             </div>
-            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-100">
-                <svg class="h-5 w-5 text-amber-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-600 text-white">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z"/>
                 </svg>
             </div>
@@ -59,8 +59,8 @@
                 <h2 class="mt-3 text-[28px] font-bold leading-none text-slate-900"><?php echo e($todayTotal); ?></h2>
                 <p class="mt-2 text-xs text-slate-400">Volume: ₹<?php echo e($todayVolume); ?></p>
             </div>
-            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-100">
-                <svg class="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-700 text-white">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                 </svg>
             </div>
@@ -71,13 +71,13 @@
                 <p class="text-xs font-semibold uppercase tracking-widest text-slate-400">Success / Failed</p>
                 <h2 class="mt-3 text-[28px] font-bold leading-none">
                     <span class="text-emerald-600"><?php echo e($todaySuccess); ?></span>
-                    <span class="text-slate-200">/</span>
+                    <span class="text-slate-400">/</span>
                     <span class="text-red-500"><?php echo e($todayFailed); ?></span>
                 </h2>
                 <p class="mt-2 text-xs text-slate-400"><?php echo e($todayPending); ?> pending today</p>
             </div>
-            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-100">
-                <svg class="h-5 w-5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-700 text-white">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
             </div>
@@ -104,7 +104,7 @@
                         <?php $pct = $chartMax > 0 ? max(round($count / $chartMax * 100), 3) : 3; ?>
                         <div class="group relative flex flex-1 flex-col items-center">
                             <span class="invisible absolute -top-6 rounded bg-slate-800 px-1.5 py-0.5 text-[10px] text-white group-hover:visible"><?php echo e($count); ?></span>
-                            <div class="w-full rounded-t-lg bg-violet-500 transition-all hover:bg-violet-400" style="height:<?php echo e($pct); ?>%"></div>
+                            <div class="w-full rounded-t-lg bg-violet-700 transition-all hover:bg-violet-600" style="height:<?php echo e($pct); ?>%"></div>
                         </div>
                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                 </div>
@@ -124,8 +124,8 @@
             <div class="space-y-5 p-6">
                 <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = [
                     ['Successful', $successRate, 'bg-emerald-500', 'text-emerald-600'],
-                    ['Pending',    $pendingRate, 'bg-amber-400',   'text-amber-600'],
-                    ['Failed',     $failedRate,  'bg-red-400',     'text-red-500'],
+                    ['Pending',    $pendingRate, 'bg-amber-500',   'text-amber-700'],
+                    ['Failed',     $failedRate,  'bg-red-600',     'text-red-700'],
                 ]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as [$label, $rate, $barCls, $textCls]): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                     <div>
                         <div class="mb-1.5 flex items-center justify-between">
@@ -250,10 +250,10 @@
                     <div class="border-t border-slate-100 pt-3">
                         <div class="flex items-center justify-between">
                             <span class="text-xs text-slate-400">KYC Status</span>
-                            <?php $kycCls = match($v->kyc_status) { 'verified'=>'bg-emerald-50 text-emerald-700','rejected'=>'bg-red-50 text-red-600',default=>'bg-amber-50 text-amber-700' }; ?>
+                            <?php $kycCls = match($v->kyc_status) { 'verified'=>'bg-emerald-50 text-emerald-700','rejected'=>'bg-red-50 text-red-600','submitted'=>'bg-blue-50 text-blue-700',default=>'bg-amber-50 text-amber-700' }; ?>
                             <a href="<?php echo e(route('vendor.profile')); ?>"
                                class="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold <?php echo e($kycCls); ?> hover:opacity-80">
-                                <?php echo e(ucfirst($v->kyc_status)); ?>
+                                <?php echo e($v->kyc_status === 'verified' ? 'KYC Approved' : ucfirst($v->kyc_status)); ?>
 
                             </a>
                         </div>

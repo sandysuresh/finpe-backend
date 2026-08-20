@@ -12,17 +12,17 @@
     <div class="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <div class="fi-card p-5">
             <p class="text-xs font-semibold uppercase tracking-widest text-slate-400">Pending</p>
-            <p class="mt-3 text-3xl font-bold text-amber-600">{{ $summary['pending'] }}</p>
+            <p class="mt-3 text-3xl font-bold text-amber-700">{{ $summary['pending'] }}</p>
             <p class="mt-1 text-xs text-slate-400">Awaiting action</p>
         </div>
         <div class="fi-card p-5">
             <p class="text-xs font-semibold uppercase tracking-widest text-slate-400">Approved</p>
-            <p class="mt-3 text-3xl font-bold text-emerald-600">{{ $summary['approved'] }}</p>
+            <p class="mt-3 text-3xl font-bold text-emerald-700">{{ $summary['approved'] }}</p>
             <p class="mt-1 text-xs text-slate-400">This month</p>
         </div>
         <div class="fi-card p-5">
             <p class="text-xs font-semibold uppercase tracking-widest text-slate-400">Rejected</p>
-            <p class="mt-3 text-3xl font-bold text-red-500">{{ $summary['rejected'] }}</p>
+            <p class="mt-3 text-3xl font-bold text-red-600">{{ $summary['rejected'] }}</p>
             <p class="mt-1 text-xs text-slate-400">Declined</p>
         </div>
         <div class="fi-card p-5">
@@ -78,7 +78,7 @@
                                     default    => 'bg-amber-50 text-amber-700',
                                 };
                             @endphp
-                            <tr class="transition-colors hover:bg-slate-50">
+                            <tr id="wallet-request-{{ $req->id }}" class="transition-colors hover:bg-slate-50 {{ $highlightId === $req->id ? 'bg-blue-50' : '' }}">
                                 <td class="whitespace-nowrap px-5 py-4 font-mono text-xs font-semibold text-slate-800">{{ $req->reference }}</td>
                                 <td class="whitespace-nowrap px-5 py-4">
                                     <p class="text-sm font-semibold text-slate-800">{{ $req->vendor->business_name }}</p>

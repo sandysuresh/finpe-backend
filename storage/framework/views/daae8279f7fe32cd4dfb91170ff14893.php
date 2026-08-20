@@ -9,13 +9,12 @@
     <?php echo \Livewire\Mechanisms\FrontendAssets\FrontendAssets::styles(); ?>
 
 </head>
-<body class="min-h-screen bg-slate-50 antialiased">
+<body class="min-h-screen antialiased" style="--fi-accent:#6d28d9">
 
-<aside id="vs" class="fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-slate-200 bg-white"
+<aside id="vs" class="fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-slate-900"
        style="transform:translateX(-100%); transition:transform .2s;">
 
-    
-    <div class="flex h-[70px] shrink-0 items-center gap-3 border-b border-slate-100 px-5">
+    <div class="flex h-[70px] shrink-0 items-center gap-3 border-b border-slate-800 px-5">
         <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-600 text-white">
             <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M12 3 20 7.5v9L12 21l-8-4.5v-9L12 3Z"/>
@@ -23,12 +22,11 @@
             </svg>
         </div>
         <div class="leading-tight">
-            <div class="text-[17px] font-bold text-slate-900">FinPay</div>
-            <div class="text-[11px] text-slate-400">Vendor Portal</div>
+            <div class="text-[17px] font-bold text-white">FinPay</div>
+            <div class="text-[11px] font-medium text-slate-300">Vendor Portal</div>
         </div>
     </div>
 
-    
     <nav class="flex-1 overflow-y-auto px-3 py-4">
         <?php
         $nav = [
@@ -47,7 +45,7 @@
             <?php $active = request()->routeIs($route); ?>
             <a href="<?php echo e(route($route)); ?>"
                class="mb-0.5 flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition
-                      <?php echo e($active ? 'bg-violet-50 text-violet-700 font-semibold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'); ?>">
+                      <?php echo e($active ? 'bg-violet-600 font-semibold text-white shadow-sm' : 'text-slate-300 hover:bg-slate-800 hover:text-white'); ?>">
                 <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="<?php echo e($icon); ?>"/>
                 </svg>
@@ -57,20 +55,19 @@
         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
     </nav>
 
-    
-    <div class="shrink-0 border-t border-slate-100 p-4">
-        <div class="flex items-center gap-3 rounded-xl bg-slate-50 p-3">
+    <div class="shrink-0 border-t border-slate-800 p-4">
+        <div class="flex items-center gap-3 rounded-xl bg-slate-800 p-3">
             <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-600 text-sm font-bold text-white">
                 <?php echo e(strtoupper(substr(auth('vendor')->user()->business_name,0,1))); ?>
 
             </div>
             <div class="min-w-0 flex-1">
-                <div class="truncate text-[13px] font-semibold text-slate-800"><?php echo e(auth('vendor')->user()->business_name); ?></div>
-                <div class="truncate text-[11px] text-slate-400"><?php echo e(auth('vendor')->user()->vendor_code); ?></div>
+                <div class="truncate text-[13px] font-semibold text-white"><?php echo e(auth('vendor')->user()->business_name); ?></div>
+                <div class="truncate text-[11px] text-slate-300"><?php echo e(auth('vendor')->user()->vendor_code); ?></div>
             </div>
             <form method="POST" action="<?php echo e(route('vendor.logout')); ?>">
                 <?php echo csrf_field(); ?>
-                <button class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-200 hover:text-red-500">
+                <button class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-700 hover:text-red-400">
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
                     </svg>
@@ -80,42 +77,47 @@
     </div>
 </aside>
 
-
-<div id="vb" onclick="closeSidebar()" class="fixed inset-0 z-30 bg-black/30 hidden lg:hidden"></div>
+<div id="vb" onclick="closeSidebar()" class="fixed inset-0 z-30 hidden bg-black/50 lg:hidden"></div>
 
 <div class="lg:pl-64">
-    
-    <header class="sticky top-0 z-30 flex h-[70px] items-center justify-between border-b border-slate-200 bg-white/95 px-5 backdrop-blur">
-        <button onclick="openSidebar()" class="rounded-lg p-2 text-slate-500 hover:bg-slate-100 lg:hidden">
+    <header class="sticky top-0 z-30 flex h-[70px] items-center justify-between border-b border-slate-300 bg-white px-5">
+        <button onclick="openSidebar()" class="rounded-lg p-2 text-slate-600 hover:bg-slate-100 lg:hidden">
             <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
             </svg>
         </button>
-        <div class="hidden lg:block text-sm text-slate-500"><?php echo e(now()->format('l, d F Y')); ?></div>
+        <div class="hidden text-sm font-medium text-slate-600 lg:block"><?php echo e(now()->format('l, d F Y')); ?></div>
         <div class="ml-auto flex items-center gap-3">
-            
             <?php $kyc = auth('vendor')->user()->kyc_status; ?>
             <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($kyc === 'pending'): ?>
-                <a href="<?php echo e(route('vendor.profile')); ?>" class="hidden sm:flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
-                    <span class="h-1.5 w-1.5 rounded-full bg-amber-400"></span>KYC Pending
+                <a href="<?php echo e(route('vendor.profile')); ?>" class="hidden items-center gap-1.5 rounded-full border border-amber-300 bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800 sm:flex">
+                    <span class="h-1.5 w-1.5 rounded-full bg-amber-600"></span>KYC Pending
+                </a>
+            <?php elseif($kyc === 'submitted'): ?>
+                <a href="<?php echo e(route('vendor.profile')); ?>" class="hidden items-center gap-1.5 rounded-full border border-blue-300 bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-800 sm:flex">
+                    <span class="h-1.5 w-1.5 rounded-full bg-blue-600"></span>KYC Under Review
+                </a>
+            <?php elseif($kyc === 'rejected'): ?>
+                <a href="<?php echo e(route('vendor.profile')); ?>" class="hidden items-center gap-1.5 rounded-full border border-red-300 bg-red-100 px-3 py-1 text-xs font-semibold text-red-800 sm:flex">
+                    <span class="h-1.5 w-1.5 rounded-full bg-red-600"></span>KYC Rejected
                 </a>
             <?php elseif($kyc === 'verified'): ?>
-                <span class="hidden sm:flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                    <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>KYC Verified
+                <span class="hidden items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800 sm:flex">
+                    <span class="h-1.5 w-1.5 rounded-full bg-emerald-600"></span>KYC Approved
                 </span>
             <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
-            <button class="relative rounded-full p-2 text-slate-500 hover:bg-slate-100">
+            <button class="relative rounded-full p-2 text-slate-600 hover:bg-slate-100">
                 <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
                     <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/>
                 </svg>
             </button>
-            <div class="h-7 w-px bg-slate-200"></div>
+            <div class="h-7 w-px bg-slate-300"></div>
             <div class="flex items-center gap-2">
-                <div class="flex h-8 w-8 items-center justify-center rounded-full bg-violet-600 text-sm font-bold text-white">
+                <div class="flex h-8 w-8 items-center justify-center rounded-full bg-violet-700 text-sm font-bold text-white">
                     <?php echo e(strtoupper(substr(auth('vendor')->user()->business_name,0,1))); ?>
 
                 </div>
-                <span class="hidden lg:block text-[13px] font-semibold text-slate-800"><?php echo e(auth('vendor')->user()->business_name); ?></span>
+                <span class="hidden text-[13px] font-semibold text-slate-800 lg:block"><?php echo e(auth('vendor')->user()->business_name); ?></span>
             </div>
         </div>
     </header>
@@ -125,7 +127,6 @@
 <script>
 function openSidebar()  { document.getElementById('vs').style.transform='translateX(0)'; document.getElementById('vb').classList.remove('hidden'); }
 function closeSidebar() { document.getElementById('vs').style.transform='translateX(-100%)'; document.getElementById('vb').classList.add('hidden'); }
-// Always show on desktop
 if(window.innerWidth >= 1024) document.getElementById('vs').style.transform='translateX(0)';
 window.addEventListener('resize', () => {
     if(window.innerWidth >= 1024) { document.getElementById('vs').style.transform='translateX(0)'; document.getElementById('vb').classList.add('hidden'); }

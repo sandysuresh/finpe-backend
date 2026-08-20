@@ -17,9 +17,14 @@ Route::post('/admin/logout', [AdminAuthController::class, 'logout'])
 Route::middleware('auth:admin')->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard',                  \App\Livewire\Admin\Dashboard::class)->name('dashboard');
     Route::get('/vendors',                    VendorIndex::class)->name('vendors');
-    Route::get('/vendors/create/{vendor?}',   \App\Livewire\Admin\Vendors\Create::class)->name('vendors.create');
-    Route::get('/vendors/{vendor}',           \App\Livewire\Admin\Vendors\Show::class)->name('vendors.show');
+    Route::get('/vendors/create/{vendor?}',   \App\Livewire\Admin\Vendors\Create::class)
+        ->where('vendor', '[A-Za-z0-9\-_]+')
+        ->name('vendors.create');
+    Route::get('/vendors/{vendor}',           \App\Livewire\Admin\Vendors\Show::class)
+        ->where('vendor', '[A-Za-z0-9\-_]+')
+        ->name('vendors.show');
     Route::get('/wallet-requests',            \App\Livewire\Admin\WalletRequests::class)->name('wallet-requests');
+    Route::get('/transactions',               \App\Livewire\Admin\Transactions::class)->name('transactions');
 });
 
 // ── Vendor Auth ───────────────────────────────────────────────────────────────

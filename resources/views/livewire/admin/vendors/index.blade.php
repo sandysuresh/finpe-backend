@@ -1,4 +1,4 @@
-<div class="min-h-full bg-slate-50 p-6">
+<div>
 
     {{-- Header --}}
     <div class="mb-6 flex items-center justify-between">
@@ -15,7 +15,7 @@
 
         <a
             href="{{ route('admin.vendors.create') }}"
-            class="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700"
+            class="fi-btn fi-btn-primary"
         >
             <span class="text-lg leading-none">+</span>
             Add Vendor
@@ -28,7 +28,7 @@
     <div class="mb-6 grid grid-cols-4 gap-4">
 
         {{-- Total --}}
-        <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div class="fi-card p-5">
 
             <p class="text-sm font-medium text-slate-500">
                 Total Vendors
@@ -46,7 +46,7 @@
 
 
         {{-- Active --}}
-        <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div class="fi-card p-5">
 
             <p class="text-sm font-medium text-slate-500">
                 Active Vendors
@@ -64,14 +64,14 @@
 
 
         {{-- KYC --}}
-        <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div class="fi-card p-5">
 
             <p class="text-sm font-medium text-slate-500">
-                KYC Pending
+                KYC Review
             </p>
 
             <p class="mt-2 text-2xl font-bold text-amber-500">
-                {{ \App\Models\Vendor::where('kyc_status', 'pending')->count() }}
+                {{ \App\Models\Vendor::whereIn('kyc_status', ['pending', 'submitted'])->count() }}
             </p>
 
             <p class="mt-1 text-xs text-slate-400">
@@ -82,7 +82,7 @@
 
 
         {{-- API --}}
-        <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div class="fi-card p-5">
 
             <p class="text-sm font-medium text-slate-500">
                 API Enabled
@@ -222,7 +222,7 @@
 
                                 <div class="flex items-center gap-3">
 
-                                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-violet-100 font-bold text-violet-700">
+                                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-700 font-bold text-white">
                                         {{ strtoupper(substr($vendor->business_name, 0, 1)) }}
                                     </div>
 
@@ -263,7 +263,7 @@
                                 @if($vendor->kyc_status === 'verified')
 
                                     <span class="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
-                                        Verified
+                                        KYC Approved
                                     </span>
 
                                 @elseif($vendor->kyc_status === 'submitted')
@@ -339,19 +339,16 @@
 
                             {{-- Action --}}
                             <td class="px-6 py-4 text-right">
-
-                               
-                                @if($vendor->registration_step < 7)
-                                    <a href="{{ route('admin.vendors.create', ['vendor' => $vendor->id]) }}">
-                                        Continue Registration
-                                    </a>
-                                @else
-                                    <a href="{{ route('admin.vendors.show', $vendor) }}">
+                                <div class="flex items-center justify-end gap-2">
+                                    <a href="{{ route('admin.vendors.show', $vendor) }}" class="fi-btn fi-btn-primary fi-btn-sm">
                                         View
                                     </a>
-                                @endif
-                                
-
+                                    @if($vendor->registration_step < 7)
+                                        <a href="{{ route('admin.vendors.create', $vendor) }}" class="fi-btn fi-btn-secondary fi-btn-sm">
+                                            Continue
+                                        </a>
+                                    @endif
+                                </div>
                             </td>
 
                         </tr>

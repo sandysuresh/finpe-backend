@@ -4,6 +4,7 @@ namespace App\Livewire\Admin;
 use App\Models\Wallet;
 use App\Models\WalletLedger;
 use App\Models\WalletTopupRequest;
+use App\Support\UrlId;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
@@ -15,12 +16,18 @@ class WalletRequests extends Component
 
     public string $filterStatus = '';
     public string $search       = '';
+    public ?int $highlightId    = null;
 
     // Approve modal
     public bool   $showApproveModal = false;
     public ?int   $actionId         = null;
     public string $adminNote        = '';
     public string $actionType       = ''; // approve | reject
+
+    public function mount(): void
+    {
+        $this->highlightId = UrlId::decode(request()->query('request'));
+    }
 
     public function openAction(int $id, string $type): void
     {

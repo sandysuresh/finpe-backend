@@ -1,129 +1,13 @@
-<div class="max-w-7xl mx-auto">
-
     
     
     
 
-    <div class="mb-6">
-        <div class="flex items-center justify-between gap-4">
-            <div>
-                <h1 class="text-2xl font-bold text-slate-900">
-                    Add Vendor
-                </h1>
-                <p class="mt-1 text-sm text-slate-500">
-                    Complete vendor registration in multiple steps.
-                </p>
-            </div>
-
-            <a
-                href="<?php echo e(route('admin.vendors')); ?>"
-                class="px-4 py-2 rounded-lg border border-slate-300 bg-white text-slate-700 text-sm font-medium hover:bg-slate-50"
-            >
-                ← Back to Vendors
-            </a>
-        </div>
-    </div>
-
-
-    
-    
-    
-
-    <div class="fi-card mb-6 overflow-hidden">
-        <div class="px-6 py-5">
-            <div class="flex items-center justify-between gap-2 overflow-x-auto">
-
-                <?php
-                    $steps = [
-                        1 => 'Registration',
-                        2 => 'Legal Details',
-                        3 => 'Promoters',
-                        4 => 'Directors & IT',
-                        5 => 'Business Plan',
-                        6 => 'Evaluation',
-                        7 => 'Review',
-                    ];
-                ?>
-
-                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $steps; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $number => $label): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-
-                    <div class="flex items-center min-w-max">
-
-                        <button
-                            type="button"
-                            <?php if($number <= $step && $vendorId): ?>
-                                wire:click="goToStep(<?php echo e($number); ?>)"
-                            <?php endif; ?>
-                            class="flex items-center gap-2"
-                        >
-
-                            <span
-                                class="
-                                    w-9 h-9 rounded-full flex items-center justify-center
-                                    text-sm font-semibold
-                                    border
-                                    transition
-                                    <?php echo e($step === $number
-                                        ? 'bg-purple-600 text-white border-purple-600'
-                                        : ($number < $step
-                                            ? 'bg-green-100 text-green-700 border-green-300'
-                                            : 'bg-white text-slate-400 border-slate-300')); ?>
-
-                                "
-                            >
-                                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($number < $step): ?>
-                                    ✓
-                                <?php else: ?>
-                                    <?php echo e($number); ?>
-
-                                <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
-                            </span>
-
-                            <span
-                                class="
-                                    hidden lg:block text-sm font-medium
-                                    <?php echo e($step === $number
-                                        ? 'text-purple-700'
-                                        : ($number < $step
-                                            ? 'text-green-700'
-                                            : 'text-slate-400')); ?>
-
-                                "
-                            >
-                                <?php echo e($label); ?>
-
-                            </span>
-
-                        </button>
-
-                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($number < 7): ?>
-                            <div class="w-8 lg:w-12 h-px bg-slate-200 mx-2"></div>
-                        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
-
-                    </div>
-
-                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
-
-            </div>
-        </div>
-    </div>
-
-
-    
-    
-    
-
-    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(session()->has('success')): ?>
-        <div class="mb-6 rounded-xl border border-green-200 bg-green-50 px-5 py-4 text-sm text-green-700">
-            <?php echo e(session('success')); ?>
-
-        </div>
-    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
-
-
-    
-    
-    
+    <?php
+        $kycIsAdmin = $kycIsAdmin ?? true;
+        $kycLocked = $kycLocked ?? false;
+        $maxDate = now()->toDateString();
+        $maxYear = now()->year;
+    ?>
 
     <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($step === 1): ?>
 
@@ -249,6 +133,7 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
 
 
                     
+                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($kycIsAdmin): ?>
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-2">
                             Password <span class="text-red-500">*</span>
@@ -272,6 +157,7 @@ if (isset($__messageOriginal)) { $message = $__messageOriginal; }
 endif;
 unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                     </div>
+                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
 
                     
@@ -305,11 +191,15 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                             Status
                         </label>
 
-                        <select wire:model="status" class="fi-input">
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
-                            <option value="suspended">Suspended</option>
-                        </select>
+                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($kycIsAdmin): ?>
+                            <select wire:model="status" class="fi-input">
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                                <option value="suspended">Suspended</option>
+                            </select>
+                        <?php else: ?>
+                            <input type="text" readonly value="<?php echo e(ucfirst($status)); ?>" class="fi-input bg-slate-50 text-slate-500">
+                        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
                         <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__errorArgs = ['status'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
@@ -361,7 +251,8 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                         </p>
 
                         <p class="mt-1 text-sm font-semibold text-purple-900">
-                            Auto Generated
+                            <?php echo e($kycIsAdmin ? 'Auto Generated' : ($vendor?->pmt_code ?? '—')); ?>
+
                         </p>
 
                         <p class="mt-1 text-xs text-purple-600">
@@ -376,7 +267,8 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                         </p>
 
                         <p class="mt-1 text-sm font-semibold text-slate-800">
-                            Auto Generated
+                            <?php echo e($kycIsAdmin ? 'Auto Generated' : ($vendor?->vendor_code ?? '—')); ?>
+
                         </p>
                     </div>
 
@@ -392,7 +284,7 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                     wire:click="nextStep"
                     wire:loading.attr="disabled"
                     wire:target="nextStep"
-                    class="px-6 py-2.5 rounded-lg bg-purple-600 text-white font-semibold hover:bg-purple-700 disabled:opacity-60"
+                    class="fi-btn fi-btn-primary"
                 >
                     <span wire:loading.remove wire:target="nextStep">
                         Continue →
@@ -574,6 +466,8 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                         <input
                             type="number"
                             wire:model="incorporation_year"
+                            min="1800"
+                            max="<?php echo e($maxYear); ?>"
                             class="fi-input"
                             placeholder="YYYY"
                         >
@@ -654,7 +548,7 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                 <button
                     type="button"
                     wire:click="previousStep"
-                    class="px-5 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-700 font-medium"
+                    class="fi-btn fi-btn-secondary"
                 >
                     ← Back
                 </button>
@@ -664,7 +558,7 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                     wire:click="nextStep"
                     wire:loading.attr="disabled"
                     wire:target="nextStep"
-                    class="px-6 py-2.5 rounded-lg bg-purple-600 text-white font-semibold disabled:opacity-60"
+                    class="fi-btn fi-btn-primary"
                 >
                     <span wire:loading.remove wire:target="nextStep">
                         Continue →
@@ -705,7 +599,7 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                 <button
                     type="button"
                     wire:click="addPromoter"
-                    class="px-4 py-2 rounded-lg bg-purple-600 text-white text-sm font-medium hover:bg-purple-700"
+                    class="fi-btn fi-btn-primary fi-btn-sm"
                 >
                     + Add Promoter
                 </button>
@@ -782,7 +676,7 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                                     step="0.01"
                                     min="20"
                                     max="100"
-                                    wire:model="promoters.<?php echo e($index); ?>.share_percentage"
+                                    wire:model.live="promoters.<?php echo e($index); ?>.share_percentage"
                                     class="fi-input"
                                 >
 
@@ -827,12 +721,14 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                             
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-2">
-                                    Date of Birth
+                                    Date of Birth <span class="text-red-500">*</span>
                                 </label>
 
                                 <input
                                     type="date"
-                                    wire:model="promoters.<?php echo e($index); ?>.dob"
+                                    wire:model.live="promoters.<?php echo e($index); ?>.dob"
+                                    min="1900-01-01"
+                                    max="<?php echo e($maxDate); ?>"
                                     class="fi-input"
                                 >
 
@@ -889,7 +785,7 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                 <button
                     type="button"
                     wire:click="previousStep"
-                    class="px-5 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-700 font-medium"
+                    class="fi-btn fi-btn-secondary"
                 >
                     ← Back
                 </button>
@@ -899,7 +795,7 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                     wire:click="nextStep"
                     wire:loading.attr="disabled"
                     wire:target="nextStep"
-                    class="px-6 py-2.5 rounded-lg bg-purple-600 text-white font-semibold disabled:opacity-60"
+                    class="fi-btn fi-btn-primary"
                 >
                     <span wire:loading.remove wire:target="nextStep">
                         Continue →
@@ -943,7 +839,7 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                     <button
                         type="button"
                         wire:click="addDirector"
-                        class="px-4 py-2 rounded-lg bg-purple-600 text-white text-sm font-medium hover:bg-purple-700"
+                        class="fi-btn fi-btn-primary fi-btn-sm"
                     >
                         + Add Director
                     </button>
@@ -1047,12 +943,14 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
 
                                 <div>
                                     <label class="block text-sm font-medium text-slate-700 mb-2">
-                                        Date of Birth
+                                        Date of Birth <span class="text-red-500">*</span>
                                     </label>
 
                                     <input
                                         type="date"
-                                        wire:model="directors.<?php echo e($index); ?>.dob"
+                                        wire:model.live="directors.<?php echo e($index); ?>.dob"
+                                        min="1900-01-01"
+                                        max="<?php echo e($maxDate); ?>"
                                         class="fi-input"
                                     >
                                 </div>
@@ -1347,7 +1245,7 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                 <button
                     type="button"
                     wire:click="previousStep"
-                    class="px-5 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-700 font-medium"
+                    class="fi-btn fi-btn-secondary"
                 >
                     ← Back
                 </button>
@@ -1357,7 +1255,7 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                     wire:click="nextStep"
                     wire:loading.attr="disabled"
                     wire:target="nextStep"
-                    class="px-6 py-2.5 rounded-lg bg-purple-600 text-white font-semibold disabled:opacity-60"
+                    class="fi-btn fi-btn-primary"
                 >
                     <span wire:loading.remove wire:target="nextStep">
                         Continue →
@@ -1545,7 +1443,7 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                 <button
                     type="button"
                     wire:click="previousStep"
-                    class="px-5 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-700 font-medium"
+                    class="fi-btn fi-btn-secondary"
                 >
                     ← Back
                 </button>
@@ -1555,7 +1453,7 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                     wire:click="nextStep"
                     wire:loading.attr="disabled"
                     wire:target="nextStep"
-                    class="px-6 py-2.5 rounded-lg bg-purple-600 text-white font-semibold disabled:opacity-60"
+                    class="fi-btn fi-btn-primary"
                 >
                     <span wire:loading.remove wire:target="nextStep">
                         Continue →
@@ -1633,7 +1531,9 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
 
                         <input
                             type="date"
-                            wire:model="ca_incorporation_date"
+                            wire:model.live="ca_incorporation_date"
+                            min="1900-01-01"
+                            max="<?php echo e($maxDate); ?>"
                             class="fi-input"
                         >
                     </div>
@@ -1804,7 +1704,7 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                 <button
                     type="button"
                     wire:click="previousStep"
-                    class="px-5 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-700 font-medium"
+                    class="fi-btn fi-btn-secondary"
                 >
                     ← Back
                 </button>
@@ -1814,7 +1714,7 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                     wire:click="nextStep"
                     wire:loading.attr="disabled"
                     wire:target="nextStep"
-                    class="px-6 py-2.5 rounded-lg bg-purple-600 text-white font-semibold disabled:opacity-60"
+                    class="fi-btn fi-btn-primary"
                 >
                     <span wire:loading.remove wire:target="nextStep">
                         Review →
@@ -1849,7 +1749,10 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                     </h2>
 
                     <p class="mt-1 text-sm text-slate-500">
-                        Please review the registration details before creating the vendor.
+                        <?php echo e($kycIsAdmin
+                            ? 'Please review the registration details before creating the vendor.'
+                            : 'Please review your KYC details. Submit enable tabhi hoga jab steps 1–6 complete honge.'); ?>
+
                     </p>
 
                 </div>
@@ -2312,14 +2215,21 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                             <div>
 
                                 <h3 class="font-semibold text-amber-900">
-                                    Confirm Vendor Registration
+                                    <?php echo e($kycIsAdmin ? 'Confirm Vendor Registration' : 'Confirm KYC Submission'); ?>
+
                                 </h3>
 
                                 <p class="mt-1 text-sm text-amber-700">
-                                    Once you create this vendor, the vendor
-                                    account and wallet will be created.
-                                    The vendor will be able to login using
-                                    Email, PMT Code and Password.
+                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($kycIsAdmin): ?>
+                                        Once you create this vendor, the vendor
+                                        account and wallet will be created.
+                                        The vendor will be able to login using
+                                        Email, PMT Code and Password.
+                                    <?php else: ?>
+                                        Once submitted, your KYC will be sent
+                                        for admin review. You can still update
+                                        details until it is verified.
+                                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                 </p>
 
                             </div>
@@ -2337,29 +2247,36 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                     <button
                         type="button"
                         wire:click="previousStep"
-                        class="px-5 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-700 font-medium"
+                        class="fi-btn fi-btn-secondary"
                     >
                         ← Back
                     </button>
 
 
+                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if (! ($kycLocked)): ?>
+                    <?php $canSubmitKyc = $kycIsAdmin || $this->kycCanSubmit(); ?>
                     <button
                         type="button"
                         wire:click="submitRegistration"
+                        <?php if(! $canSubmitKyc): echo 'disabled'; endif; ?>
                         wire:loading.attr="disabled"
                         wire:target="submitRegistration"
-                        class="px-7 py-2.5 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 disabled:opacity-60"
+                        class="fi-btn fi-btn-success"
+                        title="<?php echo e($canSubmitKyc ? '' : 'Complete all KYC steps before submitting'); ?>"
                     >
 
                         <span wire:loading.remove wire:target="submitRegistration">
-                            ✓ Create Vendor
+                            <?php echo e($kycIsAdmin ? '✓ Create Vendor' : '✓ Submit KYC'); ?>
+
                         </span>
 
                         <span wire:loading wire:target="submitRegistration">
-                            Creating Vendor...
+                            <?php echo e($kycIsAdmin ? 'Creating Vendor...' : 'Submitting...'); ?>
+
                         </span>
 
                     </button>
+                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
                 </div>
 
@@ -2368,30 +2285,4 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
         </div>
 
     <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
-
-
-    
-    
-    
-
-    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($errors->any()): ?>
-
-        <div class="mt-6 rounded-xl border border-red-200 bg-red-50 p-5">
-
-            <h3 class="font-semibold text-red-800">
-                Please correct the following errors:
-            </h3>
-
-            <ul class="mt-2 list-disc list-inside text-sm text-red-700 space-y-1">
-
-                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                    <li><?php echo e($error); ?></li>
-                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
-
-            </ul>
-
-        </div>
-
-    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
-
-</div><?php /**PATH /home/sandeep/Documents/finpay/resources/views/livewire/admin/vendors/create.blade.php ENDPATH**/ ?>
+<?php /**PATH /home/sandeep/Documents/finpay/resources/views/livewire/shared/vendor-registration-steps.blade.php ENDPATH**/ ?>

@@ -6,11 +6,11 @@
     <title>Vendor Login - FinPay Gateway</title>
     <?php echo app('Illuminate\Foundation\Vite')(['resources/css/app.css', 'resources/js/app.js']); ?>
 </head>
-<body class="min-h-screen bg-slate-50">
+<body class="min-h-screen bg-[#c5d0e0]">
     <div class="grid min-h-screen lg:grid-cols-2">
 
         
-        <div class="hidden bg-violet-700 p-12 text-white lg:flex lg:flex-col lg:justify-between">
+        <div class="hidden bg-slate-900 p-12 text-white lg:flex lg:flex-col lg:justify-between">
             <div>
                 <div class="flex items-center gap-3">
                     <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-white/15">
@@ -21,16 +21,16 @@
                     </div>
                     <div>
                         <div class="text-2xl font-bold">FinPay</div>
-                        <div class="text-xs text-violet-200">Vendor Portal</div>
+                        <div class="text-xs text-violet-300">Vendor Portal</div>
                     </div>
                 </div>
                 <div class="mt-24 max-w-lg">
-                    <p class="text-sm font-semibold uppercase tracking-[.2em] text-violet-200">Vendor Dashboard</p>
+                    <p class="text-sm font-semibold uppercase tracking-[.2em] text-violet-300">Vendor Dashboard</p>
                     <h1 class="mt-4 text-5xl font-bold leading-tight">Send money, track transactions, manage your wallet.</h1>
-                    <p class="mt-6 text-base leading-7 text-violet-200">Your complete payment operations hub — real-time balances, transaction reports, API keys, and more.</p>
+                    <p class="mt-6 text-base leading-7 text-slate-300">Your complete payment operations hub — real-time balances, transaction reports, API keys, and more.</p>
                 </div>
             </div>
-            <div class="text-sm text-violet-200">© <?php echo e(date('Y')); ?> FinPay Gateway</div>
+            <div class="text-sm text-slate-400">© <?php echo e(date('Y')); ?> FinPay Gateway</div>
         </div>
 
         
@@ -73,7 +73,7 @@
                             <input type="checkbox" name="remember" class="h-4 w-4 rounded border-slate-300 text-violet-600">
                             Remember me
                         </label>
-                        <button class="w-full rounded-xl bg-violet-600 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-violet-700 focus:outline-none focus:ring-4 focus:ring-violet-100">
+                        <button class="w-full rounded-xl bg-violet-700 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-violet-800 focus:outline-none focus:ring-4 focus:ring-violet-200">
                             Sign In
                         </button>
                     </form>

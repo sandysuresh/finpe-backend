@@ -2,6 +2,7 @@
 namespace App\Livewire\Vendor;
 
 use App\Models\WalletTopupRequest;
+use App\Support\AdminNotify;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Livewire\Component;
@@ -69,7 +70,7 @@ class Wallet extends Component
 
         $vendor = Auth::guard('vendor')->user();
 
-        WalletTopupRequest::create([
+        $request = WalletTopupRequest::create([
             'vendor_id'       => $vendor->id,
             'reference'       => 'TUP-' . strtoupper(Str::random(8)),
             'amount'          => $this->amount,
@@ -79,6 +80,8 @@ class Wallet extends Component
             'remarks'         => $this->remarks,
             'status'          => 'pending',
         ]);
+
+        AdminNotify::walletTopup($vendor, $request->reference, (string) $request->amount, $request->id);
 
         $this->showModal  = false;
         $this->successMsg = 'Add money request submitted! Admin will review and credit your wallet shortly.';
