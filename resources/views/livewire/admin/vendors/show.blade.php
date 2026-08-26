@@ -11,7 +11,7 @@
                 </a>
             @endif
             <a href="{{ route('admin.vendors') }}" class="fi-btn fi-btn-secondary">
-                ← Back to Vendors
+                ← Back
             </a>
         </div>
     </div>

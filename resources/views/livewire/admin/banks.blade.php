@@ -205,7 +205,7 @@
                                 </span>
                             </label>
                         @empty
-                            <p class="py-6 text-center text-sm text-slate-500">No vendors found.</p>
+                            <p class="py-6 text-center text-sm text-slate-500">No partners found.</p>
                         @endforelse
                     </div>
                 </div>

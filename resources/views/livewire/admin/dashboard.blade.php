@@ -33,7 +33,7 @@
                     />
                 </svg>
 
-                <span>Vendors</span>
+                <span>Partners</span>
             </a>
             @endif
         </div>
@@ -85,7 +85,7 @@
 
                 <div>
                     <p class="text-sm font-medium text-slate-500">
-                        Total Vendors
+                        Total Partners
                     </p>
 
                     <h2 class="mt-3 text-2xl font-bold text-slate-900">

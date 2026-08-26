@@ -5,11 +5,11 @@
 
         <div>
             <h1 class="text-2xl font-bold text-slate-900">
-                Vendors
+                Partners
             </h1>
 
             <p class="mt-1 text-sm text-slate-500">
-                Manage registered vendors and their API access.
+                Manage registered partners and their API access.
             </p>
         </div>
 
@@ -31,7 +31,7 @@
         <div class="fi-card p-5">
 
             <p class="text-sm font-medium text-slate-500">
-                Total Vendors
+                Total Partners
             </p>
 
             <p class="mt-2 text-2xl font-bold text-slate-900">
@@ -39,7 +39,7 @@
             </p>
 
             <p class="mt-1 text-xs text-slate-400">
-                Registered vendors
+                Registered Partners
             </p>
 
         </div>
@@ -49,7 +49,7 @@
         <div class="fi-card p-5">
 
             <p class="text-sm font-medium text-slate-500">
-                Active Vendors
+                Active Partners
             </p>
 
             <p class="mt-2 text-2xl font-bold text-emerald-600">
@@ -373,7 +373,7 @@
                                     </div>
 
                                     <p class="mt-4 text-sm font-semibold text-slate-900">
-                                        No vendors found
+                                        No partners found
                                     </p>
 
                                     <p class="mt-1 text-sm text-slate-500">
