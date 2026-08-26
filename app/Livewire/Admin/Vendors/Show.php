@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Vendors;
 
+use App\Models\Bank;
 use App\Models\Vendor;
 use App\Models\VendorKycReview;
 use Illuminate\Support\Facades\Auth;
@@ -20,10 +21,13 @@ class Show extends Component
 
     public string $reviewMessage = '';
 
+    public array $assignedBankIds = [];
+
     public function mount(Vendor $vendor): void
     {
         $this->vendor = $vendor;
         $this->kycComment = '';
+        $this->assignedBankIds = $vendor->banks()->pluck('banks.id')->map(fn ($id) => (string) $id)->all();
 
         $tab = request()->query('tab');
         if (is_string($tab) && in_array($tab, ['kyc', 'profile', 'wallet', 'transactions', 'settlements', 'beneficiaries', 'developer'], true)) {
@@ -109,6 +113,34 @@ class Show extends Component
         }
     }
 
+    public function toggleApiAccess(): void
+    {
+        $this->vendor->update([
+            'api_enabled' => ! $this->vendor->api_enabled,
+        ]);
+        $this->vendor = $this->vendor->fresh();
+        $this->reviewMessage = $this->vendor->api_enabled
+            ? 'Vendor API access enabled. Calls still require HMAC signature and IP whitelist.'
+            : 'Vendor API access disabled.';
+    }
+
+    public function saveAssignedBanks(): void
+    {
+        $ids = collect($this->assignedBankIds)->map(fn ($id) => (int) $id)->filter()->unique()->all();
+        $sync = [];
+        foreach ($ids as $id) {
+            $sync[$id] = ['is_enabled' => true];
+        }
+        $this->vendor->banks()->sync($sync);
+
+        if ($ids !== []) {
+            $this->vendor->update(['api_enabled' => true]);
+        }
+
+        $this->vendor = $this->vendor->fresh();
+        $this->reviewMessage = 'Bank APIs updated for this vendor. Endpoints will show in the vendor Developer panel.';
+    }
+
     public function render()
     {
         $vendor = $this->vendor->load([
@@ -144,6 +176,7 @@ class Show extends Component
         $beneficiaries = $vendor->beneficiaries()->latest()->paginate(10, ['*'], 'benPage');
 
         $webhookLogs = $vendor->webhookLogs()->latest()->limit(15)->get();
+        $allBanks = Bank::query()->where('is_active', true)->orderBy('name')->get();
 
         return view('livewire.admin.vendors.show', compact(
             'vendor',
@@ -154,6 +187,7 @@ class Show extends Component
             'settlements',
             'beneficiaries',
             'webhookLogs',
+            'allBanks',
         ))->layout('layouts.admin', ['title' => $vendor->business_name]);
     }
 }

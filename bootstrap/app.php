@@ -12,8 +12,13 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        $middleware->trustHosts();
+        $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
         $middleware->alias([
             'auth.vendor' => \App\Http\Middleware\AuthenticateVendor::class,
+            'admin.module' => \App\Http\Middleware\EnsureAdminModule::class,
+            'vendor.api' => \App\Http\Middleware\AuthenticateVendorApi::class,
+            'vendor.api.log' => \App\Http\Middleware\LogVendorApi::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

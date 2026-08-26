@@ -9,10 +9,10 @@
     <?php echo \Livewire\Mechanisms\FrontendAssets\FrontendAssets::styles(); ?>
 
 </head>
-<body class="min-h-screen antialiased" style="--fi-accent:#1d4ed8">
+<body class="min-h-screen font-sans antialiased" style="--fi-accent:#1d4ed8">
     <header class="sticky top-0 z-50 border-b border-slate-800 bg-slate-900">
         <div class="mx-auto flex h-[70px] max-w-[1600px] items-center px-5">
-            <a href="<?php echo e(route('admin.dashboard')); ?>" class="mr-8 flex min-w-fit items-center gap-2.5">
+            <a href="<?php echo e(\App\Support\AdminModules::firstUrl(auth('admin')->user())); ?>" class="mr-8 flex min-w-fit items-center gap-2.5">
                 <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm">
                     <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M12 3 20 7.5v9L12 21l-8-4.5v-9L12 3Z"/>
@@ -27,19 +27,11 @@
 
             <nav class="hidden flex-1 items-center gap-1 xl:flex">
                 <?php
-                    $menus = [
-                        ['Dashboard',       route('admin.dashboard'),       request()->routeIs('admin.dashboard')],
-                        ['Vendors',         route('admin.vendors'),         request()->routeIs('admin.vendors*')],
-                        ['Wallet Requests', route('admin.wallet-requests'), request()->routeIs('admin.wallet-requests')],
-                        ['Transactions',    route('admin.transactions'),    request()->routeIs('admin.transactions')],
-                        ['Settlements',     '#',                            false],
-                        ['Reports',         '#',                            false],
-                        ['API Logs',        '#',                            false],
-                    ];
+                    $menus = \App\Support\AdminModules::navItems(auth('admin')->user());
                 ?>
-                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $menus; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as [$label, $url, $active]): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                    <a href="<?php echo e($url); ?>" class="flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-semibold <?php echo e($active ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-300 hover:bg-slate-800 hover:text-white'); ?>">
-                        <?php echo e($label); ?>
+                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $menus; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <a href="<?php echo e($item['url']); ?>" class="flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-semibold <?php echo e($item['active'] ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-300 hover:bg-slate-800 hover:text-white'); ?>">
+                        <?php echo e($item['label']); ?>
 
                     </a>
                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
@@ -83,7 +75,7 @@ if (isset($__slots)) unset($__slots);
                         </span>
                         <span class="hidden text-left lg:block">
                             <span class="block text-[13px] font-semibold text-white"><?php echo e(auth('admin')->user()->name); ?></span>
-                            <span class="block text-[11px] text-slate-300"><?php echo e(ucfirst(auth('admin')->user()->role)); ?></span>
+                            <span class="block text-[11px] text-slate-300"><?php echo e(auth('admin')->user()->roleLabel()); ?></span>
                         </span>
                         <svg class="hidden h-4 w-4 text-slate-400 lg:block" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.938a.75.75 0 1 1 1.08 1.04l-4.25-4.5a.75.75 0 0 1-1.08-1.06l4.25-4.5a.75.75 0 0 1 1.06-.02Z" clip-rule="evenodd"/></svg>
                     </button>
@@ -101,8 +93,8 @@ if (isset($__slots)) unset($__slots);
 
         <div class="border-t border-slate-800 xl:hidden">
             <nav class="fi-scroll flex gap-1 overflow-x-auto px-4 py-2">
-                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $menus; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as [$label, $url, $active]): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                    <a href="<?php echo e($url); ?>" class="whitespace-nowrap rounded-lg px-3 py-2 text-xs font-semibold <?php echo e($active ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white'); ?>"><?php echo e($label); ?></a>
+                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $menus; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <a href="<?php echo e($item['url']); ?>" class="whitespace-nowrap rounded-lg px-3 py-2 text-xs font-semibold <?php echo e($item['active'] ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white'); ?>"><?php echo e($item['label']); ?></a>
                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
             </nav>
         </div>

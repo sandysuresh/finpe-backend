@@ -263,8 +263,8 @@
     {{-- ADD MONEY MODAL --}}
     {{-- ════════════════════════════════════════════════════════════ --}}
     @if($showModal)
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-        <div class="fi-card w-full max-w-lg overflow-hidden">
+    <div class="fi-modal-overlay">
+        <div class="fi-modal">
 
             {{-- Modal header --}}
             <div class="flex items-center justify-between border-b border-slate-100 px-6 py-5">

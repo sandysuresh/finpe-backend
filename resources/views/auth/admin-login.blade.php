@@ -6,7 +6,7 @@
     <title>Admin Login - FinPay Gateway</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="min-h-screen bg-[#c5d0e0]">
+<body class="min-h-screen bg-[#c5d0e0] font-sans">
     <div class="grid min-h-screen lg:grid-cols-2">
         <div class="hidden bg-slate-900 p-12 text-white lg:flex lg:flex-col lg:justify-between">
             <div>

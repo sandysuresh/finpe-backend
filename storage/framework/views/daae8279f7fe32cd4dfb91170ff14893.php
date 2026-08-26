@@ -9,7 +9,7 @@
     <?php echo \Livewire\Mechanisms\FrontendAssets\FrontendAssets::styles(); ?>
 
 </head>
-<body class="min-h-screen antialiased" style="--fi-accent:#6d28d9">
+<body class="min-h-screen font-sans antialiased" style="--fi-accent:#6d28d9">
 
 <aside id="vs" class="fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-slate-900"
        style="transform:translateX(-100%); transition:transform .2s;">
@@ -36,7 +36,7 @@
             ['Beneficiaries','vendor.beneficiaries','M17 20h5v-2a4 4 0 00-4-4h-1M9 20H4v-2a4 4 0 014-4h1m8-5a4 4 0 11-8 0 4 4 0 018 0z'],
             ['Transactions', 'vendor.transactions', 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'],
             ['Settlements',  'vendor.settlements',  'M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z'],
-            ['API & Developer','vendor.developer',  'M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4'],
+            ['API docs','vendor.developer',  'M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4'],
             ['Profile & KYC','vendor.profile',      'M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z'],
         ];
         ?>

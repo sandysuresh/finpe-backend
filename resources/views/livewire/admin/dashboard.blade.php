@@ -19,6 +19,7 @@
                 Export
             </button>
 
+            @if(auth('admin')->user()->hasModule('vendors'))
             <a
                 href="{{ route('admin.vendors') }}"
                 class="flex items-center gap-3 rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-blue-400 hover:text-blue-700"
@@ -34,6 +35,7 @@
 
                 <span>Vendors</span>
             </a>
+            @endif
         </div>
     </div>
 
@@ -357,9 +359,11 @@
                 </p>
             </div>
 
+            @if(auth('admin')->user()->hasModule('transactions'))
             <a href="{{ route('admin.transactions') }}" class="text-sm font-semibold text-blue-700 hover:text-blue-800">
                 View All →
             </a>
+            @endif
 
         </div>
 

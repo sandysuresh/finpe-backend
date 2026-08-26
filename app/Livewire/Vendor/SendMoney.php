@@ -27,7 +27,7 @@ class SendMoney extends Component {
 
     public function fillBeneficiary(): void {
         if (!$this->beneficiaryId) { $this->reset(['accountNumber','ifscCode','bankName','beneficiaryName']); return; }
-        $b = Beneficiary::find($this->beneficiaryId);
+        $b = Auth::guard('vendor')->user()->beneficiaries()->find($this->beneficiaryId);
         if ($b) {
             $this->accountNumber   = $b->account_number;
             $this->ifscCode        = $b->ifsc_code ?? '';

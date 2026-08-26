@@ -139,8 +139,8 @@
     <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($showApproveModal && $actionId): ?>
         <?php $req = $requests->firstWhere('id', $actionId) ?? \App\Models\WalletTopupRequest::with('vendor')->find($actionId); ?>
         <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($req): ?>
-        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-            <div class="fi-card w-full max-w-md overflow-hidden">
+        <div class="fi-modal-overlay">
+            <div class="fi-modal overflow-hidden">
 
                 
                 <div class="flex items-center justify-between border-b px-6 py-5

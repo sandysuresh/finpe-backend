@@ -14,6 +14,17 @@ class AuthenticateVendor
             return redirect()->route('vendor.login');
         }
 
+        $vendor = Auth::guard('vendor')->user();
+        if ($vendor && $vendor->status !== 'active') {
+            Auth::guard('vendor')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()->route('vendor.login')->withErrors([
+                'email' => 'This account is inactive.',
+            ]);
+        }
+
         return $next($request);
     }
 }

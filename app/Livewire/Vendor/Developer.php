@@ -1,68 +1,87 @@
 <?php
+
 namespace App\Livewire\Vendor;
 
 use App\Models\ApiCredential;
+use App\Support\OutboundUrl;
+use App\Support\VendorApiSecurity;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 use Livewire\Component;
 
-class Developer extends Component {
-    public bool   $showSecret   = false;
-    public string $webhookUrl   = '';
-    public string $ipWhitelist  = '';
-    public bool   $saved        = false;
-    public ?ApiCredential $creds = null;
+class Developer extends Component
+{
+    public string $webhookUrl = '';
 
-    public function mount(): void {
-        $vendor      = Auth::guard('vendor')->user();
-        $this->creds = $vendor->apiCredential;
-        if ($this->creds) {
-            $this->webhookUrl  = $this->creds->webhook_url ?? '';
-            $this->ipWhitelist = implode("\n", $this->creds->ip_whitelist ?? []);
+    public string $ipWhitelist = '';
+
+    public bool $saved = false;
+
+    public function mount(): void
+    {
+        $creds = Auth::guard('vendor')->user()?->apiCredential;
+        if ($creds) {
+            $this->webhookUrl = $creds->webhook_url ?? '';
+            $this->ipWhitelist = implode("\n", $creds->ip_whitelist ?? []);
         }
     }
 
-    public function regenerateApiKey(): void {
-        $vendor = Auth::guard('vendor')->user();
-        $creds  = $vendor->apiCredential ?? new ApiCredential(['vendor_id' => $vendor->id]);
-        $creds->api_key = 'pk_'.Str::random(32);
-        if (!$creds->secret_key) {
-            $creds->secret_key = 'sk_'.Str::random(48);
-        }
-        $creds->save();
-        $this->creds = $creds;
-        $this->dispatch('notify', message: 'API key regenerated.');
-    }
-
-    public function regenerateSecret(): void {
-        if (!$this->creds) return;
-        $this->creds->secret_key = 'sk_'.Str::random(48);
-        $this->creds->save();
-        $this->dispatch('notify', message: 'Secret key regenerated.');
-    }
-
-    public function saveSettings(): void {
+    public function saveSettings(): void
+    {
         $this->validate([
-            'webhookUrl'  => 'nullable|url|max:500',
-            'ipWhitelist' => 'nullable|string',
+            'webhookUrl' => 'nullable|url|max:500',
+            'ipWhitelist' => 'required|string',
         ]);
+
+        if ($this->webhookUrl !== '') {
+            try {
+                OutboundUrl::assertSafe($this->webhookUrl, false);
+            } catch (InvalidArgumentException $e) {
+                $this->addError('webhookUrl', $e->getMessage());
+
+                return;
+            }
+        }
+
+        $ips = VendorApiSecurity::parseWhitelist($this->ipWhitelist);
+
+        if ($ips === []) {
+            $this->addError('ipWhitelist', 'At least one IP address is required for API access.');
+
+            return;
+        }
+
+        foreach ($ips as $ip) {
+            if (! VendorApiSecurity::isValidWhitelistEntry($ip)) {
+                $this->addError('ipWhitelist', "Invalid IP or CIDR: {$ip}");
+
+                return;
+            }
+        }
+
         $vendor = Auth::guard('vendor')->user();
-        $ips    = array_filter(array_map('trim', explode("\n", $this->ipWhitelist)));
-        $creds  = $vendor->apiCredential ?? ApiCredential::create([
-            'vendor_id'  => $vendor->id,
-            'api_key'    => 'pk_'.Str::random(32),
+        $creds = $vendor->apiCredential ?? ApiCredential::create([
+            'vendor_id' => $vendor->id,
+            'api_key' => 'pk_'.Str::random(32),
             'secret_key' => 'sk_'.Str::random(48),
         ]);
-        $creds->update(['webhook_url' => $this->webhookUrl, 'ip_whitelist' => array_values($ips)]);
-        $this->creds = $creds->fresh();
+        $creds->update([
+            'webhook_url' => $this->webhookUrl ?: null,
+            'ip_whitelist' => array_values($ips),
+        ]);
         $this->saved = true;
     }
 
-    public function render() {
-        $logs = $this->creds
-            ? Auth::guard('vendor')->user()->webhookLogs()->latest()->limit(10)->get()
-            : collect();
-        return view('livewire.vendor.developer', compact('logs'))
-            ->layout('layouts.vendor', ['title' => 'Developer']);
+    public function render()
+    {
+        $vendor = Auth::guard('vendor')->user()->load([
+            'assignedBanks.apiEndpoints' => fn ($q) => $q->where('is_active', true),
+        ]);
+
+        return view('livewire.vendor.developer', [
+            'assignedBanks' => $vendor->assignedBanks,
+            'apiBase' => rtrim(config('app.url'), '/'),
+        ])->layout('layouts.vendor', ['title' => 'API Documentation']);
     }
 }

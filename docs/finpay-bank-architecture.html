@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FinPay – India → Nepal Remittance &amp; Vendor Payment Platform</title>
+  <style>
+    :root {
+      --ink: #0f172a;
+      --muted: #475569;
+      --navy: #1e3a5f;
+      --line: #94a3b8;
+      --admin: #334155;
+      --admin-bg: #f1f5f9;
+      --live: #1e4b8c;
+      --live-bg: #e8f0fa;
+      --plan: #9a3412;
+      --plan-bg: #fff7ed;
+      --ok: #047857;
+      --ok-bg: #ecfdf5;
+      --wait: #a16207;
+      --wait-bg: #fefce8;
+      --bad: #b91c1c;
+      --bad-bg: #fef2f2;
+    }
+    * { box-sizing: border-box; }
+    @page { size: A4 landscape; margin: 10mm; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Calibri, Arial, sans-serif;
+      color: var(--ink);
+      background: #cbd5e1;
+    }
+    .sheet {
+      width: 277mm;
+      min-height: 180mm;
+      margin: 12px auto;
+      padding: 14px 18px 12px;
+      background: #fff;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      border-bottom: 2px solid var(--navy);
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+    }
+    h1 { font-size: 17px; margin: 0; color: var(--navy); letter-spacing: -0.01em; }
+    .tag { font-size: 10px; color: var(--muted); text-align: right; }
+    h2 { font-size: 12px; margin: 14px 0 10px; color: var(--navy); font-weight: 700; }
+    h2:first-of-type { margin-top: 0; }
+    .sub { color: var(--muted); margin: 4px 0 0; font-size: 11px; }
+    .note {
+      background: #f8fafc;
+      border-left: 3px solid var(--navy);
+      padding: 8px 10px;
+      font-size: 10.5px;
+      color: #334155;
+      margin-top: 12px;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 10.5px; }
+    th, td { border: 1px solid #d8e0ea; padding: 8px 10px; text-align: left; vertical-align: top; }
+    th { background: #e8eef6; font-size: 9.5px; text-transform: uppercase; letter-spacing: .04em; color: #334155; }
+    tr:nth-child(even) td { background: #f8fafc; }
+    footer {
+      margin-top: 12px;
+      font-size: 9.5px;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+    }
+    .legend { display: flex; gap: 20px; font-size: 10.5px; margin: 0 0 12px; color: var(--muted); }
+    .sw { display: inline-block; width: 12px; height: 12px; margin-right: 6px; vertical-align: -2px; border-radius: 2px; }
+    .sw-admin { background: var(--admin-bg); border: 1px solid var(--admin); }
+    .sw-live { background: var(--live-bg); border: 1px solid var(--live); }
+    .sw-plan { background: var(--plan-bg); border: 1px solid var(--plan); }
+
+    .flow {
+      display: flex;
+      align-items: stretch;
+      justify-content: space-between;
+      gap: 0;
+    }
+    .node {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .box {
+      flex: 1;
+      border: 1px solid var(--live);
+      background: var(--live-bg);
+      border-radius: 6px;
+      padding: 8px 9px 9px;
+      min-height: 88px;
+    }
+    .box.admin { border-color: var(--admin); background: var(--admin-bg); }
+    .box.plan { border-color: var(--plan); background: var(--plan-bg); }
+    .box.ok { border-color: var(--ok); background: var(--ok-bg); }
+    .box.wait { border-color: var(--wait); background: var(--wait-bg); }
+    .box.bad { border-color: var(--bad); background: var(--bad-bg); }
+    .step {
+      display: inline-block;
+      font-size: 8.5px;
+      font-weight: 700;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: #fff;
+      background: var(--live);
+      padding: 2px 6px;
+      border-radius: 3px;
+      margin-bottom: 6px;
+    }
+    .box.admin .step { background: var(--admin); }
+    .box.plan .step { background: var(--plan); }
+    .box.ok .step { background: var(--ok); }
+    .box.wait .step { background: var(--wait); }
+    .box.bad .step { background: var(--bad); }
+    .box strong { display: block; font-size: 11px; color: var(--navy); margin-bottom: 5px; line-height: 1.25; }
+    .box.plan strong { color: var(--plan); }
+    .box ul { margin: 0; padding-left: 14px; font-size: 10px; color: #334155; line-height: 1.35; }
+    .arr {
+      width: 28px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .arr::before {
+      content: "";
+      width: 14px;
+      height: 0;
+      border-top: 2px solid #64748b;
+    }
+    .arr::after {
+      content: "";
+      width: 0;
+      height: 0;
+      border-top: 5px solid transparent;
+      border-bottom: 5px solid transparent;
+      border-left: 7px solid #64748b;
+    }
+    .vjoin {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 4px 0 8px;
+      color: #64748b;
+    }
+    .vjoin .line {
+      width: 0;
+      height: 14px;
+      border-left: 2px solid #64748b;
+    }
+    .vjoin .cap {
+      font-size: 9.5px;
+      color: var(--plan);
+      margin: 3px 0;
+    }
+    .life-wrap { margin-top: 4px; }
+    .branch {
+      display: grid;
+      grid-template-columns: 1fr 28px 1fr 28px 1fr;
+      align-items: start;
+      margin-top: 0;
+    }
+    .stem {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 2px 0 8px;
+    }
+    .stem .vline { width: 0; height: 16px; border-left: 2px solid #64748b; }
+    .stem .hline { width: 66%; height: 0; border-top: 2px solid #64748b; }
+    .stem .drops {
+      width: 66%;
+      display: flex;
+      justify-content: space-between;
+    }
+    .stem .drop { width: 0; height: 12px; border-left: 2px solid #64748b; }
+    .life-outcomes { display: flex; gap: 16px; }
+    .life-outcomes .box { min-height: 96px; }
+    .corridor { display: flex; align-items: stretch; margin-top: 4px; }
+    .corridor .box { min-height: 86px; }
+    @media print {
+      body { background: #fff; }
+      .sheet {
+        margin: 0;
+        width: auto;
+        min-height: 0;
+        page-break-after: always;
+      }
+      .sheet:last-child { page-break-after: auto; }
+    }
+  </style>
+</head>
+<body>
+
+  <section class="sheet">
+    <header>
+      <div>
+        <h1>FinPay – India → Nepal Remittance &amp; Vendor Payment Platform</h1>
+        <p class="sub">Bank-facing system architecture and end-to-end process flow</p>
+      </div>
+      <div class="tag">Page 1 of 4</div>
+    </header>
+
+    <div class="legend">
+      <span><i class="sw sw-admin"></i>Admin operations</span>
+      <span><i class="sw sw-live"></i>Vendor / FinPay engine</span>
+      <span><i class="sw sw-plan"></i>Bank settlement / Nepal payout</span>
+    </div>
+
+    <h2>1. Admin operations</h2>
+    <div class="flow">
+      <div class="node"><div class="box admin"><span class="step">A1</span><strong>Admin access</strong><ul><li>Admin login</li><li>Users &amp; module permissions</li></ul></div></div>
+      <div class="arr"></div>
+      <div class="node"><div class="box admin"><span class="step">A2</span><strong>Create vendor</strong><ul><li>Onboard vendor</li><li>7-step KYC</li><li>Approve / reject KYC</li></ul></div></div>
+      <div class="arr"></div>
+      <div class="node"><div class="box admin"><span class="step">A3</span><strong>Wallet funding</strong><ul><li>Review top-up request</li><li>Credit vendor wallet</li></ul></div></div>
+      <div class="arr"></div>
+      <div class="node"><div class="box admin"><span class="step">A4</span><strong>Create bank</strong><ul><li>Bank name, code, environment</li><li>Base URL + credentials</li></ul></div></div>
+      <div class="arr"></div>
+      <div class="node"><div class="box admin"><span class="step">A5</span><strong>Bank API integration</strong><ul><li>Map 10–12 bank APIs</li><li>Path, method, request / response</li><li>Test connection</li></ul></div></div>
+      <div class="arr"></div>
+      <div class="node"><div class="box admin"><span class="step">A6</span><strong>Assign to vendor</strong><ul><li>Assign bank to vendor</li><li>Enable vendor API</li></ul></div></div>
+    </div>
+
+    <h2>2. Vendor payout flow</h2>
+    <div class="flow">
+      <div class="node"><div class="box"><span class="step">01</span><strong>Vendor onboarding</strong><ul><li>Admin creates vendor</li><li>7-step registration</li><li>KYC &amp; business information</li></ul></div></div>
+      <div class="arr"></div>
+      <div class="node"><div class="box"><span class="step">02</span><strong>Vendor approval</strong><ul><li>Vendor Code + PMT Code</li><li>Login credentials</li><li>KYC approval &amp; API enable</li></ul></div></div>
+      <div class="arr"></div>
+      <div class="node"><div class="box"><span class="step">03</span><strong>Vendor panel / API</strong><ul><li>Vendor login</li><li>Dashboard &amp; wallet</li><li>Secure API or portal payout</li></ul></div></div>
+      <div class="arr"></div>
+      <div class="node"><div class="box"><span class="step">04</span><strong>Transaction engine</strong><ul><li>Authenticate &amp; authorize</li><li>Validate request</li><li>Limits &amp; unique reference</li></ul></div></div>
+      <div class="arr"></div>
+      <div class="node"><div class="box"><span class="step">05</span><strong>Wallet / ledger</strong><ul><li>Available &amp; hold balance</li><li>Debit / credit controls</li><li>Transaction status</li></ul></div></div>
+    </div>
+
+    <div class="vjoin">
+      <div class="line"></div>
+      <div class="cap">Bank connectivity after API go-live</div>
+      <div class="line"></div>
+    </div>
+
+    <div class="flow">
+      <div class="node"><div class="box plan"><span class="step">06</span><strong>Bank API gateway</strong><ul><li>Secure bank connectivity</li><li>Authentication / signing</li><li>Request &amp; bank response</li></ul></div></div>
+      <div class="arr"></div>
+      <div class="node"><div class="box plan"><span class="step">07</span><strong>India-side settlement</strong><ul><li>Bank processes payout</li><li>Settlement / payment status</li><li>Reference correlation</li></ul></div></div>
+      <div class="arr"></div>
+      <div class="node"><div class="box plan"><span class="step">08</span><strong>Nepal payout</strong><ul><li>Nepal bank / payout partner</li><li>Beneficiary receives NPR</li><li>Payout confirmation</li></ul></div></div>
+      <div class="arr"></div>
+      <div class="node"><div class="box plan"><span class="step">09</span><strong>Reconciliation</strong><ul><li>FinPay vs bank records</li><li>Exception handling</li><li>Audit trail</li></ul></div></div>
+    </div>
+
+    <p class="note">Admin creates vendors, funds wallets, creates banks, integrates 10–12 bank APIs and assigns them to vendors. Vendors never receive bank credentials. India-side settlement and Nepal NPR credit follow after bank API certification.</p>
+    <footer>
+      <span>FinPay Gateway · Confidential — for banking / integration stakeholders</span>
+      <span>Page 1 of 4</span>
+    </footer>
+  </section>
+
+  <section class="sheet">
+    <header>
+      <h1>System modules covered</h1>
+      <div class="tag">Page 2 of 4</div>
+    </header>
+    <table>
+      <thead>
+        <tr><th style="width:22%">Module</th><th>Purpose / key functions</th><th style="width:28%">Primary control</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Admin operations</td>
+          <td>Admin login; staff users and module permissions; create vendor; KYC approve/reject; wallet top-up credit; create bank; map 10–12 bank APIs; assign bank to vendor and enable API.</td>
+          <td>Role-based modules; encrypted bank secrets; audit trail</td>
+        </tr>
+        <tr>
+          <td>Vendor onboarding</td>
+          <td>7-step vendor registration; business, legal, promoter/director, team/IT, business-plan/evaluation; resume from pending step; admin KYC approve/reject.</td>
+          <td>Role-based access; validation; audit trail</td>
+        </tr>
+        <tr>
+          <td>Vendor authentication</td>
+          <td>Vendor login; vendor-specific dashboard. API uses HMAC-SHA256 (secret never sent in the request) plus IP allowlist.</td>
+          <td>Password hashing; authentication; authorization</td>
+        </tr>
+        <tr>
+          <td>Vendor wallet</td>
+          <td>Available and hold balance; admin-approved top-up; transaction-limit and balance checks before processing.</td>
+          <td>Controlled debit/credit; transaction integrity</td>
+        </tr>
+        <tr>
+          <td>Transaction management</td>
+          <td>Create transaction, unique reference, amount, beneficiary, service (IMPS/NEFT/RTGS), type and status lifecycle.</td>
+          <td>Validation; reference control; status tracking</td>
+        </tr>
+        <tr>
+          <td>API layer</td>
+          <td>Vendor-to-FinPay APIs (balance, banks, payouts, <code>/api/v1/bank/{code}/{slug}</code>). Bank APIs are mapped by admin and are not given raw to the vendor.</td>
+          <td>TLS; HMAC; IP allowlist; rate limiting; secret isolation</td>
+        </tr>
+        <tr>
+          <td>Bank integration</td>
+          <td>Approved transaction sent to mapped bank API; response/webhook/status handled by FinPay. Admin stores encrypted bank credentials and assigns the bank to vendors.</td>
+          <td>Secure connectivity; request/response validation</td>
+        </tr>
+        <tr>
+          <td>Nepal payout</td>
+          <td>Bank / payout partner completes beneficiary-side NPR payout after India-side settlement.</td>
+          <td>Partner controls; status confirmation</td>
+        </tr>
+        <tr>
+          <td>Reconciliation</td>
+          <td>Match FinPay transactions with bank/settlement records and resolve exceptions.</td>
+          <td>Reference matching; audit logs</td>
+        </tr>
+        <tr>
+          <td>Reports &amp; monitoring</td>
+          <td>Vendor reports, transaction reports, settlement reports, operational alerts and audit activity.</td>
+          <td>Access control; monitoring; event history</td>
+        </tr>
+      </tbody>
+    </table>
+    <footer>
+      <span>FinPay Gateway · Module catalogue</span>
+      <span>Page 2 of 4</span>
+    </footer>
+  </section>
+
+  <section class="sheet">
+    <header>
+      <h1>Technology architecture &amp; security controls</h1>
+      <div class="tag">Page 3 of 4</div>
+    </header>
+    <table>
+      <thead>
+        <tr><th style="width:20%">Layer</th><th>Technology / approach</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Application</td><td>PHP 8.2, Laravel 12, Livewire 3 — Admin &amp; Vendor interfaces</td><td>Business logic, onboarding, dashboards and workflow</td></tr>
+        <tr><td>Database</td><td>MySQL relational database</td><td>Vendor, wallet, transaction, registration and audit-related data</td></tr>
+        <tr><td>Cache</td><td>Database cache</td><td>HMAC nonce replay protection and rate limits</td></tr>
+        <tr><td>API</td><td>REST JSON; HTTPS/TLS; HMAC-SHA256 vendor signing</td><td>Vendor integration and bank outbound calls</td></tr>
+        <tr><td>UI</td><td>Blade + Tailwind CSS</td><td>Admin and vendor consoles</td></tr>
+        <tr><td>Authentication</td><td>Separate admin/vendor guards; hashed passwords; encrypted sessions</td><td>Verify identity and enforce access boundaries</td></tr>
+        <tr><td>Secrets</td><td>Bank credentials encrypted at rest; not in source code; never shown to vendors</td><td>Reduce credential exposure</td></tr>
+      </tbody>
+    </table>
+    <h2>Security control framework</h2>
+    <table>
+      <thead>
+        <tr><th style="width:20%">Security area</th><th>Control / design principle</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Transport security</td><td>HTTPS/TLS for vendor API, bank outbound calls and webhooks. HSTS when the application is served over TLS.</td></tr>
+        <tr><td>Authentication</td><td>Portal session login (regenerate on login). API: HMAC-SHA256 over timestamp, nonce, method, path and body hash. Secret is never transmitted in the request.</td></tr>
+        <tr><td>Authorization</td><td>Admin module permissions; vendor-scoped data; encrypted IDs in URLs.</td></tr>
+        <tr><td>API protection</td><td>Request validation, mandatory IP allowlist, rate limiting, generic auth errors, body-size cap, redacted API logs.</td></tr>
+        <tr><td>Transaction integrity</td><td>Unique transaction/reference identifiers, wallet lock, status lifecycle, pending / success / failed handling.</td></tr>
+        <tr><td>Data protection</td><td>Password hashing; least-privilege access; encrypted bank secrets; account numbers redacted in logs.</td></tr>
+        <tr><td>Outbound safety</td><td>Bank and webhook URLs restricted (HTTPS in production; no private/metadata hosts; no open redirects).</td></tr>
+        <tr><td>Audit &amp; monitoring</td><td>Administrative, API and transaction events retained for investigation and reconciliation.</td></tr>
+        <tr><td>Operational resilience</td><td>Pending states, failure handling, polling/webhook and reconciliation for external bank responses.</td></tr>
+      </tbody>
+    </table>
+    <p class="note"><strong>Important:</strong> Controls describe the implemented architecture. Regulatory compliance, certification, VAPT and bank-specific production requirements should be validated before go-live.</p>
+    <footer>
+      <span>FinPay Gateway · Technology &amp; security</span>
+      <span>Page 3 of 4</span>
+    </footer>
+  </section>
+
+  <section class="sheet">
+    <header>
+      <h1>Transaction lifecycle — bank integration phase</h1>
+      <div class="tag">Page 4 of 4</div>
+    </header>
+
+    <h2>1. Request processing</h2>
+    <div class="flow">
+      <div class="node"><div class="box"><span class="step">A</span><strong>Request</strong><ul><li>Vendor submits transaction</li><li>Amount, beneficiary, service</li><li>Portal or HMAC API</li></ul></div></div>
+      <div class="arr"></div>
+      <div class="node"><div class="box"><span class="step">B</span><strong>Secure API</strong><ul><li>Authenticate vendor</li><li>Authorize action</li><li>Validate request</li></ul></div></div>
+      <div class="arr"></div>
+      <div class="node"><div class="box"><span class="step">C</span><strong>Financial checks</strong><ul><li>Balance check</li><li>Transaction limit</li><li>Business / compliance rules</li></ul></div></div>
+      <div class="arr"></div>
+      <div class="node"><div class="box"><span class="step">D</span><strong>Create &amp; hold</strong><ul><li>Unique reference</li><li>Record transaction</li><li>Hold / debit wallet</li></ul></div></div>
+      <div class="arr"></div>
+      <div class="node"><div class="box plan"><span class="step">E</span><strong>Bank API</strong><ul><li>Send approved request</li><li>Receive response / webhook</li></ul></div></div>
+    </div>
+
+    <div class="life-wrap">
+      <div class="stem">
+        <div class="vline"></div>
+        <div class="hline"></div>
+        <div class="drops"><span class="drop"></span><span class="drop"></span><span class="drop"></span></div>
+      </div>
+      <div class="life-outcomes">
+        <div class="box ok"><span class="step">Success</span><strong>Bank confirms</strong><ul><li>Update transaction</li><li>Update ledger / wallet</li><li>Notify vendor</li></ul></div>
+        <div class="box wait"><span class="step">Pending</span><strong>Awaiting final status</strong><ul><li>Keep pending</li><li>Polling / webhook</li><li>Reconcile later</li></ul></div>
+        <div class="box bad"><span class="step">Failure</span><strong>Bank rejects / fails</strong><ul><li>Record reason</li><li>Retry or reversal / refund</li></ul></div>
+      </div>
+    </div>
+
+    <h2>2. India → Nepal corridor</h2>
+    <div class="corridor">
+      <div class="node"><div class="box"><span class="step">India</span><strong>Vendor / FinPay</strong><ul><li>Wallet debit</li><li>INR instruction</li></ul></div></div>
+      <div class="arr"></div>
+      <div class="node"><div class="box plan"><span class="step">Rail</span><strong>Cross-border processing</strong><ul><li>Secure bank API</li><li>Reference correlation</li><li>Status management</li></ul></div></div>
+      <div class="arr"></div>
+      <div class="node"><div class="box plan"><span class="step">Nepal</span><strong>Bank / payout partner</strong><ul><li>Beneficiary receives NPR</li><li>Payout confirmation</li></ul></div></div>
+    </div>
+
+    <p class="note"><strong>Document purpose:</strong> Architecture and process-flow for banking / integration stakeholders. API specifications, settlement models, limits, message formats, certificates and SLAs are finalized with the bank during integration.</p>
+    <footer>
+      <span>FinPay Gateway · Transaction lifecycle</span>
+      <span>Page 4 of 4</span>
+    </footer>
+  </section>
+</body>
+</html>

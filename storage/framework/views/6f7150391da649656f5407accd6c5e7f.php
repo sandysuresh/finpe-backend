@@ -79,8 +79,8 @@
 
     
     <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($showModal): ?>
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-        <div class="fi-card w-full max-w-lg p-6">
+    <div class="fi-modal-overlay">
+        <div class="fi-modal p-5">
             <div class="mb-5 flex items-center justify-between">
                 <h3 class="text-base font-semibold text-slate-900"><?php echo e($editMode ? 'Edit' : 'Add'); ?> Beneficiary</h3>
                 <button wire:click="$set('showModal',false)" class="rounded-lg p-1 text-slate-400 hover:bg-slate-100">

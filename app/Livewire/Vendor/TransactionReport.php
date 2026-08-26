@@ -24,8 +24,10 @@ class TransactionReport extends Component {
     public function render() {
         $vendor = Auth::guard('vendor')->user();
         $transactions = $vendor->transactions()
-            ->when($this->search,   fn($q) => $q->where('reference','like',"%{$this->search}%")
-                ->orWhere('beneficiary_name','like',"%{$this->search}%"))
+            ->when($this->search, fn($q) => $q->where(function ($inner) {
+                $inner->where('reference', 'like', '%'.$this->search.'%')
+                    ->orWhere('beneficiary_name', 'like', '%'.$this->search.'%');
+            }))
             ->when($this->status,   fn($q) => $q->where('status',   $this->status))
             ->when($this->service,  fn($q) => $q->where('service',  $this->service))
             ->when($this->dateFrom, fn($q) => $q->whereDate('created_at','>=',$this->dateFrom))

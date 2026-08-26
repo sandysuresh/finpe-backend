@@ -27,7 +27,7 @@ class Beneficiaries extends Component {
     }
 
     public function openEdit(int $id): void {
-        $b = Beneficiary::findOrFail($id);
+        $b = Auth::guard('vendor')->user()->beneficiaries()->findOrFail($id);
         $this->editId        = $id;
         $this->name          = $b->name;
         $this->accountNumber = $b->account_number;
@@ -72,8 +72,10 @@ class Beneficiaries extends Component {
     public function render() {
         $vendor = Auth::guard('vendor')->user();
         $beneficiaries = $vendor->beneficiaries()
-            ->when($this->search, fn($q) => $q->where('name','like',"%{$this->search}%")
-                ->orWhere('account_number','like',"%{$this->search}%"))
+            ->when($this->search, fn($q) => $q->where(function ($inner) {
+                $inner->where('name', 'like', '%'.$this->search.'%')
+                    ->orWhere('account_number', 'like', '%'.$this->search.'%');
+            }))
             ->latest()->paginate(12);
         return view('livewire.vendor.beneficiaries', compact('beneficiaries'))
             ->layout('layouts.vendor', ['title' => 'Beneficiaries']);

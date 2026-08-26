@@ -584,16 +584,51 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
     <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($tab === 'developer'): ?>
         <div class="space-y-5">
             <div class="fi-card p-6">
-                <h3 class="mb-4 text-sm font-semibold text-slate-900">API Credentials</h3>
+                <div class="mb-4 flex items-center justify-between gap-3">
+                    <h3 class="text-sm font-semibold text-slate-900">API Access</h3>
+                    <button type="button" wire:click="toggleApiAccess" class="fi-btn <?php echo e($vendor->api_enabled ? 'fi-btn-danger' : 'fi-btn-success'); ?> fi-btn-sm">
+                        <?php echo e($vendor->api_enabled ? 'Disable API' : 'Enable API'); ?>
+
+                    </button>
+                </div>
                 <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($vendor->apiCredential): ?>
                     <?php $c = $vendor->apiCredential; ?>
                     <div class="space-y-3 text-sm">
-                        <div class="flex justify-between gap-4"><span class="text-slate-400">API Key</span><span class="font-mono text-slate-800"><?php echo e($c->api_key); ?></span></div>
-                        <div class="flex justify-between gap-4"><span class="text-slate-400">Webhook</span><span class="text-slate-800"><?php echo e($c->webhook_url ?: '—'); ?></span></div>
-                        <div class="flex justify-between gap-4"><span class="text-slate-400">Active</span><span class="text-slate-800"><?php echo e($c->is_active ? 'Yes' : 'No'); ?></span></div>
+                        <div class="flex justify-between gap-4"><span class="text-slate-500">API Key</span><span class="font-mono text-slate-800"><?php echo e($c->api_key); ?></span></div>
+                        <div class="flex justify-between gap-4"><span class="text-slate-500">Webhook</span><span class="text-slate-800"><?php echo e($c->webhook_url ?: '—'); ?></span></div>
+                        <div class="flex justify-between gap-4"><span class="text-slate-500">IP whitelist</span>
+                            <span class="text-right text-slate-800">
+                                <?php $ips = $c->ip_whitelist ?? []; ?>
+                                <?php echo e($ips === [] ? 'Not set (API blocked)' : implode(', ', $ips)); ?>
+
+                            </span>
+                        </div>
+                        <div class="flex justify-between gap-4"><span class="text-slate-500">Admin API flag</span><span class="font-semibold <?php echo e($vendor->api_enabled ? 'text-emerald-700' : 'text-red-600'); ?>"><?php echo e($vendor->api_enabled ? 'Enabled' : 'Disabled'); ?></span></div>
                     </div>
                 <?php else: ?>
-                    <p class="text-sm text-slate-400">No API credentials generated.</p>
+                    <p class="text-sm text-slate-500">No API credentials generated.</p>
+                <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+            </div>
+            <div class="fi-card p-6">
+                <h3 class="mb-3 text-sm font-semibold text-slate-900">Assign bank APIs</h3>
+                <p class="mb-4 text-xs text-slate-500">Vendor will only see FinPay endpoints for the banks you assign here.</p>
+                <div class="space-y-2">
+                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__empty_1 = true; $__currentLoopData = $allBanks; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $bank): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                        <label class="flex items-center gap-3 rounded-xl border border-slate-200 px-3 py-2.5 text-sm hover:bg-slate-50">
+                            <input type="checkbox" wire:model="assignedBankIds" value="<?php echo e($bank->id); ?>" class="rounded border-slate-300 text-blue-700">
+                            <span>
+                                <span class="font-semibold text-slate-800"><?php echo e($bank->name); ?></span>
+                                <span class="font-mono text-xs text-slate-500"> <?php echo e($bank->code); ?></span>
+                            </span>
+                        </label>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                        <p class="text-sm text-slate-500">No active banks. Add a bank from the Banks menu first.</p>
+                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                </div>
+                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($allBanks->isNotEmpty()): ?>
+                    <div class="mt-4 flex justify-end">
+                        <button type="button" wire:click="saveAssignedBanks" class="fi-btn fi-btn-primary">Save bank assignment</button>
+                    </div>
                 <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
             </div>
             <div class="fi-card p-6">

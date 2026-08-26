@@ -4,7 +4,7 @@ namespace App\Models;
 use App\Models\Concerns\HasEncryptedRouteKey;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Database\Eloquent\Relations\{HasOne, HasMany};
+use Illuminate\Database\Eloquent\Relations\{HasOne, HasMany, BelongsToMany};
 
 class Vendor extends Authenticatable
 {
@@ -47,6 +47,19 @@ class Vendor extends Authenticatable
     public function webhookLogs(): HasMany         { return $this->hasMany(WebhookLog::class); }
     public function apiLogs(): HasMany             { return $this->hasMany(ApiLog::class); }
     public function topupRequests(): HasMany       { return $this->hasMany(WalletTopupRequest::class); }
+    public function banks(): BelongsToMany
+    {
+        return $this->belongsToMany(Bank::class, 'vendor_banks')
+            ->withPivot('is_enabled')
+            ->withTimestamps();
+    }
+
+    public function assignedBanks(): BelongsToMany
+    {
+        return $this->banks()
+            ->wherePivot('is_enabled', true)
+            ->where('banks.is_active', true);
+    }
 
     // Registration wizard relations
     public function businessDetails(): HasOne      { return $this->hasOne(VendorBusinessDetail::class); }
