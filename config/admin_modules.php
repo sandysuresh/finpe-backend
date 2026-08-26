@@ -6,7 +6,7 @@ return [
         'route' => 'admin.dashboard',
     ],
     'vendors' => [
-        'label' => 'Vendors',
+        'label' => 'Partners',
         'route' => 'admin.vendors',
     ],
     'wallet-requests' => [
