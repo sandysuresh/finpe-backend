@@ -18,7 +18,7 @@
             class="fi-btn fi-btn-primary"
         >
             <span class="text-lg leading-none">+</span>
-            Add Vendor
+            Add Partners
         </a>
 
     </div>

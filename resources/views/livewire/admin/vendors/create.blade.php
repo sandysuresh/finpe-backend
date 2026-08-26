@@ -8,7 +8,7 @@
         <div class="flex items-center justify-between gap-4">
             <div>
                 <h1 class="text-2xl font-bold text-slate-900">
-                    Add Vendor
+                    Add Partners
                 </h1>
                 <p class="mt-1 text-sm text-slate-500">
                     Complete vendor registration in multiple steps.
@@ -19,7 +19,7 @@
                 href="{{ route('admin.vendors') }}"
                 class="fi-btn fi-btn-secondary"
             >
-                ← Back to Vendors
+                ← Back to Partners
             </a>
         </div>
     </div>
