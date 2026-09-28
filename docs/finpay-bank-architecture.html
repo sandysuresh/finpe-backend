@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>FinPay – India → Nepal Remittance &amp; Vendor Payment Platform</title>
+  <title>FinPe (Dsewa Services India Pvt Ltd) – India → Nepal Remittance &amp; Vendor Payment Platform</title>
   <style>
     :root {
       --ink: #0f172a;
@@ -203,7 +203,7 @@
   <section class="sheet">
     <header>
       <div>
-        <h1>FinPay – India → Nepal Remittance &amp; Vendor Payment Platform</h1>
+        <h1>FinPe (Dsewa Services India Pvt Ltd) – India → Nepal Remittance &amp; Vendor Payment Platform</h1>
         <p class="sub">Bank-facing system architecture and end-to-end process flow</p>
       </div>
       <div class="tag">Page 1 of 4</div>
@@ -211,7 +211,7 @@
 
     <div class="legend">
       <span><i class="sw sw-admin"></i>Admin operations</span>
-      <span><i class="sw sw-live"></i>Vendor / FinPay engine</span>
+      <span><i class="sw sw-live"></i>Vendor / FinPe engine</span>
       <span><i class="sw sw-plan"></i>Bank settlement / Nepal payout</span>
     </div>
 
@@ -256,12 +256,12 @@
       <div class="arr"></div>
       <div class="node"><div class="box plan"><span class="step">08</span><strong>Nepal payout</strong><ul><li>Nepal bank / payout partner</li><li>Beneficiary receives NPR</li><li>Payout confirmation</li></ul></div></div>
       <div class="arr"></div>
-      <div class="node"><div class="box plan"><span class="step">09</span><strong>Reconciliation</strong><ul><li>FinPay vs bank records</li><li>Exception handling</li><li>Audit trail</li></ul></div></div>
+      <div class="node"><div class="box plan"><span class="step">09</span><strong>Reconciliation</strong><ul><li>FinPe vs bank records</li><li>Exception handling</li><li>Audit trail</li></ul></div></div>
     </div>
 
     <p class="note">Admin creates vendors, funds wallets, creates banks, integrates 10–12 bank APIs and assigns them to vendors. Vendors never receive bank credentials. India-side settlement and Nepal NPR credit follow after bank API certification.</p>
     <footer>
-      <span>FinPay Gateway · Confidential — for banking / integration stakeholders</span>
+      <span>FinPe (Dsewa Services India Pvt Ltd) · Confidential — for banking / integration stakeholders</span>
       <span>Page 1 of 4</span>
     </footer>
   </section>
@@ -303,12 +303,12 @@
         </tr>
         <tr>
           <td>API layer</td>
-          <td>Vendor-to-FinPay APIs (balance, banks, payouts, <code>/api/v1/bank/{code}/{slug}</code>). Bank APIs are mapped by admin and are not given raw to the vendor.</td>
+          <td>Vendor-to-FinPe APIs (balance, banks, payouts, <code>/api/v1/bank/{code}/{slug}</code>). Bank APIs are mapped by admin and are not given raw to the vendor.</td>
           <td>TLS; HMAC; IP allowlist; rate limiting; secret isolation</td>
         </tr>
         <tr>
           <td>Bank integration</td>
-          <td>Approved transaction sent to mapped bank API; response/webhook/status handled by FinPay. Admin stores encrypted bank credentials and assigns the bank to vendors.</td>
+          <td>Approved transaction sent to mapped bank API; response/webhook/status handled by FinPe. Admin stores encrypted bank credentials and assigns the bank to vendors.</td>
           <td>Secure connectivity; request/response validation</td>
         </tr>
         <tr>
@@ -318,7 +318,7 @@
         </tr>
         <tr>
           <td>Reconciliation</td>
-          <td>Match FinPay transactions with bank/settlement records and resolve exceptions.</td>
+          <td>Match FinPe transactions with bank/settlement records and resolve exceptions.</td>
           <td>Reference matching; audit logs</td>
         </tr>
         <tr>
@@ -329,7 +329,7 @@
       </tbody>
     </table>
     <footer>
-      <span>FinPay Gateway · Module catalogue</span>
+      <span>FinPe (Dsewa Services India Pvt Ltd) · Module catalogue</span>
       <span>Page 2 of 4</span>
     </footer>
   </section>
@@ -372,7 +372,7 @@
     </table>
     <p class="note"><strong>Important:</strong> Controls describe the implemented architecture. Regulatory compliance, certification, VAPT and bank-specific production requirements should be validated before go-live.</p>
     <footer>
-      <span>FinPay Gateway · Technology &amp; security</span>
+      <span>FinPe (Dsewa Services India Pvt Ltd) · Technology &amp; security</span>
       <span>Page 3 of 4</span>
     </footer>
   </section>
@@ -411,7 +411,7 @@
 
     <h2>2. India → Nepal corridor</h2>
     <div class="corridor">
-      <div class="node"><div class="box"><span class="step">India</span><strong>Vendor / FinPay</strong><ul><li>Wallet debit</li><li>INR instruction</li></ul></div></div>
+      <div class="node"><div class="box"><span class="step">India</span><strong>Vendor / FinPe</strong><ul><li>Wallet debit</li><li>INR instruction</li></ul></div></div>
       <div class="arr"></div>
       <div class="node"><div class="box plan"><span class="step">Rail</span><strong>Cross-border processing</strong><ul><li>Secure bank API</li><li>Reference correlation</li><li>Status management</li></ul></div></div>
       <div class="arr"></div>
@@ -420,7 +420,7 @@
 
     <p class="note"><strong>Document purpose:</strong> Architecture and process-flow for banking / integration stakeholders. API specifications, settlement models, limits, message formats, certificates and SLAs are finalized with the bank during integration.</p>
     <footer>
-      <span>FinPay Gateway · Transaction lifecycle</span>
+      <span>FinPe (Dsewa Services India Pvt Ltd) · Transaction lifecycle</span>
       <span>Page 4 of 4</span>
     </footer>
   </section>

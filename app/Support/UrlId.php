@@ -20,12 +20,34 @@ class UrlId
 
     public static function decode(?string $token): ?int
     {
+        $plain = self::decrypt($token);
+
+        if ($plain === null || ! ctype_digit($plain)) {
+            return null;
+        }
+
+        return (int) $plain;
+    }
+
+    public static function decodeString(?string $token): ?string
+    {
+        $plain = self::decrypt($token);
+
+        if ($plain === null || $plain === '') {
+            return null;
+        }
+
+        return $plain;
+    }
+
+    private static function decrypt(?string $token): ?string
+    {
         if ($token === null || $token === '') {
             return null;
         }
 
-        // Sequential numeric IDs are never accepted in URLs.
-        if (ctype_digit($token)) {
+        // Plain IDs and codes are never accepted in URLs.
+        if (ctype_digit($token) || preg_match('/^VND-/i', $token) === 1) {
             return null;
         }
 
@@ -36,13 +58,7 @@ class UrlId
                 $padded .= str_repeat('=', 4 - $pad);
             }
 
-            $plain = Crypt::decryptString($padded);
-
-            if (! ctype_digit($plain)) {
-                return null;
-            }
-
-            return (int) $plain;
+            return Crypt::decryptString($padded);
         } catch (DecryptException) {
             return null;
         }

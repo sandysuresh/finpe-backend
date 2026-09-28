@@ -5,9 +5,11 @@ namespace App\Livewire\Admin\Vendors;
 use App\Livewire\Concerns\ManagesVendorRegistration;
 use App\Models\Vendor;
 use App\Models\Wallet;
+use App\Support\LegacyPassword;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 use Livewire\Component;
+use RuntimeException;
 
 class Create extends Component
 {
@@ -62,11 +64,11 @@ class Create extends Component
                     'status' => $validated['status'],
                 ];
 
-                if (!empty($validated['password'])) {
-                    $vendorData['password'] = Hash::make($validated['password']);
-                }
-
                 $vendor->update($vendorData);
+
+                if (! empty($validated['password'])) {
+                    $this->persistPassword($vendor, $validated['password']);
+                }
 
             } else {
 
@@ -110,6 +112,8 @@ class Create extends Component
                     ]
                 );
 
+                $this->persistPassword($vendor, $validated['password']);
+
                 $this->vendorId = $vendor->id;
             }
 
@@ -126,6 +130,21 @@ class Create extends Component
         $this->step = 2;
 
         $this->loadStepData(2);
+    }
+
+    private function persistPassword(Vendor $vendor, string $plain): void
+    {
+        try {
+            $hash = LegacyPassword::make($plain);
+        } catch (RuntimeException) {
+            throw ValidationException::withMessages([
+                'password' => 'Password could not be stored in a valid bcrypt format.',
+            ]);
+        }
+
+        DB::table('vendors')->where('id', $vendor->id)->update([
+            'password' => $hash,
+        ]);
     }
 
     /*

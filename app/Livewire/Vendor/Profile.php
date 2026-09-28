@@ -204,7 +204,7 @@ class Profile extends Component
 
         $vendor = Auth::guard('vendor')->user();
 
-        if (! Hash::check($this->currentPassword, $vendor->password)) {
+        if (! \App\Support\LegacyPassword::check($this->currentPassword, $vendor->getRawOriginal('password'))) {
             $this->errorMsg = 'Current password is incorrect.';
             return;
         }

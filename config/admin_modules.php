@@ -23,7 +23,11 @@ return [
     ],
     'reports' => [
         'label' => 'Reports',
-        'route' => null,
+        'route' => 'admin.reports',
+        'children' => [
+            ['label' => 'Wallet reports', 'route' => 'admin.reports'],
+            ['label' => 'Daily balance', 'route' => 'admin.daily-balance'],
+        ],
     ],
     'api-logs' => [
         'label' => 'API Logs',

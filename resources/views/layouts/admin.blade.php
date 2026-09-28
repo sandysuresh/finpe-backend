@@ -29,9 +29,23 @@
                     $menus = \App\Support\AdminModules::navItems(auth('admin')->user());
                 @endphp
                 @foreach ($menus as $item)
-                    <a href="{{ $item['url'] }}" class="flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-semibold {{ $item['active'] ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                        {{ $item['label'] }}
-                    </a>
+                    @if (! empty($item['children']))
+                        <div class="group relative">
+                            <button type="button" class="flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-semibold {{ $item['active'] ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                {{ $item['label'] }}
+                                <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.938a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06Z" clip-rule="evenodd"/></svg>
+                            </button>
+                            <div class="invisible absolute left-0 top-11 z-50 w-48 rounded-xl border border-slate-200 bg-white p-1.5 opacity-0 shadow-xl transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+                                @foreach ($item['children'] as $child)
+                                    <a href="{{ $child['url'] }}" class="block rounded-lg px-3 py-2 text-sm font-semibold {{ $child['active'] ? 'bg-blue-50 text-blue-700' : 'text-slate-700 hover:bg-slate-50' }}">{{ $child['label'] }}</a>
+                                @endforeach
+                            </div>
+                        </div>
+                    @else
+                        <a href="{{ $item['url'] }}" class="flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-semibold {{ $item['active'] ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                            {{ $item['label'] }}
+                        </a>
+                    @endif
                 @endforeach
             </nav>
 
@@ -71,7 +85,13 @@
         <div class="border-t border-slate-800 xl:hidden">
             <nav class="fi-scroll flex gap-1 overflow-x-auto px-4 py-2">
                 @foreach ($menus as $item)
-                    <a href="{{ $item['url'] }}" class="whitespace-nowrap rounded-lg px-3 py-2 text-xs font-semibold {{ $item['active'] ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">{{ $item['label'] }}</a>
+                    @if (! empty($item['children']))
+                        @foreach ($item['children'] as $child)
+                            <a href="{{ $child['url'] }}" class="whitespace-nowrap rounded-lg px-3 py-2 text-xs font-semibold {{ $child['active'] ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">{{ $child['label'] }}</a>
+                        @endforeach
+                    @else
+                        <a href="{{ $item['url'] }}" class="whitespace-nowrap rounded-lg px-3 py-2 text-xs font-semibold {{ $item['active'] ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">{{ $item['label'] }}</a>
+                    @endif
                 @endforeach
             </nav>
         </div>

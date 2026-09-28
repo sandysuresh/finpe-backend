@@ -13,7 +13,10 @@ class AdminModules
 
     public static function keys(): array
     {
-        return array_keys(self::all());
+        return array_keys(array_filter(
+            self::all(),
+            fn (array $module) => empty($module['inherits'])
+        ));
     }
 
     public static function label(string $module): string
@@ -26,7 +29,7 @@ class AdminModules
         $items = [];
 
         foreach (self::all() as $key => $module) {
-            if (! $admin->hasModule($key)) {
+            if (! $admin->hasModule($module['inherits'] ?? $key)) {
                 continue;
             }
 
@@ -35,10 +38,35 @@ class AdminModules
                 ? route($route)
                 : '#';
 
+            $children = [];
+            foreach ($module['children'] ?? [] as $child) {
+                $childRoute = $child['route'] ?? null;
+                if (! $childRoute || ! \Illuminate\Support\Facades\Route::has($childRoute)) {
+                    continue;
+                }
+
+                $children[] = [
+                    'label' => $child['label'],
+                    'url' => route($childRoute),
+                    'active' => request()->routeIs($childRoute) || request()->routeIs($childRoute.'*'),
+                ];
+            }
+
+            $active = $route ? request()->routeIs($route) || request()->routeIs($route.'*') : false;
+            if (! $active) {
+                foreach ($children as $child) {
+                    if ($child['active']) {
+                        $active = true;
+                        break;
+                    }
+                }
+            }
+
             $items[] = [
                 'label' => $module['label'],
                 'url' => $url,
-                'active' => $route ? request()->routeIs($route) || request()->routeIs($route.'*') : false,
+                'active' => $active,
+                'children' => $children,
             ];
         }
 

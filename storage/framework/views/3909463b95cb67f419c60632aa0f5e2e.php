@@ -11,7 +11,7 @@
                 </a>
             <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
             <a href="<?php echo e(route('admin.vendors')); ?>" class="fi-btn fi-btn-secondary">
-                ← Back to Vendors
+                ← Back
             </a>
         </div>
     </div>
