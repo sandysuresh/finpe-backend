@@ -42,7 +42,9 @@
             </div>
             <div style="display:flex; gap:8px; margin-left:auto;">
                 <button type="button" wire:click="resetFilters" class="fi-btn fi-btn-secondary">Reset</button>
+                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(auth('admin')->user()->hasPermission('reports', 'export')): ?>
                 <button type="button" wire:click="exportExcel" class="fi-btn fi-btn-primary">Export Excel</button>
+                <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
             </div>
         </div>
     </div>

@@ -105,14 +105,18 @@
                                 <td class="whitespace-nowrap px-5 py-4 text-center">
                                     <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($req->status === 'pending'): ?>
                                         <div class="flex items-center justify-center gap-2">
+                                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(auth('admin')->user()->hasPermission('wallet-requests', 'approve')): ?>
                                             <button wire:click="openAction(<?php echo e($req->id); ?>,'approve')"
                                                     class="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700">
                                                 Approve
                                             </button>
+                                            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(auth('admin')->user()->hasPermission('wallet-requests', 'reject')): ?>
                                             <button wire:click="openAction(<?php echo e($req->id); ?>,'reject')"
                                                     class="rounded-lg bg-red-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-600">
                                                 Reject
                                             </button>
+                                            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                         </div>
                                     <?php else: ?>
                                         <span class="text-xs text-slate-400">

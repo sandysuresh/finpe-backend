@@ -2,23 +2,26 @@
     <div class="mb-6 flex items-center justify-between">
         <div>
             <h1 class="text-2xl font-bold text-slate-900">Admin Users</h1>
-            <p class="mt-1 text-sm text-slate-500">Create staff accounts and assign module access.</p>
+            <p class="mt-1 text-sm text-slate-500">Administration → Admin Users. Assign a role. The user gets that role’s permissions.</p>
         </div>
+        @if($canCreateUsers)
         <button type="button" wire:click="openCreate" class="fi-btn fi-btn-primary">
             <span class="text-lg leading-none">+</span>
-            Add User
+            Add New Admin
         </button>
+        @endif
     </div>
 
     @if(session('success'))
-        <div class="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
+        <div wire:key="admin-user-flash" class="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
             {{ session('success') }}
         </div>
     @endif
 
     <div class="fi-card mb-5 px-5 py-4">
         <div class="flex flex-wrap items-center gap-3">
-            <input wire:model.live.debounce.300ms="search" type="text" class="fi-input w-64 text-sm" placeholder="Search name or email...">
+            <input type="text" tabindex="-1" autocomplete="username" style="position:absolute; left:-9999px; width:1px; height:1px;" aria-hidden="true">
+            <input wire:key="admin-user-search" wire:model.live.debounce.300ms="search" type="text" name="admin_user_filter" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')" class="fi-input w-64 text-sm" placeholder="Search name, email, or mobile...">
             <select wire:model.live="filterStatus" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none">
                 <option value="">All Status</option>
                 <option value="active">Active</option>
@@ -27,7 +30,7 @@
         </div>
     </div>
 
-    <div class="fi-card overflow-hidden">
+    <div class="fi-card overflow-hidden" wire:key="admin-user-list">
         <div class="overflow-x-auto">
             <table class="min-w-full">
                 <thead>
@@ -37,12 +40,18 @@
                         @endforeach
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100">
+                <tbody wire:key="admin-user-rows-{{ $users->pluck('id')->implode('-') }}" class="divide-y divide-slate-100">
                     @forelse($users as $user)
-                        <tr class="hover:bg-slate-50">
+                        <tr wire:key="admin-user-{{ $user->id }}" class="hover:bg-slate-50">
                             <td class="px-5 py-4">
                                 <p class="text-sm font-semibold text-slate-900">{{ $user->name }}</p>
                                 <p class="text-xs text-slate-500">{{ $user->email }}</p>
+                                @if($user->mobile)
+                                    <p class="text-xs text-slate-500">{{ $user->mobile }}</p>
+                                @endif
+                                @if($user->department || $user->branch_region)
+                                    <p class="text-xs text-slate-400">{{ $user->department }}{{ $user->department && $user->branch_region ? ' · ' : '' }}{{ $user->branch_region }}</p>
+                                @endif
                             </td>
                             <td class="whitespace-nowrap px-5 py-4">
                                 <span class="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold {{ $user->isSuperAdmin() ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-700' }}">
@@ -56,7 +65,7 @@
                                     <div class="flex flex-wrap gap-1.5">
                                         @forelse($user->allowedModules() as $mod)
                                             <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-700">
-                                                {{ $moduleCatalog[$mod]['label'] ?? $mod }}
+                                                {{ $permissionCatalog[$mod]['label'] ?? ($moduleCatalog[$mod]['label'] ?? $mod) }}
                                             </span>
                                         @empty
                                             <span class="text-xs text-slate-500">No modules</span>
@@ -71,10 +80,12 @@
                             </td>
                             <td class="whitespace-nowrap px-5 py-4">
                                 <div class="flex items-center gap-2">
+                                    @if($canEditUsers)
                                     <button type="button" wire:click="openEdit({{ $user->id }})" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">
                                         Edit
                                     </button>
-                                    @if($user->id !== auth('admin')->id())
+                                    @endif
+                                    @if($canEditUsers && $user->id !== auth('admin')->id())
                                         <button type="button" wire:click="toggleStatus({{ $user->id }})" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">
                                             {{ $user->status === 'active' ? 'Disable' : 'Enable' }}
                                         </button>
@@ -96,19 +107,21 @@
         <div class="border-t border-slate-100 px-6 py-4">{{ $users->links() }}</div>
     </div>
 
-    @if($showModal)
-        <div class="fi-modal-overlay">
-            <div class="fi-modal fi-modal-lg">
-                <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
-                    <h2 class="text-lg font-semibold text-slate-900">{{ $editingId ? 'Edit User' : 'Add User' }}</h2>
+    <div class="fi-modal-overlay" wire:key="admin-user-modal" @if(! $showModal) style="display:none" @endif>
+            <div class="fi-modal fi-modal-admin" style="width:min(980px, calc(100vw - 32px)); max-width:980px; max-height:min(92vh, 920px); overflow:hidden; display:flex; flex-direction:column; border-radius:16px;">
+                <div class="flex items-start justify-between border-b border-slate-200 px-6 py-5">
+                    <div>
+                        <h2 class="text-lg font-semibold text-slate-900">{{ $editingId ? 'Edit Admin' : 'Add New Admin' }}</h2>
+                        <p class="mt-1 text-sm text-slate-500">Choose a role, then adjust the actions this admin is allowed to use.</p>
+                    </div>
                     <button type="button" wire:click="$set('showModal', false)" class="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100">✕</button>
                 </div>
 
-                <div class="space-y-5 p-6">
-                    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <div class="space-y-6 overflow-y-auto px-6 py-5" style="flex:1 1 auto;">
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div>
-                            <label class="mb-2 block text-sm font-medium text-slate-700">Name <span class="text-red-500">*</span></label>
-                            <input type="text" wire:model="name" class="fi-input">
+                            <label class="mb-2 block text-sm font-medium text-slate-700">Admin Name <span class="text-red-500">*</span></label>
+                            <input wire:key="admin-form-name" type="text" wire:model="name" autocomplete="off" class="fi-input">
                             @error('name')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                         </div>
                         <div>
@@ -117,8 +130,23 @@
                             @error('email')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                         </div>
                         <div>
+                            <label class="mb-2 block text-sm font-medium text-slate-700">Mobile Number <span class="text-red-500">*</span></label>
+                            <input type="text" wire:model="mobile" class="fi-input">
+                            @error('mobile')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                        </div>
+                        <div>
+                            <label class="mb-2 block text-sm font-medium text-slate-700">Department</label>
+                            <input type="text" wire:model="department" class="fi-input">
+                            @error('department')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                        </div>
+                        <div>
+                            <label class="mb-2 block text-sm font-medium text-slate-700">Branch / Region</label>
+                            <input type="text" wire:model="branchRegion" class="fi-input">
+                            @error('branchRegion')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                        </div>
+                        <div>
                             <label class="mb-2 block text-sm font-medium text-slate-700">Password {{ $editingId ? '' : '*' }}</label>
-                            <input type="password" wire:model="password" class="fi-input" placeholder="{{ $editingId ? 'Leave blank to keep current' : 'Min 8 characters' }}">
+                            <input type="password" wire:model="password" class="fi-input" placeholder="{{ $editingId ? 'Leave blank to keep current' : 'Min 9 characters' }}">
                             @error('password')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                         </div>
                         <div>
@@ -129,44 +157,28 @@
                             </select>
                             @error('status')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                         </div>
+                        <div>
+                            <label class="mb-2 block text-sm font-medium text-slate-700">2FA</label>
+                            <select wire:model="twoFactorEnabled" class="fi-input">
+                                <option value="0">Disabled</option>
+                                <option value="1">Enabled</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div>
                         <label class="mb-2 block text-sm font-medium text-slate-700">Role</label>
-                        <div class="flex gap-4">
-                            <label class="flex items-center gap-2 text-sm text-slate-700">
-                                <input type="radio" wire:model.live="role" value="staff" class="text-blue-700">
-                                Staff (selected modules only)
-                            </label>
-                            @if($canAssignSuper)
-                                <label class="flex items-center gap-2 text-sm text-slate-700">
-                                    <input type="radio" wire:model.live="role" value="super_admin" class="text-blue-700">
-                                    Super Admin (all modules)
-                                </label>
-                            @endif
-                        </div>
+                        <select wire:model="role" class="fi-input">
+                            @foreach($roleOptions as $value => $label)
+                                @if($value !== 'super_admin' || $canAssignSuper)
+                                    <option value="{{ $value }}">{{ $label }}</option>
+                                @endif
+                            @endforeach
+                        </select>
                         @error('role')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                     </div>
 
-                    @if($role === 'staff')
-                        <div>
-                            <label class="mb-2 block text-sm font-medium text-slate-700">Module permissions <span class="text-red-500">*</span></label>
-                            <p class="mb-3 text-xs text-slate-500">User will only see these modules in the panel.</p>
-                            <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                @foreach($moduleCatalog as $key => $mod)
-                                    <label class="flex items-center gap-3 rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-medium text-slate-800 hover:bg-slate-50">
-                                        <input type="checkbox" wire:model="modules" value="{{ $key }}" class="rounded border-slate-300 text-blue-700">
-                                        {{ $mod['label'] }}
-                                    </label>
-                                @endforeach
-                            </div>
-                            @error('modules')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
-                        </div>
-                    @else
-                        <div class="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
-                            Super admin has access to every module, including user management.
-                        </div>
-                    @endif
+                    <p class="text-xs text-slate-500">Permissions come from the selected role. Change them under Administration → Permissions.</p>
                 </div>
 
                 <div class="flex justify-end gap-2 border-t border-slate-200 bg-slate-50 px-6 py-4">
@@ -178,5 +190,4 @@
                 </div>
             </div>
         </div>
-    @endif
 </div>

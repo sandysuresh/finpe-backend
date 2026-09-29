@@ -44,6 +44,11 @@ class Create extends Component
 
     public function saveStep1(): void
     {
+        $action = $this->vendorId ? 'edit' : 'create';
+        if (! \App\Support\AdminAccess::allows('vendors', $action)) {
+            abort(403);
+        }
+
         $validated = $this->validate(
             $this->step1Rules()
         );

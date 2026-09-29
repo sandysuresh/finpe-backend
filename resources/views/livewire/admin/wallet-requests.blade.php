@@ -104,14 +104,18 @@
                                 <td class="whitespace-nowrap px-5 py-4 text-center">
                                     @if($req->status === 'pending')
                                         <div class="flex items-center justify-center gap-2">
+                                            @if(auth('admin')->user()->hasPermission('wallet-requests', 'approve'))
                                             <button wire:click="openAction({{ $req->id }},'approve')"
                                                     class="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700">
                                                 Approve
                                             </button>
+                                            @endif
+                                            @if(auth('admin')->user()->hasPermission('wallet-requests', 'reject'))
                                             <button wire:click="openAction({{ $req->id }},'reject')"
                                                     class="rounded-lg bg-red-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-600">
                                                 Reject
                                             </button>
+                                            @endif
                                         </div>
                                     @else
                                         <span class="text-xs text-slate-400">

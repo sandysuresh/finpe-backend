@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->trustHosts();
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
+        $middleware->append(\App\Http\Middleware\LogPanelActivity::class);
         $middleware->alias([
             'auth.vendor' => \App\Http\Middleware\AuthenticateVendor::class,
             'admin.module' => \App\Http\Middleware\EnsureAdminModule::class,

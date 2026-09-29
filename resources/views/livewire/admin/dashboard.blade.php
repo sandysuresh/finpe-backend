@@ -1,475 +1,124 @@
-<div>
-
-    {{-- Page Header --}}
-    <div class="mb-6 flex items-center justify-between">
+@php
+    $icons = [
+        'volume' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v18M7 8h10M7 12h10M9 16h6"/></svg>',
+        'txn' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 6h11M8 12h11M8 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg>',
+        'partners' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 19v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1M9.5 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM20 19v-1a3.5 3.5 0 0 0-2.5-3.3M16.5 5.2a3 3 0 0 1 0 5.6"/></svg>',
+        'kyc' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 5 6v5c0 4.5 3 7.5 7 9 4-1.5 7-4.5 7-9V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></svg>',
+        'users' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3"/><path d="M5 19a7 7 0 0 1 14 0"/></svg>',
+        'merchants' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 10h16v9H4zM3 10l2-5h14l2 5M9 19v-4h6v4"/></svg>',
+        'commission' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v18M16 7H10a3 3 0 0 0 0 6h4a3 3 0 0 1 0 6H8"/></svg>',
+        'settlement' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 10h18M5 10V7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3M6 10v8h12v-8"/></svg>',
+        'failed' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><path d="m9 9 6 6M15 9l-6 6"/></svg>',
+        'alert' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v4M12 17h.01M10.3 4.8 2.8 18a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L13.7 4.8a2 2 0 0 0-3.4 0Z"/></svg>',
+    ];
+@endphp
+<div class="dash-wrap">
+<style>
+.dash-wrap{height:calc(100vh - 110px);display:flex;flex-direction:column;overflow:hidden}
+.dash-card,.dash-mini{background:#fff;border:1px solid #e6edf5;border-radius:14px;box-shadow:0 1px 2px rgba(15,23,42,.04);min-width:0}
+.dash-card{display:flex;align-items:center;gap:12px;padding:14px 16px;border-top:3px solid #1d4ed8;text-decoration:none;color:inherit;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease}
+.dash-card:hover,.dash-mini:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(15,23,42,.08)}
+.dash-mini{text-decoration:none;color:inherit;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease}
+.dash-card-blue{border-top-color:#1d4ed8}.dash-card-indigo{border-top-color:#4f46e5}.dash-card-emerald{border-top-color:#059669}.dash-card-amber{border-top-color:#d97706}.dash-card-violet{border-top-color:#7c3aed}.dash-card-red{border-top-color:#dc2626}.dash-card-slate{border-top-color:#64748b}
+.dash-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#eff6ff;color:#1d4ed8}
+.dash-icon svg,.dash-mini-icon svg{width:18px;height:18px}
+.dash-card-indigo .dash-icon{background:#eef2ff;color:#4f46e5}
+.dash-card-emerald .dash-icon{background:#ecfdf5;color:#059669}
+.dash-card-amber .dash-icon{background:#fffbeb;color:#d97706}
+.dash-label{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dash-value{margin-top:2px;font-size:22px;line-height:1.2;font-weight:700;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dash-hint{margin-top:2px;font-size:11px;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dash-mini{padding:12px 14px;border-top:3px solid #64748b}
+.dash-mini-icon{width:22px;height:22px;color:#64748b;display:flex}
+.dash-card-blue .dash-mini-icon{color:#1d4ed8}.dash-card-violet .dash-mini-icon{color:#7c3aed}.dash-card-emerald .dash-mini-icon{color:#059669}.dash-card-red .dash-mini-icon{color:#dc2626}.dash-card-amber .dash-mini-icon{color:#d97706}
+.dash-mini-value{margin-top:8px;font-size:18px;font-weight:700;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+</style>
+    <div class="mb-3 flex items-end justify-between gap-3">
         <div>
-            <h1 class="text-2xl font-bold tracking-tight text-slate-900">
-                Dashboard
-            </h1>
-
-            <p class="mt-1 text-sm text-slate-500">
-                Welcome back to FinPay Admin Panel.
-            </p>
+            <h1 class="text-xl font-bold tracking-tight text-slate-900">Dashboard</h1>
+            <p class="text-xs text-slate-500">Partners, payouts, and items that need attention.</p>
         </div>
+        <p class="text-xs font-medium text-slate-500">{{ now()->timezone(config('app.timezone'))->format('d M Y') }}</p>
+    </div>
 
-        <div class="hidden items-center gap-3 sm:flex">
-            <button
-                type="button"
-                class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50">
-                Export
-            </button>
-
-            @if(auth('admin')->user()->hasModule('vendors'))
-            <a
-                href="{{ route('admin.vendors') }}"
-                class="flex items-center gap-3 rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-blue-400 hover:text-blue-700"
-            >
-                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M17 20h5v-2a4 4 0 00-4-4h-1M9 20H4v-2a4 4 0 014-4h1m8-5a4 4 0 11-8 0 4 4 0 018 0z"
-                    />
-                </svg>
-
-                <span>Partners</span>
+    <div class="grid gap-3" style="grid-template-columns:repeat(4,minmax(0,1fr));">
+        @foreach($primary as $card)
+            <a href="{{ $card['href'] }}" class="dash-card dash-card-{{ $card['tone'] }}">
+                <div class="dash-icon">{!! $icons[$card['icon']] !!}</div>
+                <div class="min-w-0">
+                    <p class="dash-label">{{ $card['label'] }}</p>
+                    <p class="dash-value">{{ $card['value'] }}</p>
+                    <p class="dash-hint">{{ $card['hint'] }}</p>
+                </div>
             </a>
-            @endif
-        </div>
+        @endforeach
     </div>
 
-
-    {{-- ========================================================= --}}
-    {{-- STAT CARDS --}}
-    {{-- ========================================================= --}}
-
-    <div
-        class="grid w-full grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4"
-        style="display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:20px;"
-    >
-
-        {{-- Total Balance --}}
-        <div class="fi-card p-5">
-
-            <div class="flex items-start justify-between">
-
-                <div>
-                    <p class="text-sm font-medium text-slate-500">
-                        Total Balance
-                    </p>
-
-                    <h2 class="mt-3 text-2xl font-bold text-slate-900">
-                        ₹ 12,45,800
-                    </h2>
-
-                    <div class="mt-2 flex items-center gap-1 text-xs font-medium text-emerald-600">
-                        <span>↑ 8.4%</span>
-                        <span class="text-slate-400">this month</span>
-                    </div>
+    <div class="mt-3 grid gap-3" style="grid-template-columns:repeat(6,minmax(0,1fr));">
+        @foreach($secondary as $card)
+            <a href="{{ $card['href'] }}" class="dash-mini dash-card-{{ $card['tone'] }}">
+                <div class="flex items-center justify-between gap-2">
+                    <p class="dash-label">{{ $card['label'] }}</p>
+                    <span class="dash-mini-icon">{!! $icons[$card['icon']] !!}</span>
                 </div>
-
-                <div class="fi-stat-icon fi-stat-icon-blue">
-                    ₹
-                </div>
-
-            </div>
-
-        </div>
-
-
-        {{-- Total Vendors --}}
-        <div class="fi-card p-5">
-
-            <div class="flex items-start justify-between">
-
-                <div>
-                    <p class="text-sm font-medium text-slate-500">
-                        Total Partners
-                    </p>
-
-                    <h2 class="mt-3 text-2xl font-bold text-slate-900">
-                        128
-                    </h2>
-
-                    <div class="mt-2 flex items-center gap-1 text-xs font-medium text-emerald-600">
-                        <span>↑ 12</span>
-                        <span class="text-slate-400">this month</span>
-                    </div>
-                </div>
-
-                <div class="fi-stat-icon fi-stat-icon-slate">
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M17 20h5v-2a4 4 0 00-4-4h-1M9 20H4v-2a4 4 0 014-4h1m8-5a4 4 0 11-8 0 4 4 0 018 0zm-2 7a4 4 0 00-4-4 4 4 0 00-4 4"/>
-                    </svg>
-                </div>
-
-            </div>
-
-        </div>
-
-
-        {{-- Transactions --}}
-        <div class="fi-card p-5">
-
-            <div class="flex items-start justify-between">
-
-                <div>
-                    <p class="text-sm font-medium text-slate-500">
-                        Today's Transactions
-                    </p>
-
-                    <h2 class="mt-3 text-2xl font-bold text-slate-900">
-                        2,846
-                    </h2>
-
-                    <div class="mt-2 text-xs text-slate-400">
-                        Total processed today
-                    </div>
-                </div>
-
-                <div class="fi-stat-icon fi-stat-icon-amber">
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M9 5h6M9 9h6M9 13h4m-7 8h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-                    </svg>
-                </div>
-
-            </div>
-
-        </div>
-
-
-        {{-- Today's Volume --}}
-        <div class="fi-card p-5">
-
-            <div class="flex items-start justify-between">
-
-                <div>
-                    <p class="text-sm font-medium text-slate-500">
-                        Today's Volume
-                    </p>
-
-                    <h2 class="mt-3 text-2xl font-bold text-slate-900">
-                        ₹ 38.42 L
-                    </h2>
-
-                    <div class="mt-2 flex items-center gap-1 text-xs font-medium text-emerald-600">
-                        <span>↑ 5.2%</span>
-                        <span class="text-slate-400">from yesterday</span>
-                    </div>
-                </div>
-
-                <div class="fi-stat-icon fi-stat-icon-emerald">
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 8c-2.21 0-4 1.343-4 3s1.79 3 4 3 4 1.343 4 3-1.79 3-4 3m0-15v2m0 13v2"/>
-                    </svg>
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-
-    {{-- ========================================================= --}}
-    {{-- MAIN CONTENT --}}
-    {{-- ========================================================= --}}
-
-    <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
-
-
-        {{-- Transaction Overview --}}
-        <div class="fi-card lg:col-span-2">
-
-            <div class="flex items-center justify-between border-b border-slate-100 px-6 py-5">
-
-                <div>
-                    <h2 class="text-base font-semibold text-slate-900">
-                        Transaction Overview
-                    </h2>
-
-                    <p class="mt-1 text-xs text-slate-400">
-                        Transaction volume for the current period
-                    </p>
-                </div>
-
-                <select class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600 outline-none">
-                    <option>Last 7 Days</option>
-                    <option>Last 30 Days</option>
-                    <option>Last 3 Months</option>
-                </select>
-
-            </div>
-
-
-            {{-- Static Chart --}}
-            <div class="px-6 py-6">
-
-                <div class="flex h-64 items-end gap-4">
-
-                    @foreach ([42,58,48,72,61,85,70,92,76,88,68,96] as $height)
-
-                        <div class="flex flex-1 flex-col items-center justify-end gap-2">
-
-                            <div
-                                class="w-full rounded-t-lg bg-blue-600"
-                                style="height: {{ $height }}%;"
-                            ></div>
-
-                        </div>
-
-                    @endforeach
-
-                </div>
-
-                <div class="mt-3 flex justify-between text-xs text-slate-400">
-                    <span>01 Aug</span>
-                    <span>03 Aug</span>
-                    <span>05 Aug</span>
-                    <span>07 Aug</span>
-                    <span>09 Aug</span>
-                    <span>11 Aug</span>
-                </div>
-
-            </div>
-
-        </div>
-
-
-        {{-- Quick Summary --}}
-        <div class="fi-card">
-
-            <div class="border-b border-slate-100 px-6 py-5">
-                <h2 class="text-base font-semibold text-slate-900">
-                    Transaction Status
-                </h2>
-
-                <p class="mt-1 text-xs text-slate-400">
-                    Today's transaction summary
-                </p>
-            </div>
-
-
-            <div class="space-y-5 p-6">
-
-                {{-- Success --}}
-                <div>
-                    <div class="mb-2 flex justify-between">
-                        <span class="text-sm text-slate-600">
-                            Successful
-                        </span>
-
-                        <span class="text-sm font-semibold text-emerald-600">
-                            82%
-                        </span>
-                    </div>
-
-                    <div class="h-2 overflow-hidden rounded-full bg-slate-100">
-                        <div class="h-full w-[82%] rounded-full bg-emerald-500"></div>
-                    </div>
-                </div>
-
-
-                {{-- Pending --}}
-                <div>
-                    <div class="mb-2 flex justify-between">
-                        <span class="text-sm text-slate-600">
-                            Pending
-                        </span>
-
-                        <span class="text-sm font-semibold text-amber-600">
-                            11%
-                        </span>
-                    </div>
-
-                    <div class="h-2 overflow-hidden rounded-full bg-slate-100">
-                        <div class="h-full w-[11%] rounded-full bg-amber-500"></div>
-                    </div>
-                </div>
-
-
-                {{-- Failed --}}
-                <div>
-                    <div class="mb-2 flex justify-between">
-                        <span class="text-sm text-slate-600">
-                            Failed
-                        </span>
-
-                        <span class="text-sm font-semibold text-red-600">
-                            7%
-                        </span>
-                    </div>
-
-                    <div class="h-2 overflow-hidden rounded-full bg-slate-100">
-                        <div class="h-full w-[7%] rounded-full bg-red-500"></div>
-                    </div>
-                </div>
-
-
-                <div class="border-t border-slate-100 pt-5">
-
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm text-slate-500">
-                            Total Transactions
-                        </span>
-
-                        <span class="font-semibold text-slate-900">
-                            2,846
-                        </span>
-                    </div>
-
-                    <div class="mt-3 flex items-center justify-between">
-                        <span class="text-sm text-slate-500">
-                            Total Volume
-                        </span>
-
-                        <span class="font-semibold text-slate-900">
-                            ₹38.42 L
-                        </span>
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-
-    {{-- ========================================================= --}}
-    {{-- RECENT TRANSACTIONS --}}
-    {{-- ========================================================= --}}
-
-    <div class="fi-card mt-6 overflow-hidden">
-
-        <div class="flex items-center justify-between border-b border-slate-100 px-6 py-5">
-
-            <div>
-                <h2 class="text-base font-semibold text-slate-900">
-                    Recent Transactions
-                </h2>
-
-                <p class="mt-1 text-xs text-slate-400">
-                    Latest payment activity
-                </p>
-            </div>
-
-            @if(auth('admin')->user()->hasModule('transactions'))
-            <a href="{{ route('admin.transactions') }}" class="text-sm font-semibold text-blue-700 hover:text-blue-800">
-                View All →
+                <p class="dash-mini-value">{{ $card['value'] }}</p>
             </a>
-            @endif
+        @endforeach
+    </div>
 
-        </div>
-
-
-        <div class="overflow-x-auto">
-
-            <table class="min-w-full">
-
-                <thead class="bg-slate-50">
-
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                            Transaction
-                        </th>
-
-                        <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                            Vendor
-                        </th>
-
-                        <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                            Amount
-                        </th>
-
-                        <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                            Type
-                        </th>
-
-                        <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                            Status
-                        </th>
-
-                        <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                            Date
-                        </th>
-                    </tr>
-
-                </thead>
-
-
-                <tbody class="divide-y divide-slate-100">
-
-                    @foreach ([
-                        ['id' => 'TXN-10001', 'vendor' => 'ABC Remittance', 'amount' => '₹25,000', 'type' => 'Send Money', 'status' => 'Success', 'date' => '12 Aug, 09:42 AM'],
-                        ['id' => 'TXN-10002', 'vendor' => 'Global Money', 'amount' => '₹18,500', 'type' => 'Add Money', 'status' => 'Success', 'date' => '12 Aug, 09:31 AM'],
-                        ['id' => 'TXN-10003', 'vendor' => 'FastSend Nepal', 'amount' => '₹42,000', 'type' => 'Send Money', 'status' => 'Pending', 'date' => '12 Aug, 09:18 AM'],
-                        ['id' => 'TXN-10004', 'vendor' => 'PayLink', 'amount' => '₹12,800', 'type' => 'Settlement', 'status' => 'Failed', 'date' => '12 Aug, 08:56 AM'],
-                    ] as $transaction)
-
-                        <tr class="hover:bg-slate-50">
-
-                            <td class="whitespace-nowrap px-6 py-4">
-                                <span class="text-sm font-semibold text-slate-900">
-                                    {{ $transaction['id'] }}
-                                </span>
-                            </td>
-
-                            <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
-                                {{ $transaction['vendor'] }}
-                            </td>
-
-                            <td class="whitespace-nowrap px-6 py-4 text-sm font-semibold text-slate-900">
-                                {{ $transaction['amount'] }}
-                            </td>
-
-                            <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-500">
-                                {{ $transaction['type'] }}
-                            </td>
-
-                            <td class="whitespace-nowrap px-6 py-4">
-
-                                @if ($transaction['status'] === 'Success')
-
-                                    <span class="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                                        Success
-                                    </span>
-
-                                @elseif ($transaction['status'] === 'Pending')
-
-                                    <span class="inline-flex rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
-                                        Pending
-                                    </span>
-
-                                @else
-
-                                    <span class="inline-flex rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-700">
-                                        Failed
-                                    </span>
-
-                                @endif
-
-                            </td>
-
-                            <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-500">
-                                {{ $transaction['date'] }}
-                            </td>
-
+    <div class="mt-3 grid min-h-0 flex-1 gap-3" style="grid-template-columns:minmax(0,2fr) minmax(0,1fr);">
+        <div class="fi-card flex min-h-0 min-w-0 flex-col overflow-hidden">
+            <div class="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+                <h2 class="text-sm font-semibold text-slate-900">Recent transactions</h2>
+                <a href="{{ route('admin.transactions') }}" class="text-xs font-semibold text-blue-700">View all</a>
+            </div>
+            <div class="min-h-0 flex-1 overflow-hidden">
+                <table class="min-w-full">
+                    <thead>
+                        <tr>
+                            @foreach(['Reference','Partner','Amount','Status','Time'] as $col)
+                                <th class="px-4 py-2 text-left text-[11px] font-semibold uppercase tracking-wider">{{ $col }}</th>
+                            @endforeach
                         </tr>
-
-                    @endforeach
-
-                </tbody>
-
-            </table>
-
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @forelse($recentTransactions->take(5) as $txn)
+                            @php
+                                $tone = match($txn->status) {
+                                    'success' => 'bg-emerald-50 text-emerald-700',
+                                    'failed' => 'bg-red-50 text-red-700',
+                                    default => 'bg-amber-50 text-amber-700',
+                                };
+                            @endphp
+                            <tr>
+                                <td class="truncate px-4 py-2 font-mono text-xs font-semibold text-slate-800">{{ $txn->reference }}</td>
+                                <td class="truncate px-4 py-2 text-sm text-slate-700">{{ $txn->vendor->business_name ?? '—' }}</td>
+                                <td class="whitespace-nowrap px-4 py-2 text-sm font-semibold text-slate-900">₹ {{ number_format((float) $txn->amount, 2) }}</td>
+                                <td class="whitespace-nowrap px-4 py-2">
+                                    <span class="inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold {{ $tone }}">{{ ucfirst((string) $txn->status) }}</span>
+                                </td>
+                                <td class="whitespace-nowrap px-4 py-2 text-xs text-slate-500">{{ $txn->created_at?->timezone(config('app.timezone'))->format('d M, h:i A') }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5" class="px-4 py-8 text-center text-sm text-slate-500">No transactions yet.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
         </div>
 
+        <div class="fi-card min-w-0 overflow-hidden">
+            <div class="border-b border-slate-100 px-4 py-3">
+                <h2 class="text-sm font-semibold text-slate-900">Needs attention</h2>
+            </div>
+            @foreach($alerts as $alert)
+                <a href="{{ $alert['href'] }}" class="flex items-center justify-between border-b border-slate-100 px-4 py-3 last:border-0 hover:bg-slate-50">
+                    <span class="text-sm font-medium text-slate-700">{{ $alert['label'] }}</span>
+                    <span class="rounded-full px-2 py-0.5 text-xs font-semibold {{ $alert['count'] > 0 ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600' }}">{{ number_format($alert['count']) }}</span>
+                </a>
+            @endforeach
+        </div>
     </div>
-
 </div>

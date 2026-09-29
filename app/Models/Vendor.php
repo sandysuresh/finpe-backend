@@ -41,12 +41,17 @@ class Vendor extends Authenticatable
 
     public function wallet(): HasOne               { return $this->hasOne(Wallet::class); }
     public function transactions(): HasMany        { return $this->hasMany(Transaction::class); }
+    public function merchants(): HasMany          { return $this->hasMany(Merchant::class); }
+    public function aepsTransactions(): HasMany   { return $this->hasMany(AepsTransaction::class); }
     public function beneficiaries(): HasMany       { return $this->hasMany(Beneficiary::class); }
     public function settlements(): HasMany         { return $this->hasMany(Settlement::class); }
     public function apiCredential(): HasOne        { return $this->hasOne(ApiCredential::class); }
     public function webhookLogs(): HasMany         { return $this->hasMany(WebhookLog::class); }
     public function apiLogs(): HasMany             { return $this->hasMany(ApiLog::class); }
     public function topupRequests(): HasMany       { return $this->hasMany(WalletTopupRequest::class); }
+    public function commissionRules(): HasMany     { return $this->hasMany(CommissionRule::class); }
+    public function commissionEntries(): HasMany   { return $this->hasMany(CommissionEntry::class); }
+    public function commissionSettlements(): HasMany { return $this->hasMany(CommissionSettlement::class); }
     public function banks(): BelongsToMany
     {
         return $this->belongsToMany(Bank::class, 'vendor_banks')

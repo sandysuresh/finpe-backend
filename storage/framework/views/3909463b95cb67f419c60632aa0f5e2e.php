@@ -120,12 +120,16 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                     </div>
 
                     <div class="mt-4 flex flex-wrap gap-3">
+                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(auth('admin')->user()->hasPermission('vendors', 'approve')): ?>
                         <button type="button" wire:click="approveKyc" class="fi-btn fi-btn-success">
                             Approve KYC
                         </button>
+                        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(auth('admin')->user()->hasPermission('vendors', 'reject')): ?>
                         <button type="button" wire:click="rejectKyc" class="fi-btn fi-btn-danger">
                             Reject KYC
                         </button>
+                        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                     </div>
                 <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
@@ -379,12 +383,13 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                 </div>
             </div>
             <div class="fi-card p-6">
-                <h3 class="mb-4 text-sm font-semibold text-slate-900">Commercial Settings</h3>
+                <h3 class="mb-4 text-sm font-semibold text-slate-900">Configured Commission Rule</h3>
+                <p class="mb-3 text-xs text-slate-500">Legacy partner setting. This is not applied commission.</p>
                 <div class="space-y-3">
                     <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = [
                         ['Transaction Limit', '₹'.number_format((float) $vendor->transaction_limit, 2)],
-                        ['Commission Type', ucfirst($vendor->commission_type)],
-                        ['Commission Value', $vendor->commission_value],
+                        ['Configured type', ucfirst($vendor->commission_type)],
+                        ['Configured value', $vendor->commission_value],
                         ['API Enabled', $vendor->api_enabled ? 'Yes' : 'No'],
                     ]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as [$l, $v]): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                         <div class="flex items-center justify-between">
@@ -394,6 +399,41 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                 </div>
             </div>
+        <div class="fi-card p-6 lg:col-span-2">
+            <h3 class="text-sm font-semibold text-slate-900">Applied Commission</h3>
+            <p class="mt-1 text-xs text-slate-500">Recorded commission entries for this partner.</p>
+            <div class="mt-4 grid grid-cols-2 gap-4">
+                <div>
+                    <p class="text-xs text-slate-400">Commission entries</p>
+                    <p class="text-xl font-bold text-slate-900"><?php echo e($appliedCommission->entry_count ?? 0); ?></p>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-400">Total commission</p>
+                    <p class="text-xl font-bold text-slate-900">₹<?php echo e(number_format((float) ($appliedCommission->total_commission ?? 0), 2)); ?></p>
+                </div>
+            </div>
+            <div class="mt-5 overflow-x-auto">
+                <table class="min-w-full text-sm">
+                    <thead>
+                        <tr><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = ['Reference','Amount','Rate','Commission','Status','Date']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $col): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?><th class="px-3 py-2 text-left text-[11px] font-semibold uppercase text-slate-400"><?php echo e($col); ?></th><?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?></tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__empty_1 = true; $__currentLoopData = $recentCommission; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $entry): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                            <tr>
+                                <td class="px-3 py-2"><?php echo e($entry->source_reference ?: '—'); ?></td>
+                                <td class="px-3 py-2">₹<?php echo e(number_format((float) $entry->base_amount, 2)); ?></td>
+                                <td class="px-3 py-2"><?php echo e($entry->calc_type === 'percentage' ? number_format((float) $entry->rate_value, 2).'%' : '₹'.number_format((float) $entry->rate_value, 2)); ?></td>
+                                <td class="px-3 py-2 font-semibold">₹<?php echo e(number_format((float) $entry->commission_amount, 2)); ?></td>
+                                <td class="px-3 py-2"><?php echo e(ucfirst((string) $entry->status)); ?></td>
+                                <td class="px-3 py-2 text-xs"><?php echo e($entry->created_at?->format('d M Y, h:i A')); ?></td>
+                            </tr>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                            <tr><td colspan="6" class="px-3 py-6 text-sm text-slate-500">No applied commission.</td></tr>
+                        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
         </div>
     <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
@@ -491,6 +531,7 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                             <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Reference</th>
                             <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Beneficiary</th>
                             <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Amount</th>
+                            <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Commission</th>
                             <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Status</th>
                             <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Date</th>
                         </tr>
@@ -501,6 +542,7 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                                 <td class="px-5 py-3"><?php echo e($txn->reference); ?></td>
                                 <td class="px-5 py-3"><?php echo e($txn->beneficiary_name ?? '—'); ?></td>
                                 <td class="px-5 py-3">₹<?php echo e(number_format((float) $txn->amount, 2)); ?></td>
+                                <td class="px-5 py-3"><?php echo e($txn->commissionEntry ? '₹'.number_format((float) $txn->commissionEntry->commission_amount, 2) : '—'); ?></td>
                                 <td class="px-5 py-3"><?php echo e(ucfirst($txn->status)); ?></td>
                                 <td class="px-5 py-3"><?php echo e($txn->created_at->format('d M Y H:i')); ?></td>
                             </tr>

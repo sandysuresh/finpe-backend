@@ -96,6 +96,11 @@ class Banks extends Component
 
     public function save(): void
     {
+        $action = $this->editingId ? 'edit' : 'create';
+        if (! \App\Support\AdminAccess::allows('banks', $action)) {
+            abort(403);
+        }
+
         $this->code = strtoupper(trim($this->code));
 
         $this->validate([
@@ -197,7 +202,17 @@ class Banks extends Component
     public function toggleActive(int $id): void
     {
         $bank = Bank::findOrFail($id);
+        $before = $bank->is_active ? 'Active' : 'Disabled';
         $bank->update(['is_active' => ! $bank->is_active]);
+        $after = $bank->is_active ? 'Active' : 'Disabled';
+
+        \App\Support\AdminAudit::record(
+            $bank->is_active ? 'Bank enabled' : 'Bank disabled',
+            'Success',
+            $bank->name.' ('.$bank->code.')',
+            $before,
+            $after,
+        );
     }
 
     public function openAssign(int $id): void
@@ -211,6 +226,10 @@ class Banks extends Component
 
     public function saveAssignments(): void
     {
+        if (! \App\Support\AdminAccess::allows('banks', 'edit')) {
+            abort(403);
+        }
+
         $bank = Bank::findOrFail($this->assignBankId);
         $ids = collect($this->assignedVendorIds)->map(fn ($id) => (int) $id)->filter()->unique()->all();
         $sync = [];
@@ -289,6 +308,10 @@ class Banks extends Component
 
     public function saveEndpoint(): void
     {
+        if (! \App\Support\AdminAccess::allows('banks', 'edit')) {
+            abort(403);
+        }
+
         $this->endpointSlug = Str::slug($this->endpointSlug ?: $this->endpointName);
 
         $this->validate([

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\AdminAccess;
 use App\Support\AdminModules;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -12,7 +13,8 @@ class Admin extends Authenticatable
     use Notifiable;
 
     protected $fillable = [
-        'name', 'email', 'password', 'role', 'status',
+        'name', 'email', 'mobile', 'department', 'branch_region',
+        'password', 'role', 'status', 'two_factor_enabled',
     ];
 
     protected $hidden = [
@@ -23,6 +25,7 @@ class Admin extends Authenticatable
     {
         return [
             'password' => 'hashed',
+            'two_factor_enabled' => 'boolean',
         ];
     }
 
@@ -47,6 +50,19 @@ class Admin extends Authenticatable
         return $this->modulePermissions->contains('module', $module);
     }
 
+    public function hasPermission(string $module, string $action): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        $this->loadMissing('modulePermissions');
+
+        return $this->modulePermissions->contains(
+            fn (AdminModulePermission $row) => $row->module === $module && $row->action === $action
+        );
+    }
+
     public function allowedModules(): array
     {
         if ($this->isSuperAdmin()) {
@@ -55,7 +71,7 @@ class Admin extends Authenticatable
 
         $this->loadMissing('modulePermissions');
 
-        return $this->modulePermissions->pluck('module')->all();
+        return $this->modulePermissions->pluck('module')->unique()->values()->all();
     }
 
     public function syncModules(array $modules): void
@@ -65,7 +81,49 @@ class Admin extends Authenticatable
         $this->modulePermissions()->delete();
 
         foreach ($valid as $module) {
-            $this->modulePermissions()->create(['module' => $module]);
+            foreach (AdminAccess::actionsFor($module) as $action) {
+                $this->modulePermissions()->create([
+                    'module' => $module,
+                    'action' => $action,
+                ]);
+            }
+        }
+
+        $this->unsetRelation('modulePermissions');
+    }
+
+    public function permissionTokens(): array
+    {
+        if ($this->isSuperAdmin()) {
+            $tokens = [];
+            foreach (AdminAccess::modules() as $module => $meta) {
+                foreach ($meta['actions'] as $action) {
+                    $tokens[] = AdminAccess::token($module, $action);
+                }
+            }
+
+            return $tokens;
+        }
+
+        $this->loadMissing('modulePermissions');
+
+        return $this->modulePermissions
+            ->map(fn (AdminModulePermission $row) => AdminAccess::token($row->module, (string) $row->action))
+            ->all();
+    }
+
+    public function syncPermissions(array $tokens): void
+    {
+        $valid = array_values(array_unique(array_filter($tokens, fn ($token) => is_string($token) && AdminAccess::isValidToken($token))));
+
+        $this->modulePermissions()->delete();
+
+        foreach ($valid as $token) {
+            [$module, $action] = explode(':', $token, 2);
+            $this->modulePermissions()->create([
+                'module' => $module,
+                'action' => $action,
+            ]);
         }
 
         $this->unsetRelation('modulePermissions');
@@ -73,6 +131,6 @@ class Admin extends Authenticatable
 
     public function roleLabel(): string
     {
-        return $this->isSuperAdmin() ? 'Super Admin' : 'Staff';
+        return AdminAccess::roles()[$this->role] ?? ucfirst(str_replace('_', ' ', (string) $this->role));
     }
 }

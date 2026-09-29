@@ -4,6 +4,7 @@ namespace App\Livewire\Admin;
 use App\Models\Wallet;
 use App\Models\WalletLedger;
 use App\Models\WalletTopupRequest;
+use App\Support\AdminAudit;
 use App\Support\UrlId;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -39,6 +40,13 @@ class WalletRequests extends Component
 
     public function confirm(): void
     {
+        $needed = $this->actionType === 'approve' ? 'approve' : 'reject';
+        if (! \App\Support\AdminAccess::allows('wallet-requests', $needed)) {
+            $this->showApproveModal = false;
+
+            return;
+        }
+
         $request = WalletTopupRequest::with('vendor')->findOrFail($this->actionId);
 
         if ($request->status !== 'pending') {
@@ -89,6 +97,15 @@ class WalletRequests extends Component
                 ]);
             }
         });
+
+        $approved = $this->actionType === 'approve';
+        AdminAudit::record(
+            $approved ? 'Wallet request approved' : 'Wallet request rejected',
+            $approved ? 'Approved' : 'Rejected',
+            'Request #'.$request->id.' '.($request->vendor->business_name ?? '').' '.$request->amount,
+            'pending',
+            ($approved ? 'approved' : 'rejected').($this->adminNote !== '' ? ' | '.$this->adminNote : ''),
+        );
 
         $this->showApproveModal = false;
         $this->resetPage();

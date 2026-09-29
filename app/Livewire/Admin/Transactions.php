@@ -14,10 +14,28 @@ class Transactions extends Component
     public string $service = '';
     public string $dateFrom = '';
     public string $dateTo = '';
+    public string $heading = 'All Transactions';
+    public string $viewKey = 'all';
+
+    public function mount(): void
+    {
+        [$this->viewKey, $this->heading, $this->status] = match (request()->route()?->getName()) {
+            'admin.txn-history' => ['history', 'Transaction History', ''],
+            'admin.txn-success' => ['success', 'Successful Transactions', 'success'],
+            'admin.txn-pending' => ['pending', 'Pending Transactions', 'pending'],
+            'admin.txn-failed' => ['failed', 'Failed Transactions', 'failed'],
+            'admin.txn-reversed' => ['reversed', 'Reversed / Refund Transactions', 'reversed'],
+            'admin.txn-search' => ['search', 'Transaction Search & Filter', ''],
+            'admin.txn-details' => ['details', 'Transaction Details', ''],
+            default => ['all', 'All Transactions', ''],
+        };
+    }
 
     public function resetFilters(): void
     {
+        $locked = in_array($this->viewKey, ['success', 'pending', 'failed', 'reversed'], true) ? $this->status : '';
         $this->reset(['search', 'status', 'service', 'dateFrom', 'dateTo']);
+        $this->status = $locked;
     }
 
     public function render()
@@ -28,7 +46,7 @@ class Transactions extends Component
         $transactions = $usingSample
             ? $this->sampleTransactions()
             : Transaction::query()
-                ->with('vendor')
+                ->with(['vendor', 'commissionEntry'])
                 ->when($this->search, function ($q) {
                     $q->where(function ($inner) {
                         $inner->where('reference', 'like', "%{$this->search}%")
@@ -39,7 +57,8 @@ class Transactions extends Component
                             });
                     });
                 })
-                ->when($this->status, fn ($q) => $q->where('status', $this->status))
+                ->when($this->status === 'reversed', fn ($q) => $q->whereIn('status', ['reversed', 'refund', 'refunded']))
+                ->when($this->status !== '' && $this->status !== 'reversed', fn ($q) => $q->where('status', $this->status))
                 ->when($this->service, fn ($q) => $q->where('service', $this->service))
                 ->when($this->dateFrom, fn ($q) => $q->whereDate('created_at', '>=', $this->dateFrom))
                 ->when($this->dateTo, fn ($q) => $q->whereDate('created_at', '<=', $this->dateTo))
@@ -69,7 +88,7 @@ class Transactions extends Component
         }
 
         return view('livewire.admin.transactions', compact('transactions', 'summary', 'usingSample'))
-            ->layout('layouts.admin', ['title' => 'Transactions']);
+            ->layout('layouts.admin', ['title' => $this->heading]);
     }
 
     private function filterSamples(Collection $rows): Collection
@@ -129,6 +148,7 @@ class Transactions extends Component
                 'vendor' => $vendor,
                 'vendor_name' => $vendor?->business_name ?? 'Sample Vendor',
                 'vendor_code' => $vendor?->vendor_code ?? 'VNDDEMO',
+                'commissionEntry' => null,
                 'created_at' => now()->subDays($row[6])->subHours($i),
             ];
         });

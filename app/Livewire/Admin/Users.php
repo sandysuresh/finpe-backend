@@ -3,6 +3,8 @@
 namespace App\Livewire\Admin;
 
 use App\Models\Admin;
+use App\Support\AdminAccess;
+use App\Support\AdminAudit;
 use App\Support\AdminModules;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
@@ -21,10 +23,13 @@ class Users extends Component
 
     public string $name = '';
     public string $email = '';
+    public string $mobile = '';
+    public string $department = '';
+    public string $branchRegion = '';
     public string $password = '';
-    public string $role = 'staff';
+    public string $role = 'operations_admin';
     public string $status = 'active';
-    public array $modules = [];
+    public bool $twoFactorEnabled = false;
 
     public string $formMessage = '';
 
@@ -43,7 +48,7 @@ class Users extends Component
     public function openCreate(): void
     {
         $this->resetForm();
-        $this->modules = ['dashboard'];
+        $this->role = 'operations_admin';
         $this->showModal = true;
     }
 
@@ -58,10 +63,13 @@ class Users extends Component
         $this->editingId = $user->id;
         $this->name = $user->name;
         $this->email = $user->email;
+        $this->mobile = (string) $user->mobile;
+        $this->department = (string) $user->department;
+        $this->branchRegion = (string) $user->branch_region;
         $this->password = '';
-        $this->role = $user->role === 'super_admin' ? 'super_admin' : 'staff';
+        $this->role = array_key_exists($user->role, AdminAccess::roles()) ? $user->role : 'staff';
         $this->status = $user->status;
-        $this->modules = $user->isSuperAdmin() ? AdminModules::keys() : $user->allowedModules();
+        $this->twoFactorEnabled = (bool) $user->two_factor_enabled;
         $this->formMessage = '';
         $this->showModal = true;
     }
@@ -76,6 +84,13 @@ class Users extends Component
             return;
         }
 
+        if ($this->editingId === null && ! $actor->hasPermission('users', 'create')) {
+            abort(403);
+        }
+        if ($this->editingId !== null && ! $actor->hasPermission('users', 'edit')) {
+            abort(403);
+        }
+
         $rules = [
             'name' => 'required|string|max:100',
             'email' => [
@@ -84,20 +99,18 @@ class Users extends Component
                 'max:150',
                 Rule::unique('admins', 'email')->ignore($this->editingId),
             ],
-            'role' => 'required|in:super_admin,staff',
+            'mobile' => 'required|string|max:20',
+            'department' => 'nullable|string|max:80',
+            'branchRegion' => 'nullable|string|max:80',
+            'role' => ['required', Rule::in(array_keys(AdminAccess::roles()))],
             'status' => 'required|in:active,inactive',
-            'modules' => 'array',
-            'modules.*' => Rule::in(AdminModules::keys()),
+            'twoFactorEnabled' => 'boolean',
         ];
 
         if ($this->editingId === null) {
-            $rules['password'] = 'required|string|min:12|max:100';
+            $rules['password'] = 'required|string|min:9|max:100';
         } else {
-            $rules['password'] = 'nullable|string|min:12|max:100';
-        }
-
-        if ($this->role === 'staff') {
-            $rules['modules'] = 'required|array|min:1';
+            $rules['password'] = 'nullable|string|min:9|max:100';
         }
 
         $this->validate($rules);
@@ -126,31 +139,53 @@ class Users extends Component
             $payload = [
                 'name' => $this->name,
                 'email' => $this->email,
+                'mobile' => $this->mobile,
+                'department' => $this->department !== '' ? $this->department : null,
+                'branch_region' => $this->branchRegion !== '' ? $this->branchRegion : null,
                 'role' => $this->role,
                 'status' => $this->status,
+                'two_factor_enabled' => $this->twoFactorEnabled,
             ];
 
             if ($this->password !== '') {
                 $payload['password'] = $this->password;
             }
 
+            $before = AdminAudit::snapshot($user);
             $user->update($payload);
+            $user->refresh();
+            $after = AdminAudit::snapshot($user).($this->password !== '' ? ' | Password: changed' : '');
         } else {
             $user = Admin::create([
                 'name' => $this->name,
                 'email' => $this->email,
+                'mobile' => $this->mobile,
+                'department' => $this->department !== '' ? $this->department : null,
+                'branch_region' => $this->branchRegion !== '' ? $this->branchRegion : null,
                 'password' => $this->password,
                 'role' => $this->role,
                 'status' => $this->status,
+                'two_factor_enabled' => $this->twoFactorEnabled,
             ]);
         }
 
         if ($this->role === 'super_admin') {
             $user->modulePermissions()->delete();
         } else {
-            $user->syncModules($this->modules);
+            $user->syncPermissions(AdminAccess::preset($this->role));
         }
 
+        AdminAudit::record(
+            $isUpdate ? 'Admin user updated' : 'Admin user created',
+            'Success',
+            'Admin #'.$user->id.' '.$user->email,
+            $isUpdate ? ($before ?? null) : null,
+            $isUpdate ? ($after ?? AdminAudit::snapshot($user)) : AdminAudit::snapshot($user),
+        );
+
+        $this->search = '';
+        $this->filterStatus = '';
+        $this->resetPage();
         $this->showModal = false;
         $this->resetForm();
         session()->flash('success', $isUpdate ? 'User updated.' : 'User created.');
@@ -160,6 +195,10 @@ class Users extends Component
     {
         $actor = Auth::guard('admin')->user();
         $user = Admin::findOrFail($id);
+
+        if (! $actor->hasPermission('users', 'edit')) {
+            return;
+        }
 
         if ($user->isSuperAdmin() && ! $actor->isSuperAdmin()) {
             return;
@@ -173,15 +212,27 @@ class Users extends Component
             return;
         }
 
+        $before = ucfirst((string) $user->status);
         $user->update([
             'status' => $user->status === 'active' ? 'inactive' : 'active',
         ]);
+        AdminAudit::record(
+            'Admin user status changed',
+            'Success',
+            'Admin #'.$user->id.' '.$user->email,
+            $before,
+            ucfirst((string) $user->status),
+        );
     }
 
     public function deleteUser(int $id): void
     {
         $actor = Auth::guard('admin')->user();
         $user = Admin::findOrFail($id);
+
+        if (! $actor->hasPermission('users', 'edit')) {
+            return;
+        }
 
         if ($user->isSuperAdmin() && ! $actor->isSuperAdmin()) {
             return;
@@ -195,7 +246,10 @@ class Users extends Component
             return;
         }
 
+        $label = 'Admin #'.$user->id.' '.$user->email;
+        $before = AdminAudit::snapshot($user);
         $user->delete();
+        AdminAudit::record('Admin user deleted', 'Success', $label, $before, 'Deleted');
     }
 
     private function isLastSuperAdmin(int $exceptId): bool
@@ -209,10 +263,10 @@ class Users extends Component
 
     private function resetForm(): void
     {
-        $this->reset(['editingId', 'name', 'email', 'password', 'formMessage']);
-        $this->role = 'staff';
+        $this->reset(['editingId', 'name', 'email', 'mobile', 'department', 'branchRegion', 'password', 'formMessage']);
+        $this->role = 'operations_admin';
         $this->status = 'active';
-        $this->modules = ['dashboard'];
+        $this->twoFactorEnabled = false;
         $this->resetValidation();
     }
 
@@ -223,17 +277,22 @@ class Users extends Component
             ->when($this->search !== '', function ($q) {
                 $q->where(function ($inner) {
                     $inner->where('name', 'like', '%'.$this->search.'%')
-                        ->orWhere('email', 'like', '%'.$this->search.'%');
+                        ->orWhere('email', 'like', '%'.$this->search.'%')
+                        ->orWhere('mobile', 'like', '%'.$this->search.'%');
                 });
             })
             ->when($this->filterStatus !== '', fn ($q) => $q->where('status', $this->filterStatus))
-            ->latest()
+            ->orderByDesc('id')
             ->paginate(12);
 
         return view('livewire.admin.users', [
             'users' => $users,
             'moduleCatalog' => AdminModules::all(),
+            'permissionCatalog' => AdminAccess::modules(),
+            'roleOptions' => AdminAccess::roles(),
             'canAssignSuper' => Auth::guard('admin')->user()->isSuperAdmin(),
+            'canEditUsers' => Auth::guard('admin')->user()->hasPermission('users', 'edit'),
+            'canCreateUsers' => Auth::guard('admin')->user()->hasPermission('users', 'create'),
         ])->layout('layouts.admin', ['title' => 'Users']);
     }
 }

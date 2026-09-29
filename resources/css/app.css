@@ -99,6 +99,17 @@ main .text-violet-700, .fi-card .text-violet-700 { color: #6d28d9; }
     max-width: 640px;
 }
 
+.fi-modal-admin {
+    width: min(980px, calc(100vw - 32px));
+    max-width: 980px;
+    max-height: min(92vh, 920px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    border-radius: 16px;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, .22);
+}
+
 .fi-input {
     width: 100%;
     border: 1px solid #94a3b8;

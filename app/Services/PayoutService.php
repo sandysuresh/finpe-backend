@@ -126,6 +126,14 @@ class PayoutService
             return $txn->fresh();
         });
 
+        if ($transaction->status === 'success') {
+            try {
+                app(CommissionService::class)->recordForSuccessfulPayout($transaction);
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
+
         $this->webhooks->send($vendor, 'payout.'.$transaction->status, [
             'reference' => $transaction->reference,
             'bank_reference' => $transaction->bank_reference,

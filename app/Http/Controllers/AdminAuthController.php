@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Admin;
+use App\Support\AdminAudit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\URL;
@@ -35,6 +37,7 @@ class AdminAuthController extends Controller
 
             $admin = Auth::guard('admin')->user();
             $admin->loadMissing('modulePermissions');
+            AdminAudit::record('Admin login', 'Success', 'Admin #'.$admin->id.' '.$admin->email, null, null, $admin);
 
             $intended = $request->session()->pull('url.intended');
             if (is_string($intended) && $this->isSafeInternalUrl($intended)) {
@@ -44,6 +47,18 @@ class AdminAuthController extends Controller
             return redirect()->to(\App\Support\AdminModules::firstUrl($admin));
         }
 
+        $known = Admin::query()->where('email', $credentials['email'])->first();
+        AdminAudit::record(
+            'Admin login',
+            'Failed',
+            $credentials['email'],
+            null,
+            'Invalid credentials or inactive account',
+            $known,
+            'admin',
+            $credentials['email'],
+        );
+
         return back()
             ->withErrors(['email' => 'Invalid admin credentials or inactive account.'])
             ->onlyInput('email');
@@ -51,6 +66,11 @@ class AdminAuthController extends Controller
 
     public function logout(Request $request)
     {
+        $admin = Auth::guard('admin')->user();
+        if ($admin) {
+            AdminAudit::record('Admin logout', 'Success', 'Admin #'.$admin->id.' '.$admin->email, null, null, $admin);
+        }
+
         Auth::guard('admin')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

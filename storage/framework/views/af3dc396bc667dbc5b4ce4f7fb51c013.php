@@ -9,10 +9,10 @@
     <?php echo \Livewire\Mechanisms\FrontendAssets\FrontendAssets::styles(); ?>
 
 </head>
-<body class="min-h-screen font-sans antialiased" style="--fi-accent:#1d4ed8">
+<body class="min-h-screen overflow-x-hidden font-sans antialiased" style="--fi-accent:#1d4ed8">
     <header class="sticky top-0 z-50 border-b border-slate-800 bg-slate-900">
-        <div class="mx-auto flex h-[70px] max-w-[1600px] items-center px-5">
-            <a href="<?php echo e(\App\Support\AdminModules::firstUrl(auth('admin')->user())); ?>" class="mr-8 flex min-w-fit items-center gap-2.5">
+        <div class="mx-auto flex h-[70px] min-w-0 max-w-[1600px] items-center px-5">
+            <a href="<?php echo e(\App\Support\AdminModules::firstUrl(auth('admin')->user())); ?>" class="mr-4 flex shrink-0 items-center gap-2">
                 <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm">
                     <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M12 3 20 7.5v9L12 21l-8-4.5v-9L12 3Z"/>
@@ -25,26 +25,28 @@
                 </div>
             </a>
 
-            <nav class="hidden flex-1 items-center gap-1 xl:flex">
+            <nav class="hidden min-w-0 flex-1 items-center gap-0.5 xl:flex" x-data="{ open: null }" @keydown.escape.window="open = null">
                 <?php
                     $menus = \App\Support\AdminModules::navItems(auth('admin')->user());
                 ?>
                 <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $menus; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                     <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(! empty($item['children'])): ?>
-                        <div class="group relative">
-                            <button type="button" class="flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-semibold <?php echo e($item['active'] ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-300 hover:bg-slate-800 hover:text-white'); ?>">
+                        <div class="relative" @click.outside="if (open === <?php echo e($loop->index); ?>) open = null">
+                            <button type="button" @click="open = open === <?php echo e($loop->index); ?> ? null : <?php echo e($loop->index); ?>" class="flex items-center gap-1 whitespace-nowrap rounded-lg px-2 py-1.5 text-[12px] font-semibold <?php echo e($item['active'] ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-300 hover:bg-slate-800 hover:text-white'); ?>" :aria-expanded="open === <?php echo e($loop->index); ?>">
                                 <?php echo e($item['label']); ?>
 
                                 <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.938a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06Z" clip-rule="evenodd"/></svg>
                             </button>
-                            <div class="invisible absolute left-0 top-11 z-50 w-48 rounded-xl border border-slate-200 bg-white p-1.5 opacity-0 shadow-xl transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
-                                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $item['children']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $child): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                    <a href="<?php echo e($child['url']); ?>" class="block rounded-lg px-3 py-2 text-sm font-semibold <?php echo e($child['active'] ? 'bg-blue-50 text-blue-700' : 'text-slate-700 hover:bg-slate-50'); ?>"><?php echo e($child['label']); ?></a>
-                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                            <div x-show="open === <?php echo e($loop->index); ?>" x-cloak class="absolute <?php echo e($loop->remaining < 3 ? 'right-0' : 'left-0'); ?> top-full z-50 pt-2">
+                                <div class="w-64 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl">
+                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $item['children']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $child): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                        <a href="<?php echo e($child['url']); ?>" class="block rounded-lg px-3 py-2 text-sm font-semibold <?php echo e($child['active'] ? 'bg-blue-50 text-blue-700' : 'text-slate-700 hover:bg-slate-50'); ?>"><?php echo e($child['label']); ?></a>
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                                </div>
                             </div>
                         </div>
                     <?php else: ?>
-                        <a href="<?php echo e($item['url']); ?>" class="flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-semibold <?php echo e($item['active'] ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-300 hover:bg-slate-800 hover:text-white'); ?>">
+                        <a href="<?php echo e($item['url']); ?>" class="flex items-center gap-1 whitespace-nowrap rounded-lg px-2 py-1.5 text-[12px] font-semibold <?php echo e($item['active'] ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-300 hover:bg-slate-800 hover:text-white'); ?>">
                             <?php echo e($item['label']); ?>
 
                         </a>
@@ -82,8 +84,8 @@ if (isset($__slots)) unset($__slots);
 
                 <div class="hidden h-8 w-px bg-slate-700 sm:block"></div>
 
-                <div class="group relative">
-                    <button class="flex items-center gap-2.5 rounded-lg px-1.5 py-1 hover:bg-slate-800">
+                <div class="relative" x-data="{ open: false }" @keydown.escape.window="open = false" @click.outside="open = false">
+                    <button type="button" @click="open = !open" class="flex items-center gap-2.5 rounded-lg px-1.5 py-1 hover:bg-slate-800" :aria-expanded="open">
                         <span class="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">
                             <?php echo e(strtoupper(substr(auth('admin')->user()->name, 0, 1))); ?>
 
@@ -92,15 +94,17 @@ if (isset($__slots)) unset($__slots);
                             <span class="block text-[13px] font-semibold text-white"><?php echo e(auth('admin')->user()->name); ?></span>
                             <span class="block text-[11px] text-slate-300"><?php echo e(auth('admin')->user()->roleLabel()); ?></span>
                         </span>
-                        <svg class="hidden h-4 w-4 text-slate-400 lg:block" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.938a.75.75 0 1 1 1.08 1.04l-4.25-4.5a.75.75 0 0 1-1.08-1.06l4.25-4.5a.75.75 0 0 1 1.06-.02Z" clip-rule="evenodd"/></svg>
+                        <svg class="hidden h-4 w-4 text-slate-400 lg:block" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.938a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06Z" clip-rule="evenodd"/></svg>
                     </button>
-                    <div class="invisible absolute right-0 top-12 w-48 translate-y-1 rounded-xl border border-slate-200 bg-white p-1.5 opacity-0 shadow-xl transition group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
-                        <div class="px-3 py-2 text-xs text-slate-500">Account</div>
-                        <a href="#" class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">Profile</a>
-                        <form method="POST" action="<?php echo e(route('admin.logout')); ?>">
-                            <?php echo csrf_field(); ?>
-                            <button class="w-full rounded-lg px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50">Logout</button>
-                        </form>
+                    <div x-show="open" x-cloak class="absolute right-0 top-full z-50 w-48 pt-2">
+                        <div class="rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl">
+                            <div class="px-3 py-2 text-xs text-slate-500">Account</div>
+                            <a href="#" class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">Profile</a>
+                            <form method="POST" action="<?php echo e(route('admin.logout')); ?>">
+                                <?php echo csrf_field(); ?>
+                                <button class="w-full rounded-lg px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50">Logout</button>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -121,7 +125,7 @@ if (isset($__slots)) unset($__slots);
         </div>
     </header>
 
-    <main class="mx-auto max-w-[1600px] px-5 py-7">
+    <main class="mx-auto min-w-0 max-w-[1600px] overflow-x-hidden px-5 py-5">
         <?php echo e($slot); ?>
 
     </main>

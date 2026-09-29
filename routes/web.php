@@ -16,7 +16,31 @@ Route::post('/admin/logout', [AdminAuthController::class, 'logout'])
 
 Route::middleware('auth:admin')->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', \App\Livewire\Admin\Dashboard::class)->middleware('admin.module:dashboard')->name('dashboard');
+    Route::middleware('admin.module:dashboard')->group(function () {
+        Route::get('/app-users', \App\Livewire\Admin\AppUsers::class)->name('app-users.list');
+        Route::get('/app-users/details', \App\Livewire\Admin\AppUsers::class)->name('app-users.details');
+        Route::get('/app-users/kyc', \App\Livewire\Admin\AppUsers::class)->name('app-users.kyc');
+        Route::get('/app-users/history', \App\Livewire\Admin\AppUsers::class)->name('app-users.history');
+        Route::get('/app-users/activity', \App\Livewire\Admin\AppUsers::class)->name('app-users.activity');
+        Route::get('/app-users/block', \App\Livewire\Admin\AppUsers::class)->name('app-users.block');
+    });
+    Route::get('/merchants', \App\Livewire\Admin\Merchants::class)->middleware('admin.module:vendors')->name('merchants');
+    Route::middleware('admin.module:commission')->group(function () {
+        Route::get('/commission', \App\Livewire\Admin\CommissionRules::class)->name('commission.rules');
+        Route::get('/commission/history', \App\Livewire\Admin\CommissionHistory::class)->name('commission.history');
+        Route::get('/commission/partners', \App\Livewire\Admin\AgentCommission::class)->name('commission.partners');
+        Route::get('/commission/merchants', \App\Livewire\Admin\MerchantCommission::class)->name('commission.merchants');
+        Route::get('/commission/settlement', \App\Livewire\Admin\CommissionSettlements::class)->name('commission.settlement');
+    });
+    Route::get('/settlements', \App\Livewire\Admin\Placeholder::class)->middleware('admin.module:wallet-requests')->name('settlements');
     Route::get('/vendors', VendorIndex::class)->middleware('admin.module:vendors')->name('vendors');
+    Route::middleware('admin.module:vendors')->group(function () {
+        Route::get('/partners/kyc', \App\Livewire\Admin\PartnerSection::class)->name('partners.kyc');
+        Route::get('/partners/wallet', \App\Livewire\Admin\PartnerSection::class)->name('partners.wallet');
+        Route::get('/partners/transactions', \App\Livewire\Admin\PartnerSection::class)->name('partners.transactions');
+        Route::get('/partners/commission', \App\Livewire\Admin\PartnerSection::class)->name('partners.commission');
+        Route::get('/partners/settlement', \App\Livewire\Admin\PartnerSection::class)->name('partners.settlement');
+    });
     Route::get('/vendors/create/{vendor?}', \App\Livewire\Admin\Vendors\Create::class)
         ->middleware('admin.module:vendors')
         ->where('vendor', '[A-Za-z0-9\-_]+')
@@ -26,7 +50,16 @@ Route::middleware('auth:admin')->prefix('admin')->name('admin.')->group(function
         ->where('vendor', '[A-Za-z0-9\-_]+')
         ->name('vendors.show');
     Route::get('/wallet-requests', \App\Livewire\Admin\WalletRequests::class)->middleware('admin.module:wallet-requests')->name('wallet-requests');
-    Route::get('/transactions', \App\Livewire\Admin\Transactions::class)->middleware('admin.module:transactions')->name('transactions');
+    Route::middleware('admin.module:transactions')->group(function () {
+        Route::get('/transactions', \App\Livewire\Admin\Transactions::class)->name('transactions');
+        Route::get('/transactions/history', \App\Livewire\Admin\Transactions::class)->name('txn-history');
+        Route::get('/transactions/successful', \App\Livewire\Admin\Transactions::class)->name('txn-success');
+        Route::get('/transactions/pending', \App\Livewire\Admin\Transactions::class)->name('txn-pending');
+        Route::get('/transactions/failed', \App\Livewire\Admin\Transactions::class)->name('txn-failed');
+        Route::get('/transactions/reversed', \App\Livewire\Admin\Transactions::class)->name('txn-reversed');
+        Route::get('/transactions/search', \App\Livewire\Admin\Transactions::class)->name('txn-search');
+        Route::get('/transactions/details', \App\Livewire\Admin\Transactions::class)->name('txn-details');
+    });
     Route::get('/reports', \App\Livewire\Admin\Reports::class)->middleware('admin.module:reports')->name('reports');
     Route::get('/daily-balance', \App\Livewire\Admin\DailyBalance::class)->middleware('admin.module:reports')->name('daily-balance');
     Route::get('/reports/{report}', \App\Livewire\Admin\ReportShow::class)
@@ -34,7 +67,13 @@ Route::middleware('auth:admin')->prefix('admin')->name('admin.')->group(function
         ->where('report', '[A-Za-z0-9\-_]+')
         ->name('reports.show');
     Route::get('/users', \App\Livewire\Admin\Users::class)->middleware('admin.module:users')->name('users');
+    Route::get('/roles', \App\Livewire\Admin\Roles::class)->middleware('admin.module:users')->name('roles');
+    Route::get('/permissions', \App\Livewire\Admin\RolePermissions::class)->middleware('admin.module:users')->name('permissions');
+    Route::get('/approval-workflow', \App\Livewire\Admin\Placeholder::class)->middleware('admin.module:users')->name('approval-workflow');
+    Route::get('/system-settings', \App\Livewire\Admin\Placeholder::class)->middleware('admin.module:users')->name('system-settings');
+    Route::get('/audit-logs', \App\Livewire\Admin\AuditLogs::class)->middleware('admin.module:users')->name('audit-logs');
     Route::get('/banks', \App\Livewire\Admin\Banks::class)->middleware('admin.module:banks')->name('banks');
+    Route::get('/api-logs', \App\Livewire\Admin\ApiLogs::class)->middleware('admin.module:banks')->name('api-logs');
 });
 
 Route::get('/vendor/login', [VendorAuthController::class, 'showLogin'])->name('vendor.login');

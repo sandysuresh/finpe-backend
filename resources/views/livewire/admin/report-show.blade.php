@@ -7,7 +7,9 @@
         </div>
         <div class="flex items-center gap-2">
             <span class="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">Sample data</span>
+            @if(auth('admin')->user()->hasPermission('reports', 'export'))
             <button type="button" wire:click="exportExcel" class="fi-btn fi-btn-primary">Export Excel</button>
+            @endif
         </div>
     </div>
 

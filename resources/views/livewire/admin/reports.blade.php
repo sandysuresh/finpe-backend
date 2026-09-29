@@ -42,7 +42,9 @@
             </div>
             <div style="display:flex; gap:8px; margin-left:auto;">
                 <button type="button" wire:click="resetFilters" class="fi-btn fi-btn-secondary">Reset</button>
+                @if(auth('admin')->user()->hasPermission('reports', 'export'))
                 <button type="button" wire:click="exportExcel" class="fi-btn fi-btn-primary">Export Excel</button>
+                @endif
             </div>
         </div>
     </div>

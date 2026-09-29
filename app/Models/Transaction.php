@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Transaction extends Model
 {
@@ -28,5 +29,11 @@ class Transaction extends Model
     public function bank(): BelongsTo
     {
         return $this->belongsTo(Bank::class);
+    }
+
+    public function commissionEntry(): HasOne
+    {
+        return $this->hasOne(CommissionEntry::class, 'source_id')
+            ->where('commission_entries.source_type', 'transactions');
     }
 }

@@ -48,7 +48,9 @@
                 <button type="button" wire:click="yesterday" class="fi-btn fi-btn-secondary">Yesterday</button>
                 <button type="button" wire:click="thisMonth" class="fi-btn fi-btn-secondary">This month</button>
                 <button type="button" wire:click="previousMonth" class="fi-btn fi-btn-secondary">Previous month</button>
+                @if(auth('admin')->user()->hasPermission('reports', 'export'))
                 <button type="button" wire:click="exportExcel" class="fi-btn fi-btn-primary">Export Excel</button>
+                @endif
             </div>
         </div>
     </div>

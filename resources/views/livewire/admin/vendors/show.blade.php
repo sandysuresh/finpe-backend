@@ -111,12 +111,16 @@
                     </div>
 
                     <div class="mt-4 flex flex-wrap gap-3">
+                        @if(auth('admin')->user()->hasPermission('vendors', 'approve'))
                         <button type="button" wire:click="approveKyc" class="fi-btn fi-btn-success">
                             Approve KYC
                         </button>
+                        @endif
+                        @if(auth('admin')->user()->hasPermission('vendors', 'reject'))
                         <button type="button" wire:click="rejectKyc" class="fi-btn fi-btn-danger">
                             Reject KYC
                         </button>
+                        @endif
                     </div>
                 @endif
 
@@ -368,12 +372,13 @@
                 </div>
             </div>
             <div class="fi-card p-6">
-                <h3 class="mb-4 text-sm font-semibold text-slate-900">Commercial Settings</h3>
+                <h3 class="mb-4 text-sm font-semibold text-slate-900">Configured Commission Rule</h3>
+                <p class="mb-3 text-xs text-slate-500">Legacy partner setting. This is not applied commission.</p>
                 <div class="space-y-3">
                     @foreach([
                         ['Transaction Limit', '₹'.number_format((float) $vendor->transaction_limit, 2)],
-                        ['Commission Type', ucfirst($vendor->commission_type)],
-                        ['Commission Value', $vendor->commission_value],
+                        ['Configured type', ucfirst($vendor->commission_type)],
+                        ['Configured value', $vendor->commission_value],
                         ['API Enabled', $vendor->api_enabled ? 'Yes' : 'No'],
                     ] as [$l, $v])
                         <div class="flex items-center justify-between">
@@ -383,6 +388,41 @@
                     @endforeach
                 </div>
             </div>
+        <div class="fi-card p-6 lg:col-span-2">
+            <h3 class="text-sm font-semibold text-slate-900">Applied Commission</h3>
+            <p class="mt-1 text-xs text-slate-500">Recorded commission entries for this partner.</p>
+            <div class="mt-4 grid grid-cols-2 gap-4">
+                <div>
+                    <p class="text-xs text-slate-400">Commission entries</p>
+                    <p class="text-xl font-bold text-slate-900">{{ $appliedCommission->entry_count ?? 0 }}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-400">Total commission</p>
+                    <p class="text-xl font-bold text-slate-900">₹{{ number_format((float) ($appliedCommission->total_commission ?? 0), 2) }}</p>
+                </div>
+            </div>
+            <div class="mt-5 overflow-x-auto">
+                <table class="min-w-full text-sm">
+                    <thead>
+                        <tr>@foreach(['Reference','Amount','Rate','Commission','Status','Date'] as $col)<th class="px-3 py-2 text-left text-[11px] font-semibold uppercase text-slate-400">{{ $col }}</th>@endforeach</tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @forelse($recentCommission as $entry)
+                            <tr>
+                                <td class="px-3 py-2">{{ $entry->source_reference ?: '—' }}</td>
+                                <td class="px-3 py-2">₹{{ number_format((float) $entry->base_amount, 2) }}</td>
+                                <td class="px-3 py-2">{{ $entry->calc_type === 'percentage' ? number_format((float) $entry->rate_value, 2).'%' : '₹'.number_format((float) $entry->rate_value, 2) }}</td>
+                                <td class="px-3 py-2 font-semibold">₹{{ number_format((float) $entry->commission_amount, 2) }}</td>
+                                <td class="px-3 py-2">{{ ucfirst((string) $entry->status) }}</td>
+                                <td class="px-3 py-2 text-xs">{{ $entry->created_at?->format('d M Y, h:i A') }}</td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="6" class="px-3 py-6 text-sm text-slate-500">No applied commission.</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
         </div>
     @endif
 
@@ -480,6 +520,7 @@
                             <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Reference</th>
                             <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Beneficiary</th>
                             <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Amount</th>
+                            <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Commission</th>
                             <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Status</th>
                             <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Date</th>
                         </tr>
@@ -490,6 +531,7 @@
                                 <td class="px-5 py-3">{{ $txn->reference }}</td>
                                 <td class="px-5 py-3">{{ $txn->beneficiary_name ?? '—' }}</td>
                                 <td class="px-5 py-3">₹{{ number_format((float) $txn->amount, 2) }}</td>
+                                <td class="px-5 py-3">{{ $txn->commissionEntry ? '₹'.number_format((float) $txn->commissionEntry->commission_amount, 2) : '—' }}</td>
                                 <td class="px-5 py-3">{{ ucfirst($txn->status) }}</td>
                                 <td class="px-5 py-3">{{ $txn->created_at->format('d M Y H:i') }}</td>
                             </tr>

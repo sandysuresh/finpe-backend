@@ -10,6 +10,7 @@ class AdminModulePermission extends Model
     protected $fillable = [
         'admin_id',
         'module',
+        'action',
     ];
 
     public function admin(): BelongsTo

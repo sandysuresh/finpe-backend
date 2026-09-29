@@ -3,8 +3,10 @@
 namespace App\Livewire\Admin\Vendors;
 
 use App\Models\Bank;
+use App\Models\CommissionEntry;
 use App\Models\Vendor;
 use App\Models\VendorKycReview;
+use App\Support\AdminAudit;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -42,7 +44,7 @@ class Show extends Component
 
     public function approveKyc(): void
     {
-        if (! $this->canReviewKyc()) {
+        if (! \App\Support\AdminAccess::allows('vendors', 'approve') || ! $this->canReviewKyc()) {
             return;
         }
 
@@ -51,6 +53,7 @@ class Show extends Component
         ]);
 
         $comment = $this->kycComment ?: 'KYC approved.';
+        $before = (string) $this->vendor->kyc_status;
 
         $this->vendor->update([
             'kyc_status' => 'verified',
@@ -68,18 +71,28 @@ class Show extends Component
 
         $this->kycComment = '';
         $this->vendor = $this->vendor->fresh();
+        AdminAudit::record(
+            'KYC approved',
+            'Approved',
+            'User #'.$this->vendor->id.' '.$this->vendor->business_name,
+            $before,
+            'verified | '.$comment,
+        );
         $this->reviewMessage = 'KYC approved. Vendor can now see KYC Approved in their panel.';
     }
 
     public function rejectKyc(): void
     {
-        if (! $this->canReviewKyc()) {
+        if (! \App\Support\AdminAccess::allows('vendors', 'reject') || ! $this->canReviewKyc()) {
             return;
         }
 
         $this->validate([
             'kycComment' => 'required|string|min:5|max:2000',
         ]);
+
+        $before = (string) $this->vendor->kyc_status;
+        $comment = $this->kycComment;
 
         $this->vendor->update([
             'kyc_status' => 'rejected',
@@ -97,6 +110,13 @@ class Show extends Component
 
         $this->kycComment = '';
         $this->vendor = $this->vendor->fresh();
+        AdminAudit::record(
+            'KYC rejected',
+            'Rejected',
+            'User #'.$this->vendor->id.' '.$this->vendor->business_name,
+            $before,
+            'rejected | '.$comment,
+        );
         $this->reviewMessage = 'KYC rejected. Approve/Reject will return after the vendor resubmits.';
     }
 
@@ -162,7 +182,19 @@ class Show extends Component
 
         $topups = $vendor->topupRequests()->latest()->paginate(10, ['*'], 'topPage');
 
-        $transactions = $vendor->transactions()->latest()->paginate(10, ['*'], 'txnPage');
+        $transactions = $vendor->transactions()->with('commissionEntry')->latest()->paginate(10, ['*'], 'txnPage');
+
+        $appliedCommission = CommissionEntry::query()
+            ->where('vendor_id', $vendor->id)
+            ->selectRaw('count(*) as entry_count, coalesce(sum(commission_amount), 0) as total_commission')
+            ->first();
+
+        $recentCommission = CommissionEntry::query()
+            ->with('sourceTransaction:id,created_at')
+            ->where('vendor_id', $vendor->id)
+            ->latest('id')
+            ->limit(5)
+            ->get();
 
         $txnSummary = [
             'total' => $vendor->transactions()->count(),
@@ -183,6 +215,8 @@ class Show extends Component
             'ledger',
             'topups',
             'transactions',
+            'appliedCommission',
+            'recentCommission',
             'txnSummary',
             'settlements',
             'beneficiaries',

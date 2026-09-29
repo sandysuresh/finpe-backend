@@ -36,6 +36,10 @@ class ReportShow extends Component
 
     public function exportExcel(): StreamedResponse
     {
+        if (! \App\Support\AdminAccess::allows('reports', 'export')) {
+            abort(403);
+        }
+
         $report = SampleWalletReport::vendor($this->code, $this->dateFrom, $this->dateTo);
         $summaryRows = [
             ['Vendor code', 'Vendor', 'Opening', 'Credit', 'Debit', 'Closing'],

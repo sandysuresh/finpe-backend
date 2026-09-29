@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Vendor;
+use App\Support\AdminAudit;
 use App\Support\LegacyPassword;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -34,6 +35,18 @@ class VendorAuthController extends Controller
         $stored = $vendor?->getRawOriginal('password');
 
         if (! $vendor || ! LegacyPassword::check($credentials['password'], $stored)) {
+            $known = Vendor::query()->where('email', $credentials['email'])->first();
+            AdminAudit::record(
+                'User login',
+                'Failed',
+                $credentials['email'],
+                null,
+                'Invalid credentials or inactive account',
+                $known,
+                'vendor',
+                $credentials['email'],
+            );
+
             return back()
                 ->withErrors(['email' => 'Invalid credentials or inactive account.'])
                 ->onlyInput('email');
@@ -47,12 +60,18 @@ class VendorAuthController extends Controller
 
         Auth::guard('vendor')->login($vendor, $request->boolean('remember'));
         $request->session()->regenerate();
+        AdminAudit::record('User login', 'Success', 'User #'.$vendor->id.' '.$vendor->email, null, null, $vendor);
 
         return redirect()->intended(route('vendor.dashboard'));
     }
 
     public function logout(Request $request)
     {
+        $vendor = Auth::guard('vendor')->user();
+        if ($vendor) {
+            AdminAudit::record('User logout', 'Success', 'User #'.$vendor->id.' '.$vendor->email, null, null, $vendor);
+        }
+
         Auth::guard('vendor')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
