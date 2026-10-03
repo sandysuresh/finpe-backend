@@ -90,7 +90,7 @@
                 <table class="min-w-full">
                     <thead class="bg-slate-50">
                         <tr>
-                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = ['Reference','Partner','Beneficiary','Amount','Commission','Rate','Commission Status','Commission Date','Service','Status','Date']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $col): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = ['Reference','Partner','Payout Provider','Beneficiary','Amount','Commission','Rate','Commission Status','Commission Date','Service','Status','Date']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $col): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                 <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400"><?php echo e($col); ?></th>
                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                         </tr>
@@ -120,6 +120,7 @@
                                         <p class="text-xs text-slate-400"><?php echo e($tx->vendor_code ?? ''); ?></p>
                                     <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                 </td>
+                                <td class="whitespace-nowrap px-5 py-4 text-sm font-semibold text-slate-900"><?php echo e(($tx->type ?? null) === 'payout' ? (\App\Support\CommissionProviders::name($tx->payout_provider ?? null) ?: '—') : '—'); ?></td>
                                 <td class="whitespace-nowrap px-5 py-4 text-xs text-slate-600"><?php echo e($tx->beneficiary_name ?? '—'); ?></td>
                                 <td class="whitespace-nowrap px-5 py-4 text-sm font-bold text-slate-900">₹<?php echo e(number_format((float)$tx->amount, 2)); ?></td>
                                 <td class="whitespace-nowrap px-5 py-4 text-sm font-semibold text-slate-900"><?php echo e($commission ? '₹'.number_format((float) $commission->commission_amount, 2) : '—'); ?></td>

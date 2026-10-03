@@ -10,7 +10,7 @@ class Merchant extends Model
 {
     protected $fillable = [
         'vendor_id', 'code', 'client_reference', 'registration_hash', 'provider_merchant_id', 'provider_ref',
-        'pipe', 'first_name', 'last_name', 'phone_masked', 'aadhaar_masked',
+        'pipe', 'first_name', 'last_name', 'phone', 'phone_masked', 'aadhaar_masked',
         'provider_status_code', 'onboarding_status', 'provider_status_description',
         'two_fa_at', 'sanitized_response',
     ];

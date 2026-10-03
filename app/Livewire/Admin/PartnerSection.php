@@ -3,9 +3,11 @@
 namespace App\Livewire\Admin;
 
 use App\Models\CommissionEntry;
+use App\Models\CommissionRule;
 use App\Models\Settlement;
 use App\Models\Transaction;
 use App\Models\Vendor;
+use App\Services\CommissionService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
@@ -47,19 +49,28 @@ class PartnerSection extends Component
 
         $rows = $this->rows();
         $applied = collect();
+        $configured = collect();
         if ($this->section === 'commission') {
             $applied = CommissionEntry::query()
                 ->select('vendor_id', DB::raw('count(*) as entry_count'), DB::raw('sum(commission_amount) as total_commission'))
+                ->where('status', CommissionEntry::STATUS_RECORDED)
                 ->whereIn('vendor_id', $rows->pluck('id'))
                 ->groupBy('vendor_id')
                 ->get()
                 ->keyBy('vendor_id');
+
+            $rules = CommissionRule::query()->where('status', 'active')->get();
+            $selector = app(CommissionService::class);
+            $configured = $rows->getCollection()->mapWithKeys(fn (Vendor $vendor) => [
+                $vendor->id => $selector->configuredPayoutRule($vendor->id, now(), $rules),
+            ]);
         }
 
         return view('livewire.admin.partner-section', [
             'meta' => $meta,
             'rows' => $rows,
             'applied' => $applied,
+            'configured' => $configured,
         ])->layout('layouts.admin', ['title' => $meta['title']]);
     }
 
@@ -107,7 +118,7 @@ class PartnerSection extends Component
             'kyc' => ['title' => 'Partner KYC', 'text' => 'KYC status for each partner.'],
             'wallet' => ['title' => 'Partner Wallet', 'text' => 'Current balance and hold for each partner.'],
             'transactions' => ['title' => 'Partner Transactions', 'text' => 'Payout transactions raised by partners.'],
-            'commission' => ['title' => 'Partner Commission', 'text' => 'Configured rate is the legacy partner setting. Applied commission is the recorded commission entries.'],
+            'commission' => ['title' => 'Partner Commission', 'text' => 'Configured rule is the active commission rule. Applied commission is the recorded commission entries.'],
             'settlement' => ['title' => 'Partner Settlement', 'text' => 'Settlement records for partners.'],
         ];
     }

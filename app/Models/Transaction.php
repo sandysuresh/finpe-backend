@@ -9,15 +9,17 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 class Transaction extends Model
 {
     protected $fillable = [
-        'vendor_id', 'bank_id', 'reference', 'bank_reference', 'amount', 'type',
+        'vendor_id', 'bank_id', 'reference', 'merchant_ref', 'bank_reference', 'rrn', 'amount', 'payout_charge', 'payout_provider', 'type',
         'channel', 'status', 'beneficiary_name', 'account_number', 'ifsc_code',
-        'bank_name', 'remarks', 'service', 'failure_reason',
+        'bank_name', 'beneficiary_bank_code', 'beneficiary_mobile', 'payment_purpose',
+        'beneficiary_location', 'remarks', 'service', 'failure_reason',
     ];
 
     protected function casts(): array
     {
         return [
             'amount' => 'decimal:2',
+            'payout_charge' => 'decimal:2',
         ];
     }
 

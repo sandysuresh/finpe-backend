@@ -151,9 +151,21 @@
                     </thead>
                     <tbody class="divide-y divide-slate-50">
                         @foreach($ledger as $entry)
+                            @php
+                                $payout = $entry->type === 'debit' ? ($payoutByReference[$entry->reference] ?? null) : null;
+                                $providerName = $payout ? \App\Support\CommissionProviders::name($payout->payout_provider) : null;
+                            @endphp
                             <tr class="transition-colors hover:bg-slate-50">
                                 <td class="whitespace-nowrap px-5 py-4 text-xs text-slate-500">{{ $entry->created_at->format('d M Y, h:i A') }}</td>
-                                <td class="max-w-[200px] truncate px-5 py-4 text-xs text-slate-700">{{ $entry->description ?? '—' }}</td>
+                                <td class="px-5 py-4 text-xs text-slate-700">
+                                    @if($payout)
+                                        <p class="font-semibold text-slate-900">Debit · ₹{{ number_format((float) $payout->amount, 2) }}</p>
+                                        <p class="mt-1 font-semibold text-indigo-700">Payout Provider: {{ $providerName ?: '—' }}</p>
+                                        <p class="mt-1 text-slate-500">FinPe {{ $entry->reference }} · {{ ucfirst((string) $payout->status) }}</p>
+                                    @else
+                                        <span class="block max-w-[200px] truncate">{{ $entry->description ?? '—' }}</span>
+                                    @endif
+                                </td>
                                 <td class="whitespace-nowrap px-5 py-4 font-mono text-xs text-slate-500">{{ $entry->reference ?? '—' }}</td>
                                 <td class="whitespace-nowrap px-5 py-4">
                                     <span class="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold

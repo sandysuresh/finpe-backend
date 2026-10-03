@@ -45,6 +45,20 @@ class AepsPayloadSanitizer
         return str_repeat('X', max(0, strlen($digits) - 4)).substr($digits, -4);
     }
 
+    public static function displayAadhaar(?string $stored): string
+    {
+        if ($stored === null || trim($stored) === '' || $stored === '[redacted]') {
+            return '—';
+        }
+
+        $digits = preg_replace('/\D+/', '', $stored) ?? '';
+        if (strlen($digits) < 4) {
+            return 'XXXX-XXXX-XXXX';
+        }
+
+        return 'XXXX-XXXX-'.substr($digits, -4);
+    }
+
     public static function maskPhone(?string $value): ?string
     {
         if ($value === null || $value === '') {

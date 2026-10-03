@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\ApiCredential;
+use App\Models\VendorApiAccess;
 use App\Support\VendorApiSecurity;
 use Closure;
 use Illuminate\Http\Request;
@@ -65,10 +66,11 @@ class AuthenticateVendorApi
             ->first();
 
         $canonical = VendorApiSecurity::canonicalString($request, $timestamp, $nonce);
-        $probeSecret = $credential?->secret_key ?: hash('sha256', 'finpay-dummy-'.$apiKey);
+        $storedSecret = $credential?->hmacSecret() ?? '';
+        $probeSecret = $storedSecret !== '' ? $storedSecret : hash('sha256', 'finpay-dummy-'.$apiKey);
         $expected = VendorApiSecurity::signature($canonical, $probeSecret);
 
-        if (! $credential || ! $credential->secret_key || ! VendorApiSecurity::signaturesMatch($signature, $expected)) {
+        if (! $credential || $storedSecret === '' || ! VendorApiSecurity::signaturesMatch($signature, $expected)) {
             RateLimiter::hit($failKey, 300);
 
             return $this->deny($request, 401, 'Authentication failed.');
@@ -90,6 +92,10 @@ class AuthenticateVendorApi
 
         $vendor = $credential->vendor;
         if (! $vendor || $vendor->status !== 'active' || ! $vendor->api_enabled) {
+            return $this->deny($request, 403, 'API access denied.');
+        }
+
+        if ($request->is('api/v1/payouts', 'api/v1/payouts/*', 'api/v1/payout', 'api/v1/payout/*') && ! $vendor->hasEnabledApi(VendorApiAccess::PAYOUT)) {
             return $this->deny($request, 403, 'API access denied.');
         }
 

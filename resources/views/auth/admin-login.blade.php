@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Admin Login - FinPay Gateway</title>
+    <title>Admin Login - FinPe Gateway</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="min-h-screen bg-[#c5d0e0] font-sans">
@@ -15,7 +15,7 @@
                         <svg viewBox="0 0 24 24" class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 20 7.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m8 10 4-2 4 2-4 2-4-2Zm0 4 4 2 4-2"/></svg>
                     </div>
                     <div>
-                        <div class="text-2xl font-bold">FinPay</div>
+                        <div class="text-2xl font-bold">FinPe</div>
                         <div class="text-xs text-slate-300">Gateway</div>
                     </div>
                 </div>
@@ -25,20 +25,20 @@
                     <p class="mt-6 text-base leading-7 text-slate-300">Manage vendors, wallets, transactions, settlements and APIs from one professional control center.</p>
                 </div>
             </div>
-            <div class="text-sm text-slate-400">© {{ date('Y') }} FinPay Gateway</div>
+            <div class="text-sm text-slate-400">© {{ date('Y') }} FinPe Gateway</div>
         </div>
 
         <div class="flex items-center justify-center p-6">
             <div class="w-full max-w-md">
                 <div class="mb-8 lg:hidden">
-                    <div class="text-2xl font-bold text-slate-900">FinPay</div>
+                    <div class="text-2xl font-bold text-slate-900">FinPe</div>
                     <div class="text-xs text-slate-500">Gateway</div>
                 </div>
 
                 <div class="fi-card p-8">
                     <div class="mb-7">
                         <h2 class="text-2xl font-bold text-slate-900">Admin Login</h2>
-                        <p class="mt-1.5 text-sm text-slate-500">Sign in to access the FinPay control panel.</p>
+                        <p class="mt-1.5 text-sm text-slate-500">Sign in to access the FinPe control panel.</p>
                     </div>
 
                     @if ($errors->any())

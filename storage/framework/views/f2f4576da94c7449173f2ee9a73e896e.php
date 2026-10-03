@@ -76,7 +76,7 @@
                 <table class="min-w-full">
                     <thead>
                         <tr>
-                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = ['Reference','Partner','Amount','Status','Time']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $col): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = ['Reference','Partner','Payout Provider','Amount','Commission / Charge','Status','Time']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $col): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                 <th class="px-4 py-2 text-left text-[11px] font-semibold uppercase tracking-wider"><?php echo e($col); ?></th>
                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                         </tr>
@@ -93,7 +93,9 @@
                             <tr>
                                 <td class="truncate px-4 py-2 font-mono text-xs font-semibold text-slate-800"><?php echo e($txn->reference); ?></td>
                                 <td class="truncate px-4 py-2 text-sm text-slate-700"><?php echo e($txn->vendor->business_name ?? '—'); ?></td>
+                                <td class="whitespace-nowrap px-4 py-2 text-sm font-semibold text-slate-900"><?php echo e($txn->type === 'payout' ? (\App\Support\CommissionProviders::name($txn->payout_provider) ?: '—') : '—'); ?></td>
                                 <td class="whitespace-nowrap px-4 py-2 text-sm font-semibold text-slate-900">₹ <?php echo e(number_format((float) $txn->amount, 2)); ?></td>
+                                <td class="whitespace-nowrap px-4 py-2 text-sm font-semibold text-slate-900"><?php echo e($txn->type === 'payout' ? '₹ '.number_format((float) $txn->payout_charge, 2) : '—'); ?></td>
                                 <td class="whitespace-nowrap px-4 py-2">
                                     <span class="inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold <?php echo e($tone); ?>"><?php echo e(ucfirst((string) $txn->status)); ?></span>
                                 </td>
@@ -101,7 +103,7 @@
                             </tr>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                             <tr>
-                                <td colspan="5" class="px-4 py-8 text-center text-sm text-slate-500">No transactions yet.</td>
+                                <td colspan="7" class="px-4 py-8 text-center text-sm text-slate-500">No transactions yet.</td>
                             </tr>
                         <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                     </tbody>

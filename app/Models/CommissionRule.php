@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class CommissionRule extends Model
 {
     protected $fillable = [
-        'name', 'vendor_id', 'merchant_id', 'service', 'type',
+        'name', 'vendor_id', 'provider', 'merchant_id', 'service', 'type',
         'calc_type', 'value', 'status', 'effective_from', 'effective_to',
         'priority', 'created_by', 'updated_by',
     ];

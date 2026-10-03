@@ -52,10 +52,11 @@
                                 <td class="px-5 py-3 text-sm text-slate-800">₹ <?php echo e(number_format((float) ($row->wallet->balance ?? 0), 2)); ?></td>
                                 <td class="px-5 py-3 text-sm text-slate-700">₹ <?php echo e(number_format((float) ($row->wallet->hold_balance ?? 0), 2)); ?></td>
                             <?php elseif($section === 'commission'): ?>
+                                <?php ($rule = $configured[$row->id] ?? null); ?>
                                 <td class="px-5 py-3 text-sm font-semibold text-slate-900"><?php echo e($row->business_name); ?></td>
                                 <td class="px-5 py-3 text-xs text-slate-500"><?php echo e($row->vendor_code); ?></td>
-                                <td class="px-5 py-3 text-sm text-slate-700"><?php echo e(ucfirst((string) ($row->commission_type ?: '—'))); ?></td>
-                                <td class="px-5 py-3 text-sm text-slate-800"><?php echo e(number_format((float) $row->commission_value, 2)); ?><?php echo e($row->commission_type === 'percentage' ? '%' : ''); ?></td>
+                                <td class="px-5 py-3 text-sm text-slate-700"><?php echo e($rule ? ($rule->calc_type === 'percentage' ? 'Percentage' : 'Fixed') : '—'); ?></td>
+                                <td class="px-5 py-3 text-sm text-slate-800"><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(! $rule): ?>—<?php elseif($rule->calc_type === 'percentage'): ?><?php echo e(number_format((float) $rule->value, 2)); ?>%<?php else: ?>₹<?php echo e(number_format((float) $rule->value, 2)); ?><?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?></td>
                                 <td class="px-5 py-3 text-sm text-slate-700"><?php echo e($applied[$row->id]->entry_count ?? 0); ?></td>
                                 <td class="px-5 py-3 text-sm text-slate-900">₹<?php echo e(number_format((float) ($applied[$row->id]->total_commission ?? 0), 2)); ?></td>
                             <?php elseif($section === 'settlement'): ?>

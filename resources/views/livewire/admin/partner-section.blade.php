@@ -22,7 +22,7 @@
                                 <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">{{ $col }}</th>
                             @endforeach
                         @elseif($section === 'commission')
-                            @foreach(['Partner','Code','Configured type','Configured rate','Applied entries','Applied total'] as $col)
+                            @foreach(['Vendor','Payout Provider','Type','Rate','Commission'] as $col)
                                 <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">{{ $col }}</th>
                             @endforeach
                         @elseif($section === 'settlement')
@@ -52,12 +52,21 @@
                                 <td class="px-5 py-3 text-sm text-slate-800">₹ {{ number_format((float) ($row->wallet->balance ?? 0), 2) }}</td>
                                 <td class="px-5 py-3 text-sm text-slate-700">₹ {{ number_format((float) ($row->wallet->hold_balance ?? 0), 2) }}</td>
                             @elseif($section === 'commission')
-                                <td class="px-5 py-3 text-sm font-semibold text-slate-900">{{ $row->business_name }}</td>
-                                <td class="px-5 py-3 text-xs text-slate-500">{{ $row->vendor_code }}</td>
-                                <td class="px-5 py-3 text-sm text-slate-700">{{ ucfirst((string) ($row->commission_type ?: '—')) }}</td>
-                                <td class="px-5 py-3 text-sm text-slate-800">{{ number_format((float) $row->commission_value, 2) }}{{ $row->commission_type === 'percentage' ? '%' : '' }}</td>
-                                <td class="px-5 py-3 text-sm text-slate-700">{{ $applied[$row->id]->entry_count ?? 0 }}</td>
-                                <td class="px-5 py-3 text-sm text-slate-900">₹{{ number_format((float) ($applied[$row->id]->total_commission ?? 0), 2) }}</td>
+                                @php($rule = $configured[$row->id] ?? null)
+                                <td class="px-5 py-3">
+                                    <p class="text-sm font-semibold text-slate-900">{{ $row->business_name }}</p>
+                                    <p class="text-xs text-slate-500">{{ $row->vendor_code }}</p>
+                                </td>
+                                <td class="px-5 py-3 text-sm">
+                                    @if($rule && $rule->provider)
+                                        <span class="inline-flex rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700">{{ \App\Support\CommissionProviders::name($rule->provider) }}</span>
+                                    @else
+                                        <span class="text-slate-400">—</span>
+                                    @endif
+                                </td>
+                                <td class="px-5 py-3 text-sm text-slate-700">{{ $rule ? ucfirst((string) $rule->type) : '—' }}</td>
+                                <td class="px-5 py-3 text-sm font-semibold text-slate-900">@if(! $rule)—@elseif($rule->calc_type === 'percentage'){{ number_format((float) $rule->value, 2) }}%@else₹{{ number_format((float) $rule->value, 2) }}@endif</td>
+                                <td class="px-5 py-3 text-sm font-semibold text-slate-900">₹{{ number_format((float) ($applied[$row->id]->total_commission ?? 0), 2) }}</td>
                             @elseif($section === 'settlement')
                                 <td class="px-5 py-3 text-sm font-medium text-slate-900">{{ $row->reference }}</td>
                                 <td class="px-5 py-3 text-sm text-slate-700">{{ $row->vendor->business_name ?? '—' }}</td>

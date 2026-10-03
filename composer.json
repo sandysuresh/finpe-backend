@@ -2,7 +2,7 @@
   "$schema": "https://getcomposer.org/schema.json",
   "name": "finpay/gateway",
   "type": "project",
-  "description": "FinPay Gateway - Multi-vendor fintech platform",
+  "description": "FinPe Gateway - Multi-vendor fintech platform",
   "require": {
     "php": "^8.2",
     "laravel/framework": "^12.0",

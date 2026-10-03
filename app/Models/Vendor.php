@@ -46,6 +46,15 @@ class Vendor extends Authenticatable
     public function beneficiaries(): HasMany       { return $this->hasMany(Beneficiary::class); }
     public function settlements(): HasMany         { return $this->hasMany(Settlement::class); }
     public function apiCredential(): HasOne        { return $this->hasOne(ApiCredential::class); }
+    public function apiAccess(): HasMany           { return $this->hasMany(VendorApiAccess::class); }
+
+    public function hasEnabledApi(string $apiCode): bool
+    {
+        return $this->apiAccess()
+            ->where('api_code', $apiCode)
+            ->where('is_enabled', true)
+            ->exists();
+    }
     public function webhookLogs(): HasMany         { return $this->hasMany(WebhookLog::class); }
     public function apiLogs(): HasMany             { return $this->hasMany(ApiLog::class); }
     public function topupRequests(): HasMany       { return $this->hasMany(WalletTopupRequest::class); }

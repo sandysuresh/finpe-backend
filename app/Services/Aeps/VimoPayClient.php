@@ -13,7 +13,39 @@ use Throwable;
 
 class VimoPayClient
 {
+    /** @var array{http_status: int|null, message: string|null} */
+    private array $authorizationMeta = ['http_status' => null, 'message' => null];
+
     public function __construct(private VimoPayCipher $cipher) {}
+
+    /**
+     * Run the existing authorize request and return a display-safe result.
+     * The bearer token is never included.
+     *
+     * @return array{http_status: int|null, success: bool, message: string, token_received: bool, response_ms: int}
+     */
+    public function testAuthorization(): array
+    {
+        $started = hrtime(true);
+        $this->authorizationMeta = ['http_status' => null, 'message' => null];
+
+        try {
+            $token = $this->authorize();
+        } catch (AepsException $e) {
+            return $this->authorizationResult(false, $e->getMessage(), false, $started);
+        } catch (Throwable) {
+            return $this->authorizationResult(false, 'Authorization failed.', false, $started);
+        }
+
+        $received = is_string($token) && $token !== '';
+        $message = $this->safeAuthorizationMessage($this->authorizationMeta['message'], $received ? $token : null);
+        unset($token);
+        if ($message === '') {
+            $message = 'Authorization succeeded.';
+        }
+
+        return $this->authorizationResult(true, $message, $received, $started);
+    }
 
     public function get(string $path): array
     {
@@ -65,7 +97,7 @@ class VimoPayClient
             throw new AepsException('AePS provider returned an unreadable response.', 502);
         }
 
-        if (isset($json['data']) && is_string($json['data']) && $json['data'] !== '') {
+        if ($path !== 'authorize' && isset($json['data']) && is_string($json['data']) && $json['data'] !== '') {
             try {
                 $plain = $this->cipher->decrypt($json['data'], $this->encryptKey(), $this->ivKey());
             } catch (Throwable) {
@@ -121,10 +153,13 @@ class VimoPayClient
             throw new AepsException('AePS provider authorization failed.', 502);
         }
 
+        $this->authorizationMeta['http_status'] = $response->status();
         $json = $this->decode($response, 'authorize');
-        $token = $this->extractToken($json['data'] ?? null);
-        if ($token === null) {
-            $keys = is_array($json['data'] ?? null) ? implode(',', array_keys($json['data'])) : 'none';
+        $rawMessage = $json['message'] ?? null;
+        $this->authorizationMeta['message'] = is_string($rawMessage) ? $rawMessage : null;
+        $token = $json['data'] ?? null;
+        if (! is_string($token) || $token === '') {
+            $keys = is_array($token) ? implode(',', array_keys($token)) : 'none';
             Log::warning('aeps_provider_token_missing', ['keys' => $keys]);
 
             throw new AepsException('AePS provider authorization did not return a token.', 502);
@@ -133,24 +168,40 @@ class VimoPayClient
         return $token;
     }
 
-    private function extractToken(mixed $data): ?string
+    /**
+     * @return array{http_status: int|null, success: bool, message: string, token_received: bool, response_ms: int}
+     */
+    private function authorizationResult(bool $success, string $message, bool $tokenReceived, int $started): array
     {
-        if (is_string($data) && $data !== '') {
-            return $data;
-        }
-        if (! is_array($data)) {
-            return null;
-        }
-        foreach (['token', 'accessToken', 'access_token', 'authToken', 'bearerToken', 'jwt'] as $key) {
-            if (isset($data[$key]) && is_string($data[$key]) && $data[$key] !== '') {
-                return $data[$key];
-            }
-        }
-        if (isset($data['data'])) {
-            return $this->extractToken($data['data']);
+        return [
+            'http_status' => $this->authorizationMeta['http_status'],
+            'success' => $success,
+            'message' => $message !== '' ? $message : ($success ? 'Authorization succeeded.' : 'Authorization failed.'),
+            'token_received' => $tokenReceived,
+            'response_ms' => (int) round((hrtime(true) - $started) / 1_000_000),
+        ];
+    }
+
+    private function safeAuthorizationMessage(mixed $message, ?string $token): string
+    {
+        if (! is_string($message)) {
+            return '';
         }
 
-        return null;
+        $message = trim($message);
+        if ($message === '') {
+            return '';
+        }
+
+        if ($token !== null && $token !== '' && str_contains($message, $token)) {
+            return '';
+        }
+
+        if (preg_match('/bearer|secret|salt|encrypt|token|api[_-]?key|password/i', $message) === 1 || strlen($message) > 180) {
+            return '';
+        }
+
+        return $message;
     }
 
     private function url(string $path): string
@@ -177,6 +228,10 @@ class VimoPayClient
             'banks' => '/masterapi/api/master/banklistuat',
             'bank_iin' => '/aepsapi/api/payment/bankiinuat',
             'states' => '/masterapi/api/master/statelistuat',
+            'payout_banks' => '/masterapi/api/master/banklistuat',
+            'payout_purposes' => '/masterapi/api/master/purposelistuat',
+            'payout_states' => '/masterapi/api/master/statelistuat',
+            'payout_transfer' => '/payoutapi/api/payment/payoutsuat',
             'districts' => '/aepsapi/api/payment/acquiredistrictuat',
             'register' => '/aepsapi/api/payment/merchantonboarduat',
             'send_otp' => '/aepsapi/api/payment/sendotpuat',
@@ -197,12 +252,12 @@ class VimoPayClient
 
     private function encryptKey(): string
     {
-        return $this->config('encrypt_key');
+        return $this->config('secret_key');
     }
 
     private function ivKey(): string
     {
-        return $this->config('iv_key');
+        return $this->config('salt_key');
     }
 
     private function config(string $key): string

@@ -6,6 +6,7 @@ use App\Models\CommissionRule;
 use App\Models\Merchant;
 use App\Models\Vendor;
 use App\Support\AdminAccess;
+use App\Support\CommissionProviders;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -17,7 +18,7 @@ class CommissionRules extends Component
     public string $search = '';
     public string $filterVendor = '';
     public string $filterMerchant = '';
-    public string $filterService = '';
+    public string $filterProvider = '';
     public string $filterType = '';
     public string $filterStatus = '';
 
@@ -26,7 +27,7 @@ class CommissionRules extends Component
     public string $name = '';
     public string $vendorId = '';
     public string $merchantId = '';
-    public string $service = '';
+    public string $provider = '';
     public string $type = '';
     public string $calcType = 'percentage';
     public string $value = '0';
@@ -42,7 +43,7 @@ class CommissionRules extends Component
 
     public function updated(string $name): void
     {
-        if (in_array($name, ['search', 'filterVendor', 'filterMerchant', 'filterService', 'filterType', 'filterStatus'], true)) {
+        if (in_array($name, ['search', 'filterVendor', 'filterMerchant', 'filterProvider', 'filterType', 'filterStatus'], true)) {
             if (! AdminAccess::allows('commission', 'search')) {
                 abort(403);
             }
@@ -65,7 +66,7 @@ class CommissionRules extends Component
         $this->name = $rule->name;
         $this->vendorId = (string) ($rule->vendor_id ?? '');
         $this->merchantId = (string) ($rule->merchant_id ?? '');
-        $this->service = (string) $rule->service;
+        $this->provider = (string) $rule->provider;
         $this->type = (string) $rule->type;
         $this->calcType = $rule->calc_type;
         $this->value = (string) $rule->value;
@@ -80,12 +81,16 @@ class CommissionRules extends Component
     {
         $this->authorizeChange();
 
+        if ($this->type !== 'aeps') {
+            $this->merchantId = '';
+        }
+
         $this->validate([
             'name' => 'required|string|max:120',
             'vendorId' => 'nullable|exists:vendors,id',
             'merchantId' => 'nullable|exists:merchants,id',
-            'service' => 'nullable|string|max:40',
-            'type' => 'nullable|string|max:40',
+            'provider' => 'required|in:'.implode(',', array_keys(CommissionProviders::options())),
+            'type' => 'required|in:payout,aeps',
             'calcType' => 'required|in:percentage,fixed',
             'value' => 'required|numeric|min:0'.($this->calcType === 'percentage' ? '|max:100' : ''),
             'effectiveFrom' => 'nullable|date',
@@ -112,9 +117,10 @@ class CommissionRules extends Component
         $payload = [
             'name' => $this->name,
             'vendor_id' => $this->vendorId !== '' ? $this->vendorId : null,
-            'merchant_id' => $this->merchantId !== '' ? $this->merchantId : null,
-            'service' => $this->service !== '' ? strtolower($this->service) : null,
-            'type' => $this->type !== '' ? strtolower($this->type) : null,
+            'merchant_id' => $this->type === 'aeps' && $this->merchantId !== '' ? $this->merchantId : null,
+            'provider' => $this->provider,
+            'service' => null,
+            'type' => $this->type,
             'calc_type' => $this->calcType,
             'value' => $this->value,
             'status' => $this->status,
@@ -152,7 +158,7 @@ class CommissionRules extends Component
             ->when($this->search !== '', fn ($q) => $q->where('name', 'like', '%'.$this->search.'%'))
             ->when($this->filterVendor !== '', fn ($q) => $q->where('vendor_id', $this->filterVendor))
             ->when($this->filterMerchant !== '', fn ($q) => $q->where('merchant_id', $this->filterMerchant))
-            ->when($this->filterService !== '', fn ($q) => $q->where('service', $this->filterService))
+            ->when($this->filterProvider !== '', fn ($q) => $q->where('provider', $this->filterProvider))
             ->when($this->filterType !== '', fn ($q) => $q->where('type', $this->filterType))
             ->when($this->filterStatus !== '', fn ($q) => $q->where('status', $this->filterStatus))
             ->orderByDesc('id')
@@ -164,6 +170,7 @@ class CommissionRules extends Component
             'merchants' => Merchant::query()->when($this->vendorId !== '', fn ($q) => $q->where('vendor_id', $this->vendorId))->orderBy('code')->get(['id', 'code', 'vendor_id']),
             'filterMerchants' => Merchant::query()->orderBy('code')->get(['id', 'code']),
             'canChange' => AdminAccess::allows('commission', 'change_commission'),
+            'providers' => CommissionProviders::options(),
         ])->layout('layouts.admin', ['title' => 'Commission Rules']);
     }
 
@@ -183,7 +190,7 @@ class CommissionRules extends Component
 
     private function resetForm(): void
     {
-        $this->reset(['editingId', 'name', 'vendorId', 'merchantId', 'service', 'type', 'effectiveFrom', 'effectiveTo', 'priority']);
+        $this->reset(['editingId', 'name', 'vendorId', 'merchantId', 'provider', 'type', 'effectiveFrom', 'effectiveTo', 'priority']);
         $this->calcType = 'percentage';
         $this->value = '0';
         $this->status = 'active';

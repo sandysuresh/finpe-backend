@@ -1,6 +1,6 @@
-# FinPay Gateway — Laravel + Livewire Admin
+# FinPe Gateway — Laravel + Livewire Admin
 
-This is the initial Phase-1 source project for the FinPay multi-vendor fintech platform. Dependencies are intentionally not bundled; run Composer and npm install on your development machine.
+This is the initial Phase-1 source project for the FinPe multi-vendor fintech platform. Dependencies are intentionally not bundled; run Composer and npm install on your development machine.
 
 ## Included
 

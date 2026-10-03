@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ $title ?? 'Dashboard' }} - FinPay Gateway</title>
+    <title>{{ $title ?? 'Dashboard' }} - FinPe Gateway</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
 </head>
@@ -19,7 +19,7 @@
                     </svg>
                 </div>
                 <div class="leading-tight">
-                    <div class="text-[20px] font-bold tracking-tight text-white">FinPay</div>
+                    <div class="text-[20px] font-bold tracking-tight text-white">FinPe</div>
                     <div class="text-[11px] font-medium text-slate-300">Admin Gateway</div>
                 </div>
             </a>

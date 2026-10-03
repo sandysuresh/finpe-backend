@@ -2,8 +2,12 @@
 
 namespace App\Livewire\Admin\Vendors;
 
+use App\Models\ApiCredential;
 use App\Models\Bank;
 use App\Models\CommissionEntry;
+use App\Models\VendorApiAccess;
+use App\Services\CommissionService;
+use App\Models\Transaction;
 use App\Models\Vendor;
 use App\Models\VendorKycReview;
 use App\Support\AdminAudit;
@@ -22,6 +26,8 @@ class Show extends Component
     public string $kycComment = '';
 
     public string $reviewMessage = '';
+
+    public ?string $revealedApiSecret = null;
 
     public array $assignedBankIds = [];
 
@@ -133,6 +139,66 @@ class Show extends Component
         }
     }
 
+    public function enablePayoutApi(): void
+    {
+        VendorApiAccess::query()->updateOrCreate(
+            ['vendor_id' => $this->vendor->id, 'api_code' => VendorApiAccess::PAYOUT],
+            [
+                'is_enabled' => true,
+                'assigned_at' => now(),
+                'assigned_by' => Auth::guard('admin')->id(),
+            ],
+        );
+        $this->vendor = $this->vendor->fresh();
+        $this->reviewMessage = 'Payout API assigned and enabled for this vendor.';
+    }
+
+    public function disablePayoutApi(): void
+    {
+        $access = $this->vendor->apiAccess()->where('api_code', VendorApiAccess::PAYOUT)->first();
+        if (! $access) {
+            return;
+        }
+
+        $access->update([
+            'is_enabled' => false,
+            'assigned_at' => now(),
+            'assigned_by' => Auth::guard('admin')->id(),
+        ]);
+        $this->vendor = $this->vendor->fresh();
+        $this->reviewMessage = 'Payout API disabled for this vendor.';
+    }
+
+    public function generatePayoutCredentials(): void
+    {
+        if (! $this->vendor->hasEnabledApi(VendorApiAccess::PAYOUT) || $this->vendor->apiCredential) {
+            return;
+        }
+
+        $this->revealedApiSecret = ApiCredential::issueFor($this->vendor);
+        $this->vendor = $this->vendor->fresh();
+        $this->tab = 'developer';
+        $this->reviewMessage = 'API credentials generated. Copy the secret now. It will not be shown again.';
+    }
+
+    public function rotatePayoutCredentials(): void
+    {
+        $credential = $this->vendor->apiCredential;
+        if (! $this->vendor->hasEnabledApi(VendorApiAccess::PAYOUT) || ! $credential) {
+            return;
+        }
+
+        $this->revealedApiSecret = $credential->rotateSecret();
+        $this->vendor = $this->vendor->fresh();
+        $this->tab = 'developer';
+        $this->reviewMessage = 'API secret rotated. Copy the new secret now. The previous secret no longer works.';
+    }
+
+    public function dismissRevealedApiSecret(): void
+    {
+        $this->revealedApiSecret = null;
+    }
+
     public function toggleApiAccess(): void
     {
         $this->vendor->update([
@@ -180,9 +246,24 @@ class Show extends Component
             ? $vendor->wallet->ledger()->latest()->paginate(10, ['*'], 'ledPage')
             : null;
 
+        $payoutByReference = collect();
+        if ($ledger && $ledger->isNotEmpty()) {
+            $refs = $ledger->getCollection()->pluck('reference')->filter()->unique()->values();
+            if ($refs->isNotEmpty()) {
+                $payoutByReference = Transaction::query()
+                    ->where('type', 'payout')
+                    ->where('vendor_id', $vendor->id)
+                    ->whereIn('reference', $refs)
+                    ->get(['reference', 'payout_provider', 'status', 'amount'])
+                    ->keyBy('reference');
+            }
+        }
+
         $topups = $vendor->topupRequests()->latest()->paginate(10, ['*'], 'topPage');
 
         $transactions = $vendor->transactions()->with('commissionEntry')->latest()->paginate(10, ['*'], 'txnPage');
+
+        $configuredRule = app(CommissionService::class)->configuredPayoutRule((int) $vendor->id);
 
         $appliedCommission = CommissionEntry::query()
             ->where('vendor_id', $vendor->id)
@@ -209,12 +290,15 @@ class Show extends Component
 
         $webhookLogs = $vendor->webhookLogs()->latest()->limit(15)->get();
         $allBanks = Bank::query()->where('is_active', true)->orderBy('name')->get();
+        $payoutAccess = $vendor->apiAccess()->where('api_code', VendorApiAccess::PAYOUT)->first();
 
         return view('livewire.admin.vendors.show', compact(
             'vendor',
             'ledger',
+            'payoutByReference',
             'topups',
             'transactions',
+            'configuredRule',
             'appliedCommission',
             'recentCommission',
             'txnSummary',
@@ -222,6 +306,7 @@ class Show extends Component
             'beneficiaries',
             'webhookLogs',
             'allBanks',
+            'payoutAccess',
         ))->layout('layouts.admin', ['title' => $vendor->business_name]);
     }
 }

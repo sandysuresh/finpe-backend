@@ -45,7 +45,7 @@ class BankApiCatalog
                 'slug' => 'balance',
                 'method' => 'GET',
                 'bank_path' => '/balance',
-                'description' => 'Fetch vendor wallet balance on FinPay.',
+                'description' => 'Fetch vendor wallet balance on FinPe.',
                 'request_params' => [],
                 'response_params' => [
                     ['name' => 'success', 'type' => 'boolean', 'required' => true, 'description' => 'Request status'],
@@ -71,8 +71,8 @@ class BankApiCatalog
                     ['name' => 'remarks', 'type' => 'string', 'required' => false, 'description' => 'Narration'],
                 ],
                 'response_params' => [
-                    ['name' => 'success', 'type' => 'boolean', 'required' => true, 'description' => 'Accepted by FinPay'],
-                    ['name' => 'data.reference', 'type' => 'string', 'required' => true, 'description' => 'FinPay reference'],
+                    ['name' => 'success', 'type' => 'boolean', 'required' => true, 'description' => 'Accepted by FinPe'],
+                    ['name' => 'data.reference', 'type' => 'string', 'required' => true, 'description' => 'FinPe reference'],
                     ['name' => 'data.status', 'type' => 'string', 'required' => true, 'description' => 'success | pending | failed'],
                     ['name' => 'data.bank_reference', 'type' => 'string', 'required' => false, 'description' => 'Bank UTR / control no'],
                 ],
@@ -95,9 +95,9 @@ class BankApiCatalog
                 'slug' => 'payout-status',
                 'method' => 'POST',
                 'bank_path' => '/payout/status',
-                'description' => 'Check status of a payout using FinPay reference.',
+                'description' => 'Check status of a payout using FinPe reference.',
                 'request_params' => [
-                    ['name' => 'reference', 'type' => 'string', 'required' => true, 'description' => 'FinPay transaction reference'],
+                    ['name' => 'reference', 'type' => 'string', 'required' => true, 'description' => 'FinPe transaction reference'],
                 ],
                 'response_params' => [
                     ['name' => 'success', 'type' => 'boolean', 'required' => true, 'description' => 'Request status'],
@@ -128,7 +128,7 @@ class BankApiCatalog
                 'bank_path' => '/payout/cancel',
                 'description' => 'Cancel a pending payout if the bank allows it.',
                 'request_params' => [
-                    ['name' => 'reference', 'type' => 'string', 'required' => true, 'description' => 'FinPay reference'],
+                    ['name' => 'reference', 'type' => 'string', 'required' => true, 'description' => 'FinPe reference'],
                     ['name' => 'reason', 'type' => 'string', 'required' => false, 'description' => 'Cancel reason'],
                 ],
                 'response_params' => [
@@ -196,7 +196,7 @@ class BankApiCatalog
                 'bank_path' => '/refund',
                 'description' => 'Request refund for a failed or reversed payout.',
                 'request_params' => [
-                    ['name' => 'reference', 'type' => 'string', 'required' => true, 'description' => 'Original FinPay reference'],
+                    ['name' => 'reference', 'type' => 'string', 'required' => true, 'description' => 'Original FinPe reference'],
                     ['name' => 'reason', 'type' => 'string', 'required' => false, 'description' => 'Refund reason'],
                 ],
                 'response_params' => [

@@ -373,12 +373,12 @@
             </div>
             <div class="fi-card p-6">
                 <h3 class="mb-4 text-sm font-semibold text-slate-900">Configured Commission Rule</h3>
-                <p class="mb-3 text-xs text-slate-500">Legacy partner setting. This is not applied commission.</p>
+                <p class="mb-3 text-xs text-slate-500">Active commission rule for this partner. This is not applied commission.</p>
                 <div class="space-y-3">
                     @foreach([
                         ['Transaction Limit', '₹'.number_format((float) $vendor->transaction_limit, 2)],
-                        ['Configured type', ucfirst($vendor->commission_type)],
-                        ['Configured value', $vendor->commission_value],
+                        ['Configured type', $configuredRule ? ($configuredRule->calc_type === 'percentage' ? 'Percentage' : 'Fixed') : '—'],
+                        ['Configured rate', ! $configuredRule ? '—' : ($configuredRule->calc_type === 'percentage' ? number_format((float) $configuredRule->value, 2).'%' : '₹'.number_format((float) $configuredRule->value, 2))],
                         ['API Enabled', $vendor->api_enabled ? 'Yes' : 'No'],
                     ] as [$l, $v])
                         <div class="flex items-center justify-between">
@@ -452,15 +452,31 @@
                                 <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Type</th>
                                 <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Amount</th>
                                 <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Reference</th>
+                                <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Payout Provider</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-50">
                             @foreach($ledger as $row)
+                                @php
+                                    $payout = $row->type === 'debit' ? ($payoutByReference[$row->reference] ?? null) : null;
+                                    $providerName = $payout ? \App\Support\CommissionProviders::name($payout->payout_provider) : null;
+                                @endphp
                                 <tr>
                                     <td class="px-5 py-3">{{ $row->created_at->format('d M Y H:i') }}</td>
-                                    <td class="px-5 py-3">{{ $row->type }}</td>
-                                    <td class="px-5 py-3">₹{{ number_format((float) $row->amount, 2) }}</td>
-                                    <td class="px-5 py-3">{{ $row->reference ?? '—' }}</td>
+                                    <td class="px-5 py-3">{{ ucfirst($row->type) }}</td>
+                                    <td class="px-5 py-3">
+                                        ₹{{ number_format((float) $row->amount, 2) }}
+                                        @if($payout)
+                                            <p class="text-xs text-slate-500">Payout ₹{{ number_format((float) $payout->amount, 2) }} · {{ ucfirst((string) $payout->status) }}</p>
+                                        @endif
+                                    </td>
+                                    <td class="px-5 py-3">
+                                        {{ $row->reference ?? '—' }}
+                                        @if($payout)
+                                            <p class="text-xs font-semibold text-indigo-700">Payout Provider: {{ $providerName ?: '—' }}</p>
+                                        @endif
+                                    </td>
+                                    <td class="px-5 py-3">{{ $providerName ?: '' }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -518,6 +534,7 @@
                     <thead class="bg-slate-50">
                         <tr>
                             <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Reference</th>
+                            <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Payout Provider</th>
                             <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Beneficiary</th>
                             <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Amount</th>
                             <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Commission</th>
@@ -529,6 +546,7 @@
                         @foreach($transactions as $txn)
                             <tr>
                                 <td class="px-5 py-3">{{ $txn->reference }}</td>
+                                <td class="px-5 py-3">{{ $txn->type === 'payout' ? (\App\Support\CommissionProviders::name($txn->payout_provider) ?: '—') : '—' }}</td>
                                 <td class="px-5 py-3">{{ $txn->beneficiary_name ?? '—' }}</td>
                                 <td class="px-5 py-3">₹{{ number_format((float) $txn->amount, 2) }}</td>
                                 <td class="px-5 py-3">{{ $txn->commissionEntry ? '₹'.number_format((float) $txn->commissionEntry->commission_amount, 2) : '—' }}</td>
@@ -639,8 +657,60 @@
                 @endif
             </div>
             <div class="fi-card p-6">
+                <div class="mb-4 flex items-center justify-between gap-3">
+                    <h3 class="text-sm font-semibold text-slate-900">Payout API</h3>
+                    @if($payoutAccess?->is_enabled)
+                        <button type="button" wire:click="disablePayoutApi" class="fi-btn fi-btn-danger fi-btn-sm">Disable Payout API</button>
+                    @else
+                        <button type="button" wire:click="enablePayoutApi" class="fi-btn fi-btn-success fi-btn-sm">Assign and enable Payout API</button>
+                    @endif
+                </div>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between gap-4">
+                        <span class="text-slate-500">API access</span>
+                        <span class="font-semibold {{ $payoutAccess?->is_enabled ? 'text-emerald-700' : 'text-red-600' }}">{{ $payoutAccess?->is_enabled ? 'Enabled' : 'Disabled' }}</span>
+                    </div>
+                    <div class="flex justify-between gap-4">
+                        <span class="text-slate-500">Credential</span>
+                        <span class="font-semibold {{ $vendor->apiCredential ? 'text-emerald-700' : 'text-slate-500' }}">{{ $vendor->apiCredential ? 'Generated' : 'Not generated' }}</span>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Available master APIs</p>
+                    <ul class="mt-2 space-y-1 text-sm text-slate-700">
+                        <li>Banks — GET /api/v1/payout/banks</li>
+                        <li>Purposes — GET /api/v1/payout/purposes</li>
+                        <li>States — GET /api/v1/payout/states</li>
+                    </ul>
+                </div>
+                @if($payoutAccess?->is_enabled)
+                    <div class="mt-4 border-t border-slate-100 pt-4">
+                        @if($vendor->apiCredential)
+                            <div class="flex justify-between gap-4 text-sm">
+                                <span class="text-slate-500">API Key</span>
+                                <span class="font-mono text-slate-800">{{ $vendor->apiCredential->api_key }}</span>
+                            </div>
+                            <div class="mt-3 flex justify-end">
+                                <button type="button" wire:click="rotatePayoutCredentials" class="fi-btn fi-btn-primary fi-btn-sm">Rotate API secret</button>
+                            </div>
+                        @else
+                            <button type="button" wire:click="generatePayoutCredentials" class="fi-btn fi-btn-primary fi-btn-sm">Generate API Credentials</button>
+                        @endif
+                        @if($revealedApiSecret)
+                            <div class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm">
+                                <p class="font-semibold text-amber-900">API Secret — copy now</p>
+                                <p class="mt-1 font-mono text-xs text-amber-950">{{ $revealedApiSecret }}</p>
+                                <p class="mt-2 text-xs text-amber-800">This secret is shown only once and is not stored in plaintext.</p>
+                                <button type="button" wire:click="dismissRevealedApiSecret" class="mt-3 text-xs font-semibold text-amber-900">I have copied the secret</button>
+                            </div>
+                        @endif
+                    </div>
+                @endif
+                <p class="mt-3 text-xs text-slate-500">Calls still use this vendor's HMAC key. The secret is not shown after you leave this notice.</p>
+            </div>
+            <div class="fi-card p-6">
                 <h3 class="mb-3 text-sm font-semibold text-slate-900">Assign bank APIs</h3>
-                <p class="mb-4 text-xs text-slate-500">Vendor will only see FinPay endpoints for the banks you assign here.</p>
+                <p class="mb-4 text-xs text-slate-500">Vendor will only see FinPe endpoints for the banks you assign here.</p>
                 <div class="space-y-2">
                     @forelse($allBanks as $bank)
                         <label class="flex items-center gap-3 rounded-xl border border-slate-200 px-3 py-2.5 text-sm hover:bg-slate-50">

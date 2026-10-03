@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\CommissionEntry;
 use App\Models\CommissionRule;
 use App\Models\Transaction;
+use App\Support\CommissionProviders;
 use Carbon\CarbonInterface;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Collection;
@@ -16,7 +17,7 @@ use Illuminate\Support\Collection;
  * 1. status = active
  * 2. effective_from/effective_to contain the event time when those dates are set
  * 3. vendor_id is null (any vendor) or equals the source vendor
- * 4. service is null or equals the source service
+ * 4. provider equals the source provider exactly; a blank provider does not match a named provider
  * 5. type is null or equals the source type
  * 6. merchant_id is null, or equals the source merchant
  *    Payout transactions have no merchant_id, so a merchant-specific rule never matches a payout.
@@ -47,11 +48,16 @@ class CommissionService
 
         $transaction->loadMissing('vendor');
         $at = $transaction->updated_at ?? $transaction->created_at ?? now();
+        $provider = strtolower(trim((string) $transaction->payout_provider));
+        if ($provider === '') {
+            return null;
+        }
+
         $context = [
             'vendor_id' => (int) $transaction->vendor_id,
             'merchant_id' => null,
-            'service' => (string) $transaction->service,
-            'type' => (string) $transaction->type,
+            'provider' => $provider,
+            'type' => 'payout',
             'at' => $at,
         ];
 
@@ -94,6 +100,33 @@ class CommissionService
      * @param  iterable<CommissionRule>  $rules
      * @param  array{vendor_id:int,merchant_id:?int,service:?string,type:?string,at:CarbonInterface}  $context
      */
+    /**
+     * The VimoPay payout rule for this vendor. Ranking is select().
+     *
+     * @param  iterable<CommissionRule>|null  $rules
+     */
+    public function configuredPayoutRule(int $vendorId, ?CarbonInterface $at = null, ?iterable $rules = null): ?CommissionRule
+    {
+        return $this->select($rules ?? $this->loadCandidates($vendorId), [
+            'vendor_id' => $vendorId,
+            'merchant_id' => null,
+            'provider' => CommissionProviders::VIMOPAY,
+            'type' => 'payout',
+            'at' => $at ?? now(),
+        ]);
+    }
+
+    public function selectAepsRule(int $vendorId, string $provider, ?int $merchantId = null, ?CarbonInterface $at = null): ?CommissionRule
+    {
+        return $this->select($this->loadCandidates($vendorId), [
+            'vendor_id' => $vendorId,
+            'merchant_id' => $merchantId,
+            'provider' => $provider,
+            'type' => 'aeps',
+            'at' => $at ?? now(),
+        ]);
+    }
+
     public function select(iterable $rules, array $context): ?CommissionRule
     {
         $matches = Collection::make($rules)
@@ -143,7 +176,9 @@ class CommissionService
         if ($rule->effective_from && $at->lt($rule->effective_from)) {
             return false;
         }
-        if ($rule->effective_to && $at->gt($rule->effective_to)) {
+        // effective_to is the last calendar day the rule applies. A time chosen
+        // in the date picker must not expire the rule earlier that same day.
+        if ($rule->effective_to && $at->gt($rule->effective_to->copy()->endOfDay())) {
             return false;
         }
 
@@ -155,7 +190,13 @@ class CommissionService
             return false;
         }
 
-        if ($rule->service !== null && $rule->service !== '' && strcasecmp((string) $rule->service, (string) ($context['service'] ?? '')) !== 0) {
+        $contextProvider = strtolower(trim((string) ($context['provider'] ?? '')));
+        $ruleProvider = strtolower(trim((string) ($rule->provider ?? '')));
+        if ($contextProvider !== '') {
+            if ($ruleProvider !== $contextProvider) {
+                return false;
+            }
+        } elseif ($ruleProvider !== '') {
             return false;
         }
 
@@ -173,6 +214,11 @@ class CommissionService
         }
 
         return $rule->vendor_id !== null ? 2 : 1;
+    }
+
+    public function rulesForVendor(int $vendorId): Collection
+    {
+        return $this->loadCandidates($vendorId);
     }
 
     private function loadCandidates(int $vendorId): Collection

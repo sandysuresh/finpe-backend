@@ -1,7 +1,7 @@
 <div>
     <div class="mb-6">
         <h1 class="text-2xl font-bold text-slate-900">API documentation</h1>
-        <p class="mt-1 text-sm text-slate-500">HMAC signing format and the FinPay APIs assigned to your account. Bank credentials are never shared with vendors.</p>
+        <p class="mt-1 text-sm text-slate-500">HMAC signing format and the FinPe APIs assigned to your account. Bank credentials are never shared with vendors.</p>
     </div>
 
     @if($saved)
@@ -23,7 +23,7 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-50">
-                        <tr><td class="py-2 pr-4 font-mono text-xs">X-API-Key</td><td class="py-2 text-slate-600">Your public API key (from FinPay)</td></tr>
+                        <tr><td class="py-2 pr-4 font-mono text-xs">X-API-Key</td><td class="py-2 text-slate-600">Your public API key (from FinPe)</td></tr>
                         <tr><td class="py-2 pr-4 font-mono text-xs">X-Timestamp</td><td class="py-2 text-slate-600">UNIX epoch in seconds. Must be within 300 seconds.</td></tr>
                         <tr><td class="py-2 pr-4 font-mono text-xs">X-Nonce</td><td class="py-2 text-slate-600">Random string, unique per request, min 16 characters</td></tr>
                         <tr><td class="py-2 pr-4 font-mono text-xs">X-Signature</td><td class="py-2 text-slate-600">HMAC-SHA256 hex of the canonical string</td></tr>
@@ -96,6 +96,38 @@ await fetch(apiBase + path, {
   body,
 });</pre>
             </div>
+        </div>
+
+        <div class="fi-card p-6">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <h2 class="text-sm font-semibold text-slate-900">AePS transaction request</h2>
+                <a href="{{ route('vendor.aeps.api-documentation') }}" class="text-sm font-semibold text-blue-700">Download API documentation PDF</a>
+            </div>
+            <p class="mt-2 text-sm text-slate-600">POST /api/v1/aeps/transactions. <span class="font-semibold">aadhaarNumber</span> is required. The sample value is masked.</p>
+            <div class="mt-4 overflow-x-auto">
+                <table class="min-w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-slate-100">
+                            <th class="py-2 pr-4 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">Field</th>
+                            <th class="py-2 pr-4 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">Type</th>
+                            <th class="py-2 pr-4 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">Required</th>
+                            <th class="py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="py-2 pr-4 font-mono text-xs">aadhaarNumber</td>
+                            <td class="py-2 pr-4">string</td>
+                            <td class="py-2 pr-4 font-semibold text-slate-900">required</td>
+                            <td class="py-2 text-slate-600">Customer Aadhaar. Example: XXXX-XXXX-0738</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <pre class="mt-4 overflow-x-auto rounded-lg bg-slate-900 p-3 text-[12px] leading-5 text-emerald-300">{
+  "aadhaarNumber": "XXXX-XXXX-0738"
+}</pre>
+            <p class="mt-2 text-sm text-slate-600">aadhaarNumber is required. The example value is masked. FinPe accepts this required value as aadhaar.</p>
         </div>
 
         <div class="fi-card p-6">

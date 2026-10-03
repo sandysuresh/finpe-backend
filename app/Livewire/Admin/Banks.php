@@ -380,7 +380,7 @@ class Banks extends Component
 
         $this->showEndpointForm = false;
         $this->resetEndpointForm();
-        session()->flash('success', 'Bank API saved. Vendor docs will show FinPay path + request/response.');
+        session()->flash('success', 'Bank API saved. Vendor docs will show FinPe path + request/response.');
     }
 
     public function deleteEndpoint(int $id): void

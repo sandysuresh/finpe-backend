@@ -6,15 +6,23 @@ use App\Http\Controllers\Api\V1\BankServiceController;
 use App\Http\Controllers\Api\V1\Aeps\AepsCatalogController;
 use App\Http\Controllers\Api\V1\Aeps\AepsMerchantController;
 use App\Http\Controllers\Api\V1\Aeps\AepsTransactionController;
+use App\Http\Controllers\Api\V1\PayoutCallbackController;
 use App\Http\Controllers\Api\V1\PayoutController;
+use App\Http\Controllers\Api\V1\PayoutMasterController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/health', fn () => response()->json(['success' => true]))
     ->middleware('throttle:30,1');
 
+Route::post('/v1/payout/callback', PayoutCallbackController::class)
+    ->middleware('throttle:60,1');
+
 Route::prefix('v1')->middleware(['throttle:vendor-api', 'vendor.api', 'vendor.api.log'])->group(function () {
     Route::get('/balance', [BalanceController::class, 'show']);
     Route::get('/banks', [AssignedBankController::class, 'index']);
+    Route::get('/payout/banks', [PayoutMasterController::class, 'banks']);
+    Route::get('/payout/purposes', [PayoutMasterController::class, 'purposes']);
+    Route::get('/payout/states', [PayoutMasterController::class, 'states']);
     Route::get('/payouts', [PayoutController::class, 'index']);
     Route::post('/payouts', [PayoutController::class, 'store']);
     Route::get('/payouts/{reference}', [PayoutController::class, 'show']);

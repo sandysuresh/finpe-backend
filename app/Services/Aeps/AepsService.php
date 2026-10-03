@@ -50,6 +50,7 @@ class AepsService
                 'pipe' => (string) $input['pipe'],
                 'first_name' => $input['first_name'],
                 'last_name' => $input['last_name'],
+                'phone' => $input['phone'],
                 'phone_masked' => AepsPayloadSanitizer::maskPhone($input['phone']),
                 'aadhaar_masked' => AepsPayloadSanitizer::maskDigits($input['aadhaar']),
                 'onboarding_status' => AepsStatus::INITIATED,

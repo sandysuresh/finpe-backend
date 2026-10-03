@@ -1,6 +1,7 @@
 <?php
 namespace App\Livewire\Vendor;
 
+use App\Models\Transaction;
 use App\Models\WalletTopupRequest;
 use App\Support\AdminNotify;
 use Illuminate\Support\Facades\Auth;
@@ -112,10 +113,23 @@ class Wallet extends Component
             $ledger = $q->paginate(15);
         }
 
+        $payoutByReference = collect();
+        if ($ledger && $ledger->isNotEmpty()) {
+            $refs = $ledger->getCollection()->pluck('reference')->filter()->unique()->values();
+            if ($refs->isNotEmpty()) {
+                $payoutByReference = Transaction::query()
+                    ->where('type', 'payout')
+                    ->where('vendor_id', $vendor->id)
+                    ->whereIn('reference', $refs)
+                    ->get(['reference', 'payout_provider', 'status', 'amount'])
+                    ->keyBy('reference');
+            }
+        }
+
         // Topup requests
         $topupRequests = $vendor->topupRequests()->latest()->paginate(10, ['*'], 'req_page');
 
-        return view('livewire.vendor.wallet', compact('ledger','topupRequests'))
+        return view('livewire.vendor.wallet', compact('ledger','topupRequests','payoutByReference'))
             ->layout('layouts.vendor', ['title' => 'Wallet']);
     }
 }

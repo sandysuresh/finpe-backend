@@ -20,7 +20,7 @@
         @foreach([
             ['1', 'Add bank', 'Name, code, sandbox/live'],
             ['2', 'Integrate bank APIs', 'Map the 10–12 APIs the bank gave you'],
-            ['3', 'Assign vendors', 'Vendor sees FinPay docs for those APIs'],
+            ['3', 'Assign vendors', 'Vendor sees FinPe docs for those APIs'],
         ] as [$n, $t, $d])
             <div class="fi-card p-4">
                 <p class="text-xs font-bold text-blue-700">Step {{ $n }}</p>
@@ -193,7 +193,7 @@
                     <button type="button" wire:click="$set('showAssignModal', false)" class="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100">✕</button>
                 </div>
                 <div class="space-y-4 p-6">
-                    <p class="text-sm text-slate-600">Selected vendors will see FinPay API endpoints for this bank in their Developer panel. They never receive the bank’s own credentials.</p>
+                    <p class="text-sm text-slate-600">Selected vendors will see FinPe API endpoints for this bank in their Developer panel. They never receive the bank’s own credentials.</p>
                     <input type="text" wire:model.live.debounce.300ms="assignSearch" class="fi-input text-sm" placeholder="Search vendor...">
                     <div class="max-h-80 space-y-2 overflow-y-auto">
                         @forelse($vendors as $vendor)
@@ -223,7 +223,7 @@
                 <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
                     <div>
                         <h2 class="text-lg font-semibold text-slate-900">{{ $apisBank->name }} APIs</h2>
-                        <p class="text-xs text-slate-500">Integrate each API the bank provided. Vendors receive FinPay URLs, not bank credentials.</p>
+                        <p class="text-xs text-slate-500">Integrate each API the bank provided. Vendors receive FinPe URLs, not bank credentials.</p>
                     </div>
                     <button type="button" wire:click="$set('showApisModal', false)" class="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100">✕</button>
                 </div>

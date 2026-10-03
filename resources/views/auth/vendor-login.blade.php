@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Vendor Login - FinPay Gateway</title>
+    <title>Vendor Login - FinPe Gateway</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="min-h-screen bg-[#c5d0e0] font-sans">
@@ -20,7 +20,7 @@
                         </svg>
                     </div>
                     <div>
-                        <div class="text-2xl font-bold">FinPay</div>
+                        <div class="text-2xl font-bold">FinPe</div>
                         <div class="text-xs text-violet-300">Vendor Portal</div>
                     </div>
                 </div>
@@ -30,7 +30,7 @@
                     <p class="mt-6 text-base leading-7 text-slate-300">Your complete payment operations hub — real-time balances, transaction reports, API keys, and more.</p>
                 </div>
             </div>
-            <div class="text-sm text-slate-400">© {{ date('Y') }} FinPay Gateway</div>
+            <div class="text-sm text-slate-400">© {{ date('Y') }} FinPe Gateway</div>
         </div>
 
         {{-- Right panel --}}
@@ -38,7 +38,7 @@
             <div class="w-full max-w-md">
 
                 <div class="mb-8 lg:hidden">
-                    <div class="text-2xl font-bold text-slate-900">FinPay</div>
+                    <div class="text-2xl font-bold text-slate-900">FinPe</div>
                     <div class="text-xs text-slate-500">Vendor Portal</div>
                 </div>
 

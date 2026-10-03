@@ -16,6 +16,7 @@ Route::post('/admin/logout', [AdminAuthController::class, 'logout'])
 
 Route::middleware('auth:admin')->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', \App\Livewire\Admin\Dashboard::class)->middleware('admin.module:dashboard')->name('dashboard');
+    Route::get('/commission/summary', \App\Livewire\Admin\CommissionSummary::class)->middleware('admin.module:dashboard')->name('commission.summary');
     Route::middleware('admin.module:dashboard')->group(function () {
         Route::get('/app-users', \App\Livewire\Admin\AppUsers::class)->name('app-users.list');
         Route::get('/app-users/details', \App\Livewire\Admin\AppUsers::class)->name('app-users.details');
@@ -59,7 +60,21 @@ Route::middleware('auth:admin')->prefix('admin')->name('admin.')->group(function
         Route::get('/transactions/reversed', \App\Livewire\Admin\Transactions::class)->name('txn-reversed');
         Route::get('/transactions/search', \App\Livewire\Admin\Transactions::class)->name('txn-search');
         Route::get('/transactions/details', \App\Livewire\Admin\Transactions::class)->name('txn-details');
+        Route::get('/aeps-transactions', \App\Livewire\Admin\AepsTransactions::class)->name('aeps-transactions');
+        Route::get('/payout-transactions', \App\Livewire\Admin\PayoutTransactions::class)->name('payout-transactions');
+        Route::get('/payout-transactions/{reference}/receipt', \App\Http\Controllers\Admin\PayoutReceiptController::class)
+            ->where('reference', '[A-Za-z0-9\-]+')
+            ->name('payout-transactions.receipt');
+        Route::get('/aeps/api-documentation', \App\Http\Controllers\Admin\AepsApiDocController::class)
+            ->name('aeps.api-documentation');
+        Route::get('/aeps-transactions/{reference}/receipt', \App\Http\Controllers\Admin\AepsReceiptController::class)
+            ->where('reference', '[A-Za-z0-9\-]+')
+            ->name('aeps-transactions.receipt');
+        Route::get('/aeps-transactions/{reference}', \App\Livewire\Admin\AepsTransactions::class)
+            ->where('reference', '[A-Za-z0-9\-]+')
+            ->name('aeps-transactions.show');
     });
+    Route::get('/payout-api', \App\Livewire\Admin\PayoutApiTest::class)->middleware('admin.module:payout-api')->name('payout-api');
     Route::get('/reports', \App\Livewire\Admin\Reports::class)->middleware('admin.module:reports')->name('reports');
     Route::get('/daily-balance', \App\Livewire\Admin\DailyBalance::class)->middleware('admin.module:reports')->name('daily-balance');
     Route::get('/reports/{report}', \App\Livewire\Admin\ReportShow::class)
@@ -92,5 +107,6 @@ Route::middleware('auth:vendor')->prefix('vendor')->name('vendor.')->group(funct
     Route::get('/reports', \App\Livewire\Vendor\Reports::class)->name('reports');
     Route::get('/settlements', \App\Livewire\Vendor\SettlementReport::class)->name('settlements');
     Route::get('/developer', \App\Livewire\Vendor\Developer::class)->name('developer');
+    Route::get('/aeps/api-documentation', \App\Http\Controllers\Admin\AepsApiDocController::class)->name('aeps.api-documentation');
     Route::get('/profile', \App\Livewire\Vendor\Profile::class)->name('profile');
 });

@@ -48,6 +48,8 @@ return [
             ['label' => 'Reversed / Refund', 'route' => 'admin.txn-reversed'],
             ['label' => 'Search & Filter', 'route' => 'admin.txn-search'],
             ['label' => 'Transaction Details', 'route' => 'admin.txn-details'],
+            ['label' => 'AePS Transactions', 'route' => 'admin.aeps-transactions'],
+            ['label' => 'Payout Transactions', 'route' => 'admin.payout-transactions'],
         ],
     ],
     'commission' => [
@@ -76,6 +78,10 @@ return [
             ['label' => 'Wallet reports', 'route' => 'admin.reports'],
             ['label' => 'Daily balance', 'route' => 'admin.daily-balance'],
         ],
+    ],
+    'payout-api' => [
+        'label' => 'Payout API',
+        'route' => 'admin.payout-api',
     ],
     'banks' => [
         'label' => 'Bank & API',

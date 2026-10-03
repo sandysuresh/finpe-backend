@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin;
 
+use App\Models\CommissionEntry;
 use App\Models\Merchant;
 use App\Models\Settlement;
 use App\Models\Transaction;
@@ -18,6 +19,9 @@ class Dashboard extends Component
         $failed = Transaction::query()->where('status', 'failed')->count();
         $volume = (float) Transaction::query()->where('status', 'success')->sum('amount');
         $settled = (float) Settlement::query()->where('status', 'settled')->sum('net_amount');
+        $commission = (float) CommissionEntry::query()
+            ->where('status', CommissionEntry::STATUS_RECORDED)
+            ->sum('commission_amount');
 
         $primary = [
             ['label' => 'Transaction Volume', 'value' => '₹ '.number_format($volume, 2), 'hint' => 'Successful payouts', 'tone' => 'blue', 'icon' => 'volume', 'href' => route('admin.txn-success')],
@@ -29,7 +33,7 @@ class Dashboard extends Component
         $secondary = [
             ['label' => 'Total Users', 'value' => '0', 'tone' => 'slate', 'icon' => 'users', 'href' => route('admin.app-users.list')],
             ['label' => 'Total Merchants', 'value' => number_format(Merchant::query()->count()), 'tone' => 'violet', 'icon' => 'merchants', 'href' => route('admin.merchants')],
-            ['label' => 'Total Commission', 'value' => '₹ 0.00', 'tone' => 'blue', 'icon' => 'commission', 'href' => route('admin.commission.rules')],
+            ['label' => 'Total Commission', 'value' => '₹ '.number_format($commission, 2), 'tone' => 'blue', 'icon' => 'commission', 'href' => route('admin.commission.summary')],
             ['label' => 'Settlement Amount', 'value' => '₹ '.number_format($settled, 2), 'tone' => 'emerald', 'icon' => 'settlement', 'href' => route('admin.partners.settlement')],
             ['label' => 'Failed Transactions', 'value' => number_format($failed), 'tone' => 'red', 'icon' => 'failed', 'href' => route('admin.txn-failed')],
             ['label' => 'System Alerts', 'value' => number_format($pendingKyc + $pendingWallet), 'tone' => 'amber', 'icon' => 'alert', 'href' => route('admin.partners.kyc')],
