@@ -84,7 +84,7 @@
                                     <p class="text-sm font-semibold text-slate-800">{{ $req->vendor->business_name }}</p>
                                     <p class="text-xs text-slate-400">{{ $req->vendor->vendor_code }}</p>
                                 </td>
-                                <td class="whitespace-nowrap px-5 py-4 text-sm font-bold text-slate-900">₹{{ number_format((float)$req->amount,2) }}</td>
+                                <td class="whitespace-nowrap px-5 py-4 text-sm font-bold {{ $req->status === 'approved' ? 'text-emerald-700' : ($req->status === 'rejected' ? 'text-red-700' : 'text-amber-700') }}">{{ $req->status === 'approved' ? '+' : '' }}₹{{ number_format((float)$req->amount,2) }}</td>
                                 <td class="whitespace-nowrap px-5 py-4 text-xs text-slate-600">{{ ucwords(str_replace('_',' ',$req->payment_mode)) }}</td>
                                 <td class="whitespace-nowrap px-5 py-4 font-mono text-xs text-slate-500">{{ $req->transaction_ref ?? '—' }}</td>
                                 <td class="whitespace-nowrap px-5 py-4 text-xs text-slate-500">{{ $req->bank_name ?? '—' }}</td>

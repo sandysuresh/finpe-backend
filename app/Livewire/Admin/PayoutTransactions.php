@@ -20,6 +20,11 @@ class PayoutTransactions extends Component
         if (! Auth::guard('admin')->user()?->hasModule('transactions')) {
             abort(403);
         }
+
+        $id = (int) request()->query('view', 0);
+        if ($id > 0) {
+            $this->show($id);
+        }
     }
 
     public function show(int $id): void

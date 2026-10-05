@@ -45,10 +45,7 @@ class Index extends Component
             $vendors = Vendor::query()
                 ->when($this->search !== '', function ($query) {
                     $query->where(function ($q) {
-                        $q->where('vendor_code', 'like', '%' . $this->search . '%')
-                            ->orWhere('business_name', 'like', '%' . $this->search . '%')
-                            ->orWhere('contact_name', 'like', '%' . $this->search . '%')
-                            ->orWhere('email', 'like', '%' . $this->search . '%')
+                        $q->where('business_name', 'like', '%' . $this->search . '%')
                             ->orWhere('phone', 'like', '%' . $this->search . '%');
                     });
                 })

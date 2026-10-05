@@ -39,8 +39,6 @@
                         2 => 'Legal Details',
                         3 => 'Promoters',
                         4 => 'Directors & IT',
-                        5 => 'Business Plan',
-                        6 => 'Evaluation',
                         7 => 'Review',
                     ];
                 @endphp
@@ -73,7 +71,7 @@
                                 @if($number < $step)
                                     ✓
                                 @else
-                                    {{ $number }}
+                                    {{ $loop->iteration }}
                                 @endif
                             </span>
 

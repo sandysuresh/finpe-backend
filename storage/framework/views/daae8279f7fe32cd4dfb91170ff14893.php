@@ -1,12 +1,13 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="<?php echo e(str_replace('_', '-', app()->getLocale())); ?>">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ $title ?? 'Dashboard' }} — FinPe Vendor</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-    @livewireStyles
+    <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
+    <title><?php echo e($title ?? 'Dashboard'); ?> — FinPe Vendor</title>
+    <?php echo app('Illuminate\Foundation\Vite')(['resources/css/app.css', 'resources/js/app.js']); ?>
+    <?php echo \Livewire\Mechanisms\FrontendAssets\FrontendAssets::styles(); ?>
+
 </head>
 <body class="min-h-screen font-sans antialiased" style="--fi-accent:#6d28d9">
 
@@ -27,7 +28,7 @@
     </div>
 
     <nav class="flex-1 overflow-y-auto px-3 py-4">
-        @php
+        <?php
         $nav = [
             ['Dashboard',    'vendor.dashboard',    'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'],
             ['Send Money',   'vendor.send-money',   'M12 19l9 2-9-18-9 18 9-2zm0 0v-8'],
@@ -38,32 +39,34 @@
             ['Reports',      'vendor.reports',      'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'],
             ['Profile & KYC','vendor.profile',      'M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z'],
         ];
-        @endphp
+        ?>
         <p class="mb-2 px-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400">Menu</p>
-        @foreach($nav as [$label,$route,$icon])
-            @php $active = request()->routeIs($route); @endphp
-            <a href="{{ route($route) }}"
+        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $nav; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as [$label,$route,$icon]): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+            <?php $active = request()->routeIs($route); ?>
+            <a href="<?php echo e(route($route)); ?>"
                class="mb-0.5 flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition
-                      {{ $active ? 'bg-violet-600 font-semibold text-white shadow-sm' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                      <?php echo e($active ? 'bg-violet-600 font-semibold text-white shadow-sm' : 'text-slate-300 hover:bg-slate-800 hover:text-white'); ?>">
                 <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="{{ $icon }}"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="<?php echo e($icon); ?>"/>
                 </svg>
-                {{ $label }}
+                <?php echo e($label); ?>
+
             </a>
-        @endforeach
+        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
     </nav>
 
     <div class="shrink-0 border-t border-slate-800 p-4">
         <div class="flex items-center gap-3 rounded-xl bg-slate-800 p-3">
             <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-600 text-sm font-bold text-white">
-                {{ strtoupper(substr(auth('vendor')->user()->business_name,0,1)) }}
+                <?php echo e(strtoupper(substr(auth('vendor')->user()->business_name,0,1))); ?>
+
             </div>
             <div class="min-w-0 flex-1">
-                <div class="truncate text-[13px] font-semibold text-white">{{ auth('vendor')->user()->business_name }}</div>
-                <div class="truncate text-[11px] text-slate-300">{{ auth('vendor')->user()->vendor_code }}</div>
+                <div class="truncate text-[13px] font-semibold text-white"><?php echo e(auth('vendor')->user()->business_name); ?></div>
+                <div class="truncate text-[11px] text-slate-300"><?php echo e(auth('vendor')->user()->vendor_code); ?></div>
             </div>
-            <form method="POST" action="{{ route('vendor.logout') }}">
-                @csrf
+            <form method="POST" action="<?php echo e(route('vendor.logout')); ?>">
+                <?php echo csrf_field(); ?>
                 <button class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-700 hover:text-red-400">
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
@@ -83,37 +86,58 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
             </svg>
         </button>
-        <div class="hidden text-sm font-medium text-slate-600 lg:block">{{ now()->format('l, d F Y') }}</div>
+        <div class="hidden text-sm font-medium text-slate-600 lg:block"><?php echo e(now()->format('l, d F Y')); ?></div>
         <div class="ml-auto flex items-center gap-3">
-            @php $kyc = auth('vendor')->user()->kyc_status; @endphp
-            @if($kyc === 'pending')
-                <a href="{{ route('vendor.profile') }}" class="hidden items-center gap-1.5 rounded-full border border-amber-300 bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800 sm:flex">
+            <?php $kyc = auth('vendor')->user()->kyc_status; ?>
+            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($kyc === 'pending'): ?>
+                <a href="<?php echo e(route('vendor.profile')); ?>" class="hidden items-center gap-1.5 rounded-full border border-amber-300 bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800 sm:flex">
                     <span class="h-1.5 w-1.5 rounded-full bg-amber-600"></span>KYC Pending
                 </a>
-            @elseif($kyc === 'submitted')
-                <a href="{{ route('vendor.profile') }}" class="hidden items-center gap-1.5 rounded-full border border-blue-300 bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-800 sm:flex">
+            <?php elseif($kyc === 'submitted'): ?>
+                <a href="<?php echo e(route('vendor.profile')); ?>" class="hidden items-center gap-1.5 rounded-full border border-blue-300 bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-800 sm:flex">
                     <span class="h-1.5 w-1.5 rounded-full bg-blue-600"></span>KYC Under Review
                 </a>
-            @elseif($kyc === 'rejected')
-                <a href="{{ route('vendor.profile') }}" class="hidden items-center gap-1.5 rounded-full border border-red-300 bg-red-100 px-3 py-1 text-xs font-semibold text-red-800 sm:flex">
+            <?php elseif($kyc === 'rejected'): ?>
+                <a href="<?php echo e(route('vendor.profile')); ?>" class="hidden items-center gap-1.5 rounded-full border border-red-300 bg-red-100 px-3 py-1 text-xs font-semibold text-red-800 sm:flex">
                     <span class="h-1.5 w-1.5 rounded-full bg-red-600"></span>KYC Rejected
                 </a>
-            @elseif($kyc === 'verified')
+            <?php elseif($kyc === 'verified'): ?>
                 <span class="hidden items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800 sm:flex">
                     <span class="h-1.5 w-1.5 rounded-full bg-emerald-600"></span>KYC Approved
                 </span>
-            @endif
-            @livewire('vendor.notification-bell')
+            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+            <?php
+$__split = function ($name, $params = []) {
+    return [$name, $params];
+};
+[$__name, $__params] = $__split('vendor.notification-bell');
+
+$__key = null;
+
+$__key ??= \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::generateKey('lw-1334465706-0', $__key);
+
+$__html = app('livewire')->mount($__name, $__params, $__key);
+
+echo $__html;
+
+unset($__html);
+unset($__key);
+unset($__name);
+unset($__params);
+unset($__split);
+if (isset($__slots)) unset($__slots);
+?>
             <div class="h-7 w-px bg-slate-300"></div>
             <div class="flex items-center gap-2">
                 <div class="flex h-8 w-8 items-center justify-center rounded-full bg-violet-700 text-sm font-bold text-white">
-                    {{ strtoupper(substr(auth('vendor')->user()->business_name,0,1)) }}
+                    <?php echo e(strtoupper(substr(auth('vendor')->user()->business_name,0,1))); ?>
+
                 </div>
-                <span class="hidden text-[13px] font-semibold text-slate-800 lg:block">{{ auth('vendor')->user()->business_name }}</span>
+                <span class="hidden text-[13px] font-semibold text-slate-800 lg:block"><?php echo e(auth('vendor')->user()->business_name); ?></span>
             </div>
         </div>
     </header>
-    <main class="p-5 lg:p-6">{{ $slot }}</main>
+    <main class="p-5 lg:p-6"><?php echo e($slot); ?></main>
 </div>
 
 <script>
@@ -124,6 +148,8 @@ window.addEventListener('resize', () => {
     if(window.innerWidth >= 1024) { document.getElementById('vs').style.transform='translateX(0)'; document.getElementById('vb').classList.add('hidden'); }
 });
 </script>
-@livewireScripts
+<?php echo \Livewire\Mechanisms\FrontendAssets\FrontendAssets::scripts(); ?>
+
 </body>
 </html>
+<?php /**PATH /home/sandeep/Documents/finpay/resources/views/layouts/vendor.blade.php ENDPATH**/ ?>

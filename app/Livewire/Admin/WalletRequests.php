@@ -5,6 +5,7 @@ use App\Models\Wallet;
 use App\Models\WalletLedger;
 use App\Models\WalletTopupRequest;
 use App\Support\AdminAudit;
+use App\Support\VendorNotify;
 use App\Support\UrlId;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -106,6 +107,16 @@ class WalletRequests extends Component
             'pending',
             ($approved ? 'approved' : 'rejected').($this->adminNote !== '' ? ' | '.$this->adminNote : ''),
         );
+
+        if ($request->vendor) {
+            VendorNotify::walletDecision(
+                $request->vendor,
+                $approved,
+                (string) $request->reference,
+                (string) $request->amount,
+                $this->adminNote,
+            );
+        }
 
         $this->showApproveModal = false;
         $this->resetPage();

@@ -104,6 +104,10 @@ Route::middleware('auth:vendor')->prefix('vendor')->name('vendor.')->group(funct
     Route::get('/send-money', \App\Livewire\Vendor\SendMoney::class)->name('send-money');
     Route::get('/beneficiaries', \App\Livewire\Vendor\Beneficiaries::class)->name('beneficiaries');
     Route::get('/transactions', \App\Livewire\Vendor\TransactionReport::class)->name('transactions');
+    Route::get('/payout-api', \App\Livewire\Vendor\PayoutApi::class)->name('payout-api');
+    Route::get('/payout-transactions/{reference}/receipt', \App\Http\Controllers\Vendor\PayoutReceiptController::class)
+        ->where('reference', '[A-Za-z0-9\-]+')
+        ->name('payout-transactions.receipt');
     Route::get('/reports', \App\Livewire\Vendor\Reports::class)->name('reports');
     Route::get('/settlements', \App\Livewire\Vendor\SettlementReport::class)->name('settlements');
     Route::get('/developer', \App\Livewire\Vendor\Developer::class)->name('developer');

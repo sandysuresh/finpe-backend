@@ -5,28 +5,26 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class VendorPromoterShareholder extends Model
+class VendorNotification extends Model
 {
     protected $fillable = [
-        'vendor_id',
-        'full_name',
-        'shareholding_percentage',
-        'pan_card_no',
-        'aadhaar_card_no',
-        'date_of_birth',
-        'official_address',
+        'vendor_id', 'type', 'title', 'body', 'action_url', 'read_at',
     ];
 
     protected function casts(): array
     {
         return [
-            'shareholding_percentage' => 'decimal:2',
-            'date_of_birth' => 'date',
+            'read_at' => 'datetime',
         ];
     }
 
     public function vendor(): BelongsTo
     {
         return $this->belongsTo(Vendor::class);
+    }
+
+    public function isUnread(): bool
+    {
+        return $this->read_at === null;
     }
 }

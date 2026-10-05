@@ -37,6 +37,9 @@ class Profile extends Component
 
         $savedStep = (int) $vendor->registration_step;
         $this->step = ($savedStep >= 1 && $savedStep <= 7) ? $savedStep : 1;
+        if (in_array($this->step, [5, 6], true)) {
+            $this->step = 7;
+        }
 
         $this->loadStepData($this->step);
         $this->loadStepData(1);
@@ -46,6 +49,10 @@ class Profile extends Component
 
     public function goToStep(int $step): void
     {
+        if (in_array($step, [5, 6], true)) {
+            $step = 7;
+        }
+
         if ($step < 1 || $step > 7) {
             return;
         }
@@ -121,8 +128,6 @@ class Profile extends Component
                 2 => 'Legal Details',
                 3 => 'Promoters',
                 4 => 'Directors & IT',
-                5 => 'Business Plan',
-                6 => 'Evaluation',
             ];
             $names = collect($missing)->map(fn ($n) => $labels[$n] ?? "Step {$n}")->implode(', ');
             $this->errorMsg = "KYC submit ke liye pehle yeh steps complete karein: {$names}.";

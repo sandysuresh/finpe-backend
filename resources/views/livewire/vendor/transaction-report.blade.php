@@ -154,7 +154,7 @@
                 <table class="min-w-full">
                     <thead class="bg-slate-50">
                         <tr>
-                            @foreach(['Reference','Beneficiary','Amount','Service','Status','Date'] as $col)
+                            @foreach(['Reference','Beneficiary','Amount','Service','Status','Date',''] as $col)
                                 <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">{{ $col }}</th>
                             @endforeach
                         </tr>
@@ -179,6 +179,7 @@
                                     <span class="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold {{ $sc }}">{{ ucfirst($tx->status) }}</span>
                                 </td>
                                 <td class="whitespace-nowrap px-5 py-4 text-xs text-slate-400">{{ $tx->created_at->format('d M Y, h:i A') }}</td>
+                                <td class="whitespace-nowrap px-5 py-4">@include('livewire.vendor.partials.txn-actions', ['id' => $tx->id, 'reference' => $tx->reference, 'type' => $tx->type])</td>
                             </tr>
                         @endforeach
                     </tbody>

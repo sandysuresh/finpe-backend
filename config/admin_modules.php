@@ -68,7 +68,6 @@ return [
         'route' => 'admin.wallet-requests',
         'children' => [
             ['label' => 'Wallet Requests', 'route' => 'admin.wallet-requests'],
-            ['label' => 'Settlements', 'route' => 'admin.settlements'],
         ],
     ],
     'reports' => [

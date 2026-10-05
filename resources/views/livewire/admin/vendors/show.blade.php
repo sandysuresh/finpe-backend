@@ -201,8 +201,8 @@
                         @foreach([
                             $kv('Entity Type', $ld->entity_type),
                             $kv('Registered With', $ld->registration_body),
-                            $kv('Registration Number', $ld->registration_number),
-                            $kv('PAN / TIN', $ld->tax_identification),
+                            $kv('Corporate Identification Number (CIN)', $ld->registration_number),
+                            $kv('PAN Card Number', $ld->tax_identification),
                             $kv('RBI Regulated', $ld->rbi_regulated ? 'Yes' : 'No'),
                             $kv('Incorporation Year', $ld->incorporation_year),
                             $kv('Merchant Acquiring Years', $ld->merchant_acquiring_years),
@@ -228,7 +228,8 @@
                             @foreach([
                                 $kv('Name', $p->full_name),
                                 $kv('Share %', $p->shareholding_percentage),
-                                $kv('PAN', $p->pan_card_no),
+                                $kv('PAN Card Number', $p->pan_card_no),
+                                $kv('Aadhaar Card Number', $p->aadhaar_card_no),
                                 $kv('DOB', optional($p->date_of_birth)->format('d M Y')),
                                 $kv('Address', $p->official_address),
                             ] as $item)
@@ -281,69 +282,6 @@
                 @endif
             </div>
 
-            <div class="fi-card overflow-hidden">
-                <div class="border-b border-slate-100 px-6 py-5">
-                    <h3 class="text-sm font-semibold text-slate-900">5. Business Plan</h3>
-                </div>
-                @if($vendor->businessPlans->isNotEmpty())
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full text-sm">
-                            <thead class="bg-slate-50">
-                                <tr>
-                                    <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Month</th>
-                                    <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Customers</th>
-                                    <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Transactions</th>
-                                    <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Volume</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-50">
-                                @foreach($vendor->businessPlans as $plan)
-                                    <tr>
-                                        <td class="px-5 py-3 font-medium">{{ $plan->month }}</td>
-                                        <td class="px-5 py-3">{{ number_format($plan->customer_registrations) }}</td>
-                                        <td class="px-5 py-3">{{ number_format($plan->transactions) }}</td>
-                                        <td class="px-5 py-3">₹{{ number_format($plan->total_volume) }}</td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                @else
-                    <p class="px-6 py-8 text-sm text-slate-400">Not submitted.</p>
-                @endif
-            </div>
-
-            <div class="fi-card p-6">
-                <h3 class="mb-4 text-sm font-semibold text-slate-900">6. Evaluation</h3>
-                @if($vendor->evaluation)
-                    @php $ev = $vendor->evaluation; @endphp
-                    <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
-                        @foreach([
-                            $kv('CA Name', $ev->ca_name),
-                            $kv('Constitution', $ev->ca_constitution),
-                            $kv('Incorporation Date', optional($ev->ca_incorporation_date)->format('d M Y')),
-                            $kv('Networth', $ev->networth),
-                            $kv('Credit Rating', $ev->credit_rating),
-                            $kv('Bank Since', $ev->dealing_with_bank_since),
-                            $kv('Contract Expiry', optional($ev->contract_expiry_date)->format('d M Y')),
-                            $kv('Engagement Scope', $ev->engagement_scope),
-                            $kv('Open Risk Issues', $ev->open_risk_issues),
-                            $kv('Documentation', $ev->documentation_status),
-                            $kv('Conflict of Interest', $ev->conflict_of_interest),
-                            $kv('Termination / Penalties', $ev->terminated_or_penalties),
-                            $kv('RBI Defaulter', $ev->rbi_defaulter),
-                            $kv('Recommendations', $ev->recommendations),
-                        ] as $item)
-                            <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
-                                <p class="text-xs font-semibold text-slate-400">{{ $item['label'] }}</p>
-                                <p class="mt-1 text-sm font-medium text-slate-800">{{ $item['value'] }}</p>
-                            </div>
-                        @endforeach
-                    </div>
-                @else
-                    <p class="text-sm text-slate-400">Not submitted.</p>
-                @endif
-            </div>
         </div>
     @endif
 
@@ -453,6 +391,7 @@
                                 <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Amount</th>
                                 <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Reference</th>
                                 <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Payout Provider</th>
+                                <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400"></th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-50">
@@ -463,11 +402,18 @@
                                 @endphp
                                 <tr>
                                     <td class="px-5 py-3">{{ $row->created_at->format('d M Y H:i') }}</td>
-                                    <td class="px-5 py-3">{{ ucfirst($row->type) }}</td>
-                                    <td class="px-5 py-3">
-                                        ₹{{ number_format((float) $row->amount, 2) }}
+                                    <td class="px-5 py-3 text-xs font-semibold {{ $row->type === 'credit' ? 'text-emerald-700' : 'text-red-700' }}">{{ ucfirst($row->type) }}</td>
+                                    <td class="px-5 py-3 font-semibold {{ $row->type === 'credit' ? 'text-emerald-700' : 'text-red-700' }}">
+                                        {{ $row->type === 'credit' ? '+' : '-' }}₹{{ number_format((float) $row->amount, 2) }}
                                         @if($payout)
-                                            <p class="text-xs text-slate-500">Payout ₹{{ number_format((float) $payout->amount, 2) }} · {{ ucfirst((string) $payout->status) }}</p>
+                                            @php
+                                                $payoutStatusClass = match((string) $payout->status) {
+                                                    'success' => 'bg-emerald-50 text-emerald-700',
+                                                    'failed' => 'bg-red-50 text-red-600',
+                                                    default => 'bg-amber-50 text-amber-700',
+                                                };
+                                            @endphp
+                                            <p class="mt-1 text-xs font-medium text-slate-500">Payout ₹{{ number_format((float) $payout->amount, 2) }} · <span class="inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold {{ $payoutStatusClass }}">{{ ucfirst((string) $payout->status) }}</span></p>
                                         @endif
                                     </td>
                                     <td class="px-5 py-3">
@@ -477,6 +423,7 @@
                                         @endif
                                     </td>
                                     <td class="px-5 py-3">{{ $providerName ?: '' }}</td>
+                                    <td class="px-5 py-3">@include('livewire.admin.partials.txn-actions', ['id' => $payout?->id, 'reference' => $payout?->reference, 'type' => $payout ? 'payout' : null])</td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -507,7 +454,16 @@
                                     <td class="px-5 py-3">{{ $req->reference }}</td>
                                     <td class="px-5 py-3">₹{{ number_format((float) $req->amount, 2) }}</td>
                                     <td class="px-5 py-3">{{ $req->payment_mode }}</td>
-                                    <td class="px-5 py-3">{{ ucfirst($req->status) }}</td>
+                                    <td class="px-5 py-3">
+                                        @php
+                                            $topupClass = match($req->status) {
+                                                'approved' => 'bg-emerald-50 text-emerald-700',
+                                                'rejected' => 'bg-red-50 text-red-600',
+                                                default => 'bg-amber-50 text-amber-700',
+                                            };
+                                        @endphp
+                                        <span class="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold {{ $topupClass }}">{{ ucfirst($req->status) }}</span>
+                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -540,6 +496,7 @@
                             <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Commission</th>
                             <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Status</th>
                             <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Date</th>
+                            <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400"></th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-50">
@@ -550,8 +507,18 @@
                                 <td class="px-5 py-3">{{ $txn->beneficiary_name ?? '—' }}</td>
                                 <td class="px-5 py-3">₹{{ number_format((float) $txn->amount, 2) }}</td>
                                 <td class="px-5 py-3">{{ $txn->commissionEntry ? '₹'.number_format((float) $txn->commissionEntry->commission_amount, 2) : '—' }}</td>
-                                <td class="px-5 py-3">{{ ucfirst($txn->status) }}</td>
+                                <td class="px-5 py-3">
+                                    @php
+                                        $txnStatusClass = match((string) $txn->status) {
+                                            'success' => 'bg-emerald-50 text-emerald-700',
+                                            'failed' => 'bg-red-50 text-red-600',
+                                            default => 'bg-amber-50 text-amber-700',
+                                        };
+                                    @endphp
+                                    <span class="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold {{ $txnStatusClass }}">{{ ucfirst($txn->status) }}</span>
+                                </td>
                                 <td class="px-5 py-3">{{ $txn->created_at->format('d M Y H:i') }}</td>
+                                <td class="px-5 py-3">@include('livewire.admin.partials.txn-actions', ['id' => $txn->id, 'reference' => $txn->reference, 'type' => $txn->type])</td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -603,28 +570,48 @@
                 <table class="min-w-full text-sm">
                     <thead class="bg-slate-50">
                         <tr>
-                            <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Name</th>
-                            <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Account</th>
+                            <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Beneficiary name</th>
+                            <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Account number</th>
                             <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">IFSC</th>
                             <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Bank</th>
                             <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Mobile</th>
+                            <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Payout provider</th>
+                            <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Last transaction</th>
+                            <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Status</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-50">
                         @foreach($beneficiaries as $b)
+                            @php
+                                $statusClass = match($b['status']) {
+                                    'success' => 'bg-emerald-50 text-emerald-700',
+                                    'failed' => 'bg-red-50 text-red-600',
+                                    'pending' => 'bg-amber-50 text-amber-700',
+                                    default => 'bg-slate-100 text-slate-500',
+                                };
+                            @endphp
                             <tr>
-                                <td class="px-5 py-3">{{ $b->name }}</td>
-                                <td class="px-5 py-3">{{ $b->account_number }}</td>
-                                <td class="px-5 py-3">{{ $b->ifsc_code ?? '—' }}</td>
-                                <td class="px-5 py-3">{{ $b->bank_name ?? '—' }}</td>
-                                <td class="px-5 py-3">{{ $b->mobile ?? '—' }}</td>
+                                <td class="px-5 py-3 font-semibold text-slate-900">{{ $b['name'] }}</td>
+                                <td class="px-5 py-3 font-mono text-xs">{{ $b['account'] }}</td>
+                                <td class="px-5 py-3">{{ $b['ifsc'] }}</td>
+                                <td class="px-5 py-3">{{ $b['bank'] }}</td>
+                                <td class="px-5 py-3 font-mono text-xs">{{ $b['mobile'] }}</td>
+                                <td class="px-5 py-3">{{ $b['provider'] }}</td>
+                                <td class="px-5 py-3">{{ $b['last_at'] }}</td>
+                                <td class="px-5 py-3">
+                                    @if($b['status'])
+                                        <span class="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold {{ $statusClass }}">{{ ucfirst($b['status']) }}</span>
+                                    @else
+                                        —
+                                    @endif
+                                </td>
                             </tr>
                         @endforeach
                     </tbody>
                 </table>
                 <div class="px-5 py-3">{{ $beneficiaries->links() }}</div>
             @else
-                <p class="px-6 py-8 text-sm text-slate-400">No beneficiaries.</p>
+                <p class="px-6 py-8 text-sm text-slate-400">No beneficiaries from this vendor's payout transactions.</p>
             @endif
         </div>
     @endif
@@ -658,21 +645,40 @@
             </div>
             <div class="fi-card p-6">
                 <div class="mb-4 flex items-center justify-between gap-3">
-                    <h3 class="text-sm font-semibold text-slate-900">Payout API</h3>
+                    <div>
+                        <h3 class="text-sm font-semibold text-slate-900">Payout API</h3>
+                        <p class="mt-1 text-sm font-semibold text-slate-900">Payout Provider: {{ $selectedPayoutProvider['name'] ?? '—' }}</p>
+                    </div>
                     @if($payoutAccess?->is_enabled)
                         <button type="button" wire:click="disablePayoutApi" class="fi-btn fi-btn-danger fi-btn-sm">Disable Payout API</button>
                     @else
                         <button type="button" wire:click="enablePayoutApi" class="fi-btn fi-btn-success fi-btn-sm">Assign and enable Payout API</button>
                     @endif
                 </div>
-                <div class="space-y-2 text-sm">
+                <label class="block max-w-sm text-sm font-semibold text-slate-700">
+                    Payout Provider
+                    <select wire:model.live="payoutProviderCode" class="fi-input mt-1 text-sm font-normal" aria-label="Payout Provider">
+                        @foreach($payoutProviders as $provider)
+                            <option value="{{ $provider['code'] }}">{{ $provider['name'] }}</option>
+                        @endforeach
+                    </select>
+                </label>
+                <div class="mt-4 space-y-2 text-sm">
                     <div class="flex justify-between gap-4">
-                        <span class="text-slate-500">API access</span>
+                        <span class="text-slate-500">Provider</span>
+                        <span class="font-semibold text-slate-900">{{ $selectedPayoutProvider['name'] ?? '—' }}</span>
+                    </div>
+                    <div class="flex justify-between gap-4">
+                        <span class="text-slate-500">API Access</span>
                         <span class="font-semibold {{ $payoutAccess?->is_enabled ? 'text-emerald-700' : 'text-red-600' }}">{{ $payoutAccess?->is_enabled ? 'Enabled' : 'Disabled' }}</span>
                     </div>
                     <div class="flex justify-between gap-4">
                         <span class="text-slate-500">Credential</span>
-                        <span class="font-semibold {{ $vendor->apiCredential ? 'text-emerald-700' : 'text-slate-500' }}">{{ $vendor->apiCredential ? 'Generated' : 'Not generated' }}</span>
+                        <span class="font-semibold {{ $payoutCredential ? 'text-emerald-700' : 'text-slate-500' }}">{{ $payoutCredential ? 'Generated' : 'Not Generated' }}</span>
+                    </div>
+                    <div class="flex justify-between gap-4">
+                        <span class="text-slate-500">Environment</span>
+                        <span class="font-semibold text-slate-900">{{ $selectedPayoutProvider['environment'] ?? '—' }}</span>
                     </div>
                 </div>
                 <div class="mt-4">
@@ -685,10 +691,10 @@
                 </div>
                 @if($payoutAccess?->is_enabled)
                     <div class="mt-4 border-t border-slate-100 pt-4">
-                        @if($vendor->apiCredential)
+                        @if($payoutCredential)
                             <div class="flex justify-between gap-4 text-sm">
                                 <span class="text-slate-500">API Key</span>
-                                <span class="font-mono text-slate-800">{{ $vendor->apiCredential->api_key }}</span>
+                                <span class="font-mono text-slate-800">{{ $payoutCredential->api_key }}</span>
                             </div>
                             <div class="mt-3 flex justify-end">
                                 <button type="button" wire:click="rotatePayoutCredentials" class="fi-btn fi-btn-primary fi-btn-sm">Rotate API secret</button>

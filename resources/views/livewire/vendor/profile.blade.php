@@ -166,8 +166,8 @@
 
         @php $incompleteSteps = $this->incompleteKycSteps(); @endphp
         @if($kyc === 'pending' || $kyc === 'rejected')
-            <div class="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-                @foreach([1=>'Registration',2=>'Legal',3=>'Promoters',4=>'Directors',5=>'Business Plan',6=>'Evaluation'] as $n => $lbl)
+            <div class="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                @foreach([1=>'Registration',2=>'Legal',3=>'Promoters',4=>'Directors'] as $n => $lbl)
                     @php $done = ! in_array($n, $incompleteSteps, true); @endphp
                     <button type="button" wire:click="goToStep({{ $n }})"
                             class="rounded-xl border px-3 py-2.5 text-left transition {{ $done ? 'border-emerald-200 bg-emerald-50' : 'border-amber-200 bg-amber-50' }}">
@@ -187,8 +187,6 @@
                             2 => 'Legal Details',
                             3 => 'Promoters',
                             4 => 'Directors & IT',
-                            5 => 'Business Plan',
-                            6 => 'Evaluation',
                             7 => 'Review',
                         ];
                     @endphp
@@ -208,7 +206,7 @@
                                         : ($stepDone
                                             ? 'border-green-300 bg-green-100 text-green-700'
                                             : 'border-slate-300 bg-white text-slate-400') }}">
-                                    {{ $stepDone && $step !== $number ? '✓' : $number }}
+                                    {{ $stepDone && $step !== $number ? '✓' : $loop->iteration }}
                                 </span>
                                 <span class="hidden text-sm font-medium lg:block
                                     {{ $step === $number

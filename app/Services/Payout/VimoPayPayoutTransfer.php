@@ -14,6 +14,18 @@ class VimoPayPayoutTransfer implements PayoutProvider
         return CommissionProviders::VIMOPAY;
     }
 
+    public function name(): string
+    {
+        return 'VimoPay';
+    }
+
+    public function environment(): string
+    {
+        $environment = strtoupper(trim((string) config('services.vimopay.environment', 'uat')));
+
+        return $environment !== '' ? $environment : 'UAT';
+    }
+
     public function __construct(private VimoPayClient $client) {}
 
     public function transfer(array $payload): array

@@ -13,6 +13,16 @@ class FakePayoutTransfer implements PayoutProvider
         return CommissionProviders::VIMOPAY;
     }
 
+    public function name(): string
+    {
+        return 'VimoPay';
+    }
+
+    public function environment(): string
+    {
+        return 'UAT';
+    }
+
     public string $outcome = 'pending';
 
     /** @var array<string, mixed> */

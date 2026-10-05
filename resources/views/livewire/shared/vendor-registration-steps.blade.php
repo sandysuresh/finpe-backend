@@ -186,23 +186,7 @@
                 </div>
 
 
-                {{-- Auto Generated Codes --}}
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-
-                    <div class="rounded-xl border border-purple-200 bg-purple-50 p-4">
-                        <p class="text-xs text-purple-600 font-medium">
-                            PMT Code
-                        </p>
-
-                        <p class="mt-1 text-sm font-semibold text-purple-900">
-                            {{ $kycIsAdmin ? 'Auto Generated' : ($vendor?->pmt_code ?? '—') }}
-                        </p>
-
-                        <p class="mt-1 text-xs text-purple-600">
-                            Vendor will use this code during login.
-                        </p>
-                    </div>
-
 
                     <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
                         <p class="text-xs text-slate-500 font-medium">
@@ -311,14 +295,14 @@
                     {{-- Registration Number --}}
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-2">
-                            Registration Number & Certificate
+                            Corporate Identification Number (CIN)
                         </label>
 
                         <input
                             type="text"
                             wire:model="registration_number"
                             class="fi-input"
-                            placeholder="Registration number"
+                            placeholder="Corporate Identification Number (CIN)"
                         >
 
                         @error('registration_number')
@@ -330,14 +314,14 @@
                     {{-- PAN --}}
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-2">
-                            PAN / TIN
+                            PAN Card Number
                         </label>
 
                         <input
                             type="text"
                             wire:model="tax_identification"
                             class="fi-input"
-                            placeholder="PAN / TIN"
+                            placeholder="PAN Card Number"
                         >
 
                         @error('tax_identification')
@@ -577,6 +561,26 @@
                                 >
 
                                 @error("promoters.$index.pan")
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">
+                                    Aadhaar Card Number @unless($kycIsAdmin)<span class="text-red-500">*</span>@endunless
+                                </label>
+
+                                <input
+                                    type="text"
+                                    wire:model="promoters.{{ $index }}.aadhaar"
+                                    inputmode="numeric"
+                                    maxlength="12"
+                                    class="fi-input"
+                                    placeholder="12-digit Aadhaar number"
+                                >
+
+                                @error("promoters.$index.aadhaar")
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
                             </div>
@@ -1079,440 +1083,6 @@
                     class="fi-btn fi-btn-primary"
                 >
                     <span wire:loading.remove wire:target="nextStep">
-                        Continue →
-                    </span>
-
-                    <span wire:loading wire:target="nextStep">
-                        Saving...
-                    </span>
-                </button>
-
-            </div>
-
-        </div>
-
-    @endif
-
-
-    {{-- ============================================================= --}}
-    {{-- STEP 5 - BUSINESS PLAN --}}
-    {{-- ============================================================= --}}
-
-    @if($step === 5)
-
-        <div class="fi-card overflow-hidden">
-
-            <div class="px-6 py-5 border-b border-slate-200">
-
-                <h2 class="text-lg font-semibold text-slate-900">
-                    3 Years Business Plan
-                </h2>
-
-                <p class="mt-1 text-sm text-slate-500">
-                    Enter projected customers, transactions and volume for each month.
-                </p>
-
-            </div>
-
-
-            <div class="p-6">
-
-                <div class="overflow-x-auto">
-
-                    <table class="w-full text-sm">
-
-                        <thead>
-
-                            <tr class="border-b border-slate-200 text-left">
-
-                                <th class="px-3 py-3 font-semibold text-slate-700">
-                                    Month
-                                </th>
-
-                                <th class="px-3 py-3 font-semibold text-slate-700">
-                                    Customers
-                                </th>
-
-                                <th class="px-3 py-3 font-semibold text-slate-700">
-                                    Transactions
-                                </th>
-
-                                <th class="px-3 py-3 font-semibold text-slate-700">
-                                    Volume
-                                </th>
-
-                            </tr>
-
-                        </thead>
-
-
-                        <tbody>
-
-                            @foreach($business_plan as $index => $plan)
-
-                                <tr
-                                    wire:key="business-plan-{{ $index }}"
-                                    class="border-b border-slate-100"
-                                >
-
-                                    <td class="px-3 py-3">
-
-                                        <div class="font-medium text-slate-800">
-                                            {{ $plan['month'] }}
-                                        </div>
-
-                                    </td>
-
-
-                                    <td class="px-3 py-3">
-
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            wire:model="business_plan.{{ $index }}.customers"
-                                            class="fi-input"
-                                            placeholder="0"
-                                        >
-
-                                        @error("business_plan.$index.customers")
-                                            <p class="mt-1 text-xs text-red-600">
-                                                {{ $message }}
-                                            </p>
-                                        @enderror
-
-                                    </td>
-
-
-                                    <td class="px-3 py-3">
-
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            wire:model="business_plan.{{ $index }}.transactions"
-                                            class="fi-input"
-                                            placeholder="0"
-                                        >
-
-                                        @error("business_plan.$index.transactions")
-                                            <p class="mt-1 text-xs text-red-600">
-                                                {{ $message }}
-                                            </p>
-                                        @enderror
-
-                                    </td>
-
-
-                                    <td class="px-3 py-3">
-
-                                        <input
-                                            type="number"
-                                            step="0.01"
-                                            min="0"
-                                            wire:model="business_plan.{{ $index }}.volume"
-                                            class="fi-input"
-                                            placeholder="0.00"
-                                        >
-
-                                        @error("business_plan.$index.volume")
-                                            <p class="mt-1 text-xs text-red-600">
-                                                {{ $message }}
-                                            </p>
-                                        @enderror
-
-                                    </td>
-
-                                </tr>
-
-                            @endforeach
-
-                        </tbody>
-
-                    </table>
-
-                </div>
-
-            </div>
-
-
-            <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-between">
-
-                <button
-                    type="button"
-                    wire:click="previousStep"
-                    class="fi-btn fi-btn-secondary"
-                >
-                    ← Back
-                </button>
-
-                <button
-                    type="button"
-                    wire:click="nextStep"
-                    wire:loading.attr="disabled"
-                    wire:target="nextStep"
-                    class="fi-btn fi-btn-primary"
-                >
-                    <span wire:loading.remove wire:target="nextStep">
-                        Continue →
-                    </span>
-
-                    <span wire:loading wire:target="nextStep">
-                        Saving...
-                    </span>
-                </button>
-
-            </div>
-
-        </div>
-
-    @endif
-
-
-    {{-- ============================================================= --}}
-    {{-- STEP 6 - EVALUATION --}}
-    {{-- ============================================================= --}}
-
-    @if($step === 6)
-
-        <div class="fi-card overflow-hidden">
-
-            <div class="px-6 py-5 border-b border-slate-200">
-
-                <h2 class="text-lg font-semibold text-slate-900">
-                    Evaluation
-                </h2>
-
-                <p class="mt-1 text-sm text-slate-500">
-                    Complete financial, compliance and evaluation information.
-                </p>
-
-            </div>
-
-
-            <div class="p-6 space-y-6">
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">
-                            Name of CA
-                        </label>
-
-                        <input
-                            type="text"
-                            wire:model="ca_name"
-                            class="fi-input"
-                            placeholder="Name of CA"
-                        >
-                    </div>
-
-
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">
-                            Constitution of CA
-                        </label>
-
-                        <input
-                            type="text"
-                            wire:model="ca_constitution"
-                            class="fi-input"
-                            placeholder="Constitution of CA"
-                        >
-                    </div>
-
-
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">
-                            CA Incorporation Date
-                        </label>
-
-                        <input
-                            type="date"
-                            wire:model.live="ca_incorporation_date"
-                            min="1900-01-01"
-                            max="{{ $maxDate }}"
-                            class="fi-input"
-                        >
-                    </div>
-
-
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">
-                            Networth / Financial Strength
-                        </label>
-
-                        <input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            wire:model="networth"
-                            class="fi-input"
-                            placeholder="0.00"
-                        >
-                    </div>
-
-
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">
-                            External Credit Rating
-                        </label>
-
-                        <input
-                            type="text"
-                            wire:model="credit_rating"
-                            class="fi-input"
-                            placeholder="Credit rating"
-                        >
-                    </div>
-
-
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">
-                            Dealing with Bank Since
-                        </label>
-
-                        <input
-                            type="text"
-                            wire:model="dealing_with_bank_since"
-                            class="fi-input"
-                            placeholder="Year / Date"
-                        >
-                    </div>
-
-
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">
-                            Contract Expiry Date
-                        </label>
-
-                        <input
-                            type="date"
-                            wire:model="contract_expiry_date"
-                            class="fi-input"
-                        >
-                    </div>
-
-                </div>
-
-
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-2">
-                        Engagement Scope
-                    </label>
-
-                    <textarea
-                        wire:model="engagement_scope"
-                        rows="4"
-                        class="fi-input"
-                        placeholder="Detailed description of type and scope of engagement"
-                    ></textarea>
-                </div>
-
-
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-2">
-                        Open Risk Issues
-                    </label>
-
-                    <textarea
-                        wire:model="open_risk_issues"
-                        rows="4"
-                        class="fi-input"
-                        placeholder="Reputation, compliance, data security etc."
-                    ></textarea>
-                </div>
-
-
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-2">
-                        Documentation Status
-                    </label>
-
-                    <textarea
-                        wire:model="documentation_status"
-                        rows="3"
-                        class="fi-input"
-                        placeholder="Status of CA documentation"
-                    ></textarea>
-                </div>
-
-
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">
-                            Conflict of Interest
-                        </label>
-
-                        <textarea
-                            wire:model="conflict_of_interest"
-                            rows="4"
-                            class="fi-input"
-                        ></textarea>
-                    </div>
-
-
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">
-                            Termination / Penalties
-                        </label>
-
-                        <textarea
-                            wire:model="terminated_or_penalties"
-                            rows="4"
-                            class="fi-input"
-                        ></textarea>
-                    </div>
-
-
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">
-                            RBI Defaulter Status
-                        </label>
-
-                        <textarea
-                            wire:model="rbi_defaulter"
-                            rows="4"
-                            class="fi-input"
-                        ></textarea>
-                    </div>
-
-                </div>
-
-
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-2">
-                        Recommendations
-                    </label>
-
-                    <textarea
-                        wire:model="recommendations"
-                        rows="5"
-                        class="fi-input"
-                        placeholder="Recommendations"
-                    ></textarea>
-                </div>
-
-            </div>
-
-
-            <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-between">
-
-                <button
-                    type="button"
-                    wire:click="previousStep"
-                    class="fi-btn fi-btn-secondary"
-                >
-                    ← Back
-                </button>
-
-                <button
-                    type="button"
-                    wire:click="nextStep"
-                    wire:loading.attr="disabled"
-                    wire:target="nextStep"
-                    class="fi-btn fi-btn-primary"
-                >
-                    <span wire:loading.remove wire:target="nextStep">
                         Review →
                     </span>
 
@@ -1682,7 +1252,7 @@
 
                             <div>
                                 <p class="text-xs text-slate-500">
-                                    Registration Number
+                                    Corporate Identification Number (CIN)
                                 </p>
 
                                 <p class="font-medium">
@@ -1693,7 +1263,7 @@
 
                             <div>
                                 <p class="text-xs text-slate-500">
-                                    PAN / TIN
+                                    PAN Card Number
                                 </p>
 
                                 <p class="font-medium">
@@ -1758,11 +1328,21 @@
 
                                         <div>
                                             <p class="text-xs text-slate-500">
-                                                PAN
+                                                PAN Card Number
                                             </p>
 
                                             <p class="font-medium">
                                                 {{ $promoter['pan'] ?: '—' }}
+                                            </p>
+                                        </div>
+
+                                        <div>
+                                            <p class="text-xs text-slate-500">
+                                                Aadhaar Card Number
+                                            </p>
+
+                                            <p class="font-medium">
+                                                {{ $promoter['aadhaar'] ?: '—' }}
                                             </p>
                                         </div>
 
@@ -1848,135 +1428,6 @@
                     </div>
 
 
-                    {{-- Business Plan --}}
-                    <div class="rounded-xl border border-slate-200 p-5">
-
-                        <div class="flex items-center justify-between mb-4">
-
-                            <h3 class="font-semibold text-slate-900">
-                                5. Business Plan
-                            </h3>
-
-                            <button
-                                type="button"
-                                wire:click="goToStep(5)"
-                                class="text-sm text-purple-600 font-medium"
-                            >
-                                Edit
-                            </button>
-
-                        </div>
-
-
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-
-                            <div>
-                                <p class="text-xs text-slate-500">
-                                    Plan Months
-                                </p>
-
-                                <p class="font-medium">
-                                    {{ count($business_plan) }}
-                                </p>
-                            </div>
-
-
-                            <div>
-                                <p class="text-xs text-slate-500">
-                                    First Month
-                                </p>
-
-                                <p class="font-medium">
-                                    {{ $business_plan[0]['month'] ?? '—' }}
-                                </p>
-                            </div>
-
-
-                            <div>
-                                <p class="text-xs text-slate-500">
-                                    Last Month
-                                </p>
-
-                                <p class="font-medium">
-                                    {{ $business_plan[35]['month'] ?? '—' }}
-                                </p>
-                            </div>
-
-                        </div>
-
-                    </div>
-
-
-                    {{-- Evaluation --}}
-                    <div class="rounded-xl border border-slate-200 p-5">
-
-                        <div class="flex items-center justify-between mb-4">
-
-                            <h3 class="font-semibold text-slate-900">
-                                6. Evaluation
-                            </h3>
-
-                            <button
-                                type="button"
-                                wire:click="goToStep(6)"
-                                class="text-sm text-purple-600 font-medium"
-                            >
-                                Edit
-                            </button>
-
-                        </div>
-
-
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
-
-                            <div>
-                                <p class="text-xs text-slate-500">
-                                    Name of CA
-                                </p>
-
-                                <p class="font-medium">
-                                    {{ $ca_name ?: '—' }}
-                                </p>
-                            </div>
-
-
-                            <div>
-                                <p class="text-xs text-slate-500">
-                                    Constitution
-                                </p>
-
-                                <p class="font-medium">
-                                    {{ $ca_constitution ?: '—' }}
-                                </p>
-                            </div>
-
-
-                            <div>
-                                <p class="text-xs text-slate-500">
-                                    Networth
-                                </p>
-
-                                <p class="font-medium">
-                                    {{ $networth ?: '—' }}
-                                </p>
-                            </div>
-
-
-                            <div>
-                                <p class="text-xs text-slate-500">
-                                    Credit Rating
-                                </p>
-
-                                <p class="font-medium">
-                                    {{ $credit_rating ?: '—' }}
-                                </p>
-                            </div>
-
-                        </div>
-
-                    </div>
-
-
                     {{-- Final warning --}}
                     <div class="rounded-xl border border-amber-200 bg-amber-50 p-5">
 
@@ -1997,7 +1448,7 @@
                                         Once you create this vendor, the vendor
                                         account and wallet will be created.
                                         The vendor will be able to login using
-                                        Email, PMT Code and Password.
+                                        Email and Password.
                                     @else
                                         Once submitted, your KYC will be sent
                                         for admin review. You can still update

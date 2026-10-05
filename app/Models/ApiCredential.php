@@ -58,7 +58,7 @@ class ApiCredential extends Model
      */
     public static function issueFor(Vendor $vendor): string
     {
-        $credential = static::query()->where('vendor_id', $vendor->id)->first() ?? new static([
+        $credential = static::query()->where('vendor_id', $vendor->id)->orderBy('id')->first() ?? new static([
             'vendor_id' => $vendor->id,
             'is_active' => true,
         ]);
@@ -66,6 +66,64 @@ class ApiCredential extends Model
         if (! $credential->exists) {
             $credential->api_key = 'pk_'.Str::random(32);
         }
+
+        return $credential->rotateSecret();
+    }
+
+    public static function providerKeyPrefix(string $code): string
+    {
+        return 'pkp_'.strtolower(trim($code)).'_';
+    }
+
+    public static function forVendorProvider(Vendor $vendor, string $code): ?self
+    {
+        $code = strtolower(trim($code));
+        if ($code === '') {
+            return null;
+        }
+
+        $scoped = static::query()
+            ->where('vendor_id', $vendor->id)
+            ->where('api_key', 'like', static::providerKeyPrefix($code).'%')
+            ->orderBy('id')
+            ->first();
+        if ($scoped) {
+            return $scoped;
+        }
+
+        if ($code !== strtolower((string) config('payout.provider', ''))) {
+            return null;
+        }
+
+        return static::query()
+            ->where('vendor_id', $vendor->id)
+            ->where('api_key', 'not like', 'pkp_%')
+            ->orderBy('id')
+            ->first();
+    }
+
+    /**
+     * Creates a credential for one payout provider. An existing provider credential is not rotated or replaced.
+     */
+    public static function issueForProvider(Vendor $vendor, string $code): ?string
+    {
+        $code = strtolower(trim($code));
+        if ($code === '' || static::forVendorProvider($vendor, $code)) {
+            return null;
+        }
+
+        $legacy = static::query()->where('vendor_id', $vendor->id)->orderBy('id')->first();
+        if (! $legacy && $code === strtolower((string) config('payout.provider', ''))) {
+            return static::issueFor($vendor);
+        }
+
+        $credential = new static([
+            'vendor_id' => $vendor->id,
+            'api_key' => static::providerKeyPrefix($code).Str::random(32),
+            'is_active' => true,
+            'webhook_url' => $legacy?->webhook_url,
+            'ip_whitelist' => $legacy?->ip_whitelist,
+        ]);
 
         return $credential->rotateSecret();
     }

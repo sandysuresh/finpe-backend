@@ -37,6 +37,8 @@ class PayoutApiTest extends Component
 
     public string $vendorSearch = '';
 
+    public string $providerCode = '';
+
     /** @var array<int, string> */
     public array $stepResults = [];
 
@@ -108,9 +110,23 @@ class PayoutApiTest extends Component
 
     private bool $vendorResolved = false;
 
-    public function mount(): void
+    public function mount(PayoutProviderRegistry $providers): void
     {
         $this->authorizeModule();
+        $active = collect($providers->catalog())->firstWhere('active', true);
+        $this->providerCode = $active['code'] ?? strtolower((string) config('payout.provider', ''));
+    }
+
+    public function selectProvider(string $code): void
+    {
+        $code = strtolower(trim($code));
+        $known = collect(app(PayoutProviderRegistry::class)->catalog())
+            ->contains(fn (array $row): bool => $row['code'] === $code);
+        if (! $known) {
+            return;
+        }
+
+        $this->providerCode = $code;
     }
 
     public function updatedVendorId(mixed $value): void
@@ -641,14 +657,18 @@ class PayoutApiTest extends Component
         }
 
         $vendor = $this->activeVendor();
-        $environment = strtoupper(trim((string) config('services.vimopay.environment')));
-
-        try {
-            $providerCode = strtolower($providers->current()->code());
-        } catch (Throwable) {
-            $providerCode = strtolower((string) config('payout.provider'));
+        $catalog = $providers->catalog();
+        $selectedProvider = collect($catalog)->firstWhere('code', $this->providerCode)
+            ?? collect($catalog)->firstWhere('active', true);
+        if ($selectedProvider !== null && $this->providerCode === '') {
+            $this->providerCode = $selectedProvider['code'];
         }
-        $providerName = CommissionProviders::name($providerCode) ?? ($providerCode !== '' ? $providerCode : 'VimoPay');
+        $providerCode = $selectedProvider['code'] ?? strtolower((string) config('payout.provider'));
+        $providerName = $selectedProvider['name'] ?? $providers->displayName($providerCode);
+        $providerActive = (bool) ($selectedProvider['active'] ?? ($providerCode !== '' && $providerCode === strtolower((string) config('payout.provider'))));
+        $environment = $providerCode === CommissionProviders::VIMOPAY
+            ? strtoupper(trim((string) config('services.vimopay.environment')))
+            : '';
 
         return view('livewire.admin.payout-api-test', [
             'steps' => $steps,
@@ -663,8 +683,10 @@ class PayoutApiTest extends Component
                 'credential_status' => $this->credentialStatus($vendor->apiCredential),
             ] : null,
             'blockReason' => $this->blockReason($vendor),
+            'providers' => $catalog,
             'providerName' => $providerName,
-            'environment' => $environment !== '' ? $environment : 'UAT',
+            'providerActive' => $providerActive,
+            'environment' => $environment !== '' ? $environment : ($providerCode === CommissionProviders::VIMOPAY ? 'UAT' : '—'),
             'payoutEstimate' => $this->payoutEstimate($vendor, $providerCode),
             'payoutSnapshot' => $this->step === 6 ? $this->payoutSnapshot() : null,
             'testReport' => $this->step === 7 ? $this->testReport() : null,
@@ -1158,7 +1180,7 @@ class PayoutApiTest extends Component
             'amount' => (float) $txn->amount,
             'charge' => (float) $txn->payout_charge,
             'total' => round((float) $txn->amount + (float) $txn->payout_charge, 2),
-            'provider' => CommissionProviders::name($txn->payout_provider) ?? (string) $txn->payout_provider,
+            'provider' => app(PayoutProviderRegistry::class)->displayName($txn->payout_provider),
         ];
     }
 

@@ -144,7 +144,7 @@
                 <table class="min-w-full">
                     <thead class="bg-slate-50">
                         <tr>
-                            @foreach(['Date','Description','Reference','Type','Amount','Balance After'] as $col)
+                            @foreach(['Date','Description','Reference','Type','Amount','Balance After',''] as $col)
                                 <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">{{ $col }}</th>
                             @endforeach
                         </tr>
@@ -180,6 +180,7 @@
                                 <td class="whitespace-nowrap px-5 py-4 text-xs font-semibold text-slate-900">
                                     ₹{{ number_format((float)$entry->balance_after,2) }}
                                 </td>
+                                <td class="whitespace-nowrap px-5 py-4">@include('livewire.vendor.partials.txn-actions', ['id' => $payout?->id, 'reference' => $payout?->reference, 'type' => $payout ? 'payout' : null])</td>
                             </tr>
                         @endforeach
                     </tbody>

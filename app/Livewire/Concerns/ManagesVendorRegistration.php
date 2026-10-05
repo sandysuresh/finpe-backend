@@ -4,6 +4,7 @@ namespace App\Livewire\Concerns;
 
 use App\Models\Vendor;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 
 trait ManagesVendorRegistration
@@ -85,7 +86,7 @@ trait ManagesVendorRegistration
     public string $phone = '';
     public string $password = '';
     public string $address = '';
-    public string $country = 'Nepal';
+    public string $country = 'India';
     public string $status = 'active';
 
     /*
@@ -114,6 +115,7 @@ trait ManagesVendorRegistration
             'name' => '',
             'share_percentage' => '',
             'pan' => '',
+            'aadhaar' => '',
             'dob' => '',
             'address' => '',
         ],
@@ -222,8 +224,9 @@ trait ManagesVendorRegistration
     public function nextStep(): void
     {
         if ($this->kycLocked) {
-            if ($this->step < 7) {
-                $this->step++;
+            $next = $this->step === 4 ? 7 : $this->step + 1;
+            if ($this->step < 7 && $next <= 7) {
+                $this->step = $next;
                 $this->loadStepData($this->step);
             }
 
@@ -244,6 +247,12 @@ trait ManagesVendorRegistration
 
     public function previousStep(): void
     {
+        if ($this->step === 7) {
+            $this->step = 4;
+
+            return;
+        }
+
         if ($this->step > 1) {
             $this->step--;
         }
@@ -251,6 +260,10 @@ trait ManagesVendorRegistration
 
     public function goToStep(int $step): void
     {
+        if (in_array($step, [5, 6], true)) {
+            $step = 7;
+        }
+
         if ($step < 1 || $step > 7) {
             return;
         }
@@ -271,7 +284,12 @@ trait ManagesVendorRegistration
             ? Vendor::find($this->vendorId)
             : null;
 
-        if ($vendor && $step > (int) $vendor->registration_step) {
+        $reached = $vendor ? (int) $vendor->registration_step : 1;
+        if (in_array($reached, [5, 6], true)) {
+            $reached = 7;
+        }
+
+        if ($vendor && $step > $reached) {
             return;
         }
 
@@ -501,6 +519,12 @@ trait ManagesVendorRegistration
                 'max:30',
             ],
 
+            'promoters.*.aadhaar' => [
+                $this->kycFillRule(),
+                'string',
+                'regex:/^\d{12}$/',
+            ],
+
             'promoters.*.dob' => [
                 $this->kycFillRule(),
                 'date',
@@ -522,6 +546,7 @@ trait ManagesVendorRegistration
             'name' => '',
             'share_percentage' => '',
             'pan' => '',
+            'aadhaar' => '',
             'dob' => '',
             'address' => '',
         ];
@@ -562,7 +587,7 @@ trait ManagesVendorRegistration
 
             foreach ($validated['promoters'] as $promoter) {
 
-                $vendor->promoters()->create([
+                $promoterRow = [
                     'full_name' => $promoter['name'],
                     'shareholding_percentage' =>
                         $promoter['share_percentage'],
@@ -575,7 +600,13 @@ trait ManagesVendorRegistration
 
                     'official_address' =>
                         $promoter['address'] ?: null,
-                ]);
+                ];
+
+                if (Schema::hasColumn('vendor_promoter_shareholders', 'aadhaar_card_no')) {
+                    $promoterRow['aadhaar_card_no'] = $promoter['aadhaar'] ?: null;
+                }
+
+                $vendor->promoters()->create($promoterRow);
             }
 
             $this->advanceRegistrationStep(
@@ -814,13 +845,13 @@ trait ManagesVendorRegistration
 
             $this->advanceRegistrationStep(
                 $vendor,
-                5
+                7
             );
         });
 
-        $this->step = 5;
+        $this->step = 7;
 
-        $this->loadStepData(5);
+        $this->loadStepData(7);
     }
 
     /*
@@ -1029,7 +1060,7 @@ trait ManagesVendorRegistration
             $this->email = $vendor->email ?? '';
             $this->phone = $vendor->phone ?? '';
             $this->address = $vendor->address ?? '';
-            $this->country = $vendor->country ?? 'Nepal';
+            $this->country = $vendor->country ?? 'India';
             $this->status = $vendor->status ?? 'active';
 
             /*
@@ -1100,6 +1131,9 @@ trait ManagesVendorRegistration
 
                             'pan' =>
                                 $promoter->pan_card_no ?? '',
+
+                            'aadhaar' =>
+                                $promoter->aadhaar_card_no ?? '',
 
                             'dob' =>
                                 $promoter->date_of_birth
@@ -1302,8 +1336,8 @@ trait ManagesVendorRegistration
             'contact_name' => 'contact person',
             'entity_type' => 'type of entity',
             'registration_body' => 'registered with',
-            'registration_number' => 'registration number',
-            'tax_identification' => 'PAN / TIN',
+            'registration_number' => 'Corporate Identification Number (CIN)',
+            'tax_identification' => 'PAN Card Number',
             'rbi_regulated' => 'RBI regulation',
             'incorporation_year' => 'year of incorporation',
             'merchant_acquiring_years' => 'years in merchant acquiring',
@@ -1311,6 +1345,7 @@ trait ManagesVendorRegistration
             'promoters.*.name' => 'promoter full name',
             'promoters.*.share_percentage' => 'shareholding %',
             'promoters.*.pan' => 'PAN card number',
+            'promoters.*.aadhaar' => 'Aadhaar card number',
             'promoters.*.dob' => 'date of birth',
             'promoters.*.address' => 'official address',
             'directors.*.name' => 'director full name',
@@ -1357,6 +1392,7 @@ trait ManagesVendorRegistration
         $year = now()->year;
 
         return [
+            'promoters.*.aadhaar.regex' => 'Aadhaar card number must be 12 digits.',
             'promoters.*.share_percentage.gte' => 'Shareholding must be at least 20%.',
             'promoters.*.share_percentage.lte' => 'Shareholding cannot be more than 100%.',
             'promoters.*.share_percentage.required' => 'Shareholding % is required.',
@@ -1386,7 +1422,7 @@ trait ManagesVendorRegistration
         ])->find($this->vendorId) : null);
 
         if (! $vendor) {
-            return [1, 2, 3, 4, 5, 6];
+            return [1, 2, 3, 4];
         }
 
         $filled = static fn ($value) => filled($value) && trim((string) $value) !== '';
@@ -1441,29 +1477,6 @@ trait ManagesVendorRegistration
             || ! $filled($team->merchant_agent_management)
             || ! $filled($team->merchant_agent_portal)) {
             $missing[] = 4;
-        }
-
-        if ($vendor->businessPlans->count() < 36) {
-            $missing[] = 5;
-        }
-
-        $evaluation = $vendor->evaluation;
-        if (! $evaluation
-            || ! $filled($evaluation->ca_name)
-            || ! $filled($evaluation->ca_constitution)
-            || ! $evaluation->ca_incorporation_date
-            || $evaluation->networth === null
-            || ! $filled($evaluation->credit_rating)
-            || ! $filled($evaluation->dealing_with_bank_since)
-            || ! $evaluation->contract_expiry_date
-            || ! $filled($evaluation->engagement_scope)
-            || ! $filled($evaluation->open_risk_issues)
-            || ! $filled($evaluation->documentation_status)
-            || ! $filled($evaluation->conflict_of_interest)
-            || ! $filled($evaluation->terminated_or_penalties)
-            || ! $filled($evaluation->rbi_defaulter)
-            || ! $filled($evaluation->recommendations)) {
-            $missing[] = 6;
         }
 
         return $missing;

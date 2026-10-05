@@ -37,6 +37,9 @@ class Wallet extends Component
 
     public function mount(): void
     {
+        if (request()->query('tab') === 'requests') {
+            $this->tab = 'requests';
+        }
         $this->refreshBalances();
     }
 
@@ -121,7 +124,7 @@ class Wallet extends Component
                     ->where('type', 'payout')
                     ->where('vendor_id', $vendor->id)
                     ->whereIn('reference', $refs)
-                    ->get(['reference', 'payout_provider', 'status', 'amount'])
+                    ->get(['id', 'reference', 'payout_provider', 'status', 'amount'])
                     ->keyBy('reference');
             }
         }

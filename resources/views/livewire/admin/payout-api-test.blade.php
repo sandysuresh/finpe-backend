@@ -1,8 +1,20 @@
 <div>
     <div class="mb-6">
         <h1 class="text-2xl font-bold text-slate-900">Payout API</h1>
+        <p class="mt-1 text-sm font-semibold text-slate-900">Payout Provider: {{ $providerName }}</p>
         <p class="mt-1 text-sm text-slate-500">Pre-delivery check for a vendor’s payout API. Select the vendor first. Each step stays locked until the previous step passes.</p>
     </div>
+
+    @if($providers !== [])
+        <div class="mb-5 flex flex-wrap gap-2" aria-label="Payout providers">
+            @foreach($providers as $provider)
+                <button type="button" wire:click="selectProvider('{{ $provider['code'] }}')"
+                        class="rounded-full px-4 py-2 text-sm font-semibold {{ $providerCode === $provider['code'] ? 'bg-slate-900 text-white' : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50' }}">
+                    {{ $provider['name'] }}@if($provider['active']) <span class="ml-1 text-[11px] font-medium uppercase tracking-wide {{ $providerCode === $provider['code'] ? 'text-slate-300' : 'text-slate-400' }}">Configured</span>@endif
+                </button>
+            @endforeach
+        </div>
+    @endif
 
     <section class="fi-card mb-5 p-5 sm:p-6">
         <div class="flex flex-wrap items-end justify-between gap-3">
@@ -41,7 +53,7 @@
                     <dd class="mt-1 text-sm font-semibold text-slate-900">{{ $selected['credential_status'] }}</dd>
                 </div>
                 <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-                    <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Provider</dt>
+                    <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Payout Provider</dt>
                     <dd class="mt-1 text-sm font-semibold text-slate-900">{{ $providerName }}</dd>
                 </div>
                 <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
@@ -57,6 +69,7 @@
         @endif
     </section>
 
+    @if($providerActive)
     <div class="grid grid-cols-1 gap-5 lg:grid-cols-[280px_minmax(0,1fr)]">
         <nav class="fi-card h-fit p-3" aria-label="Payout API steps">
             <ol class="space-y-1">
@@ -99,7 +112,7 @@
 
             @if($step === 5)
                 <div class="mt-5 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950">
-                    This test will initiate a real VimoPay UAT payout. The vendor wallet is debited for the payout amount plus the FinPe commission. Nothing is sent until you confirm.
+                    This test will initiate a real {{ $providerName }} {{ $environment }} payout. The vendor wallet is debited for the payout amount plus the FinPe commission. Nothing is sent until you confirm.
                 </div>
             @endif
 
@@ -134,7 +147,7 @@
                             <dd class="mt-1 text-sm font-semibold text-slate-900">{{ $authResult['response_ms'] !== null ? $authResult['response_ms'].' ms' : '—' }}</dd>
                         </div>
                         <div class="rounded-xl border border-slate-200 px-4 py-3">
-                            <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Provider</dt>
+                            <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Payout Provider</dt>
                             <dd class="mt-1 text-sm font-semibold text-slate-900">{{ $providerName }}</dd>
                         </div>
                         <div class="rounded-xl border border-slate-200 px-4 py-3">
@@ -174,7 +187,7 @@
                             <dd class="mt-1 text-sm font-semibold text-slate-900">{{ $bankResult['response_ms'] !== null ? $bankResult['response_ms'].' ms' : '—' }}</dd>
                         </div>
                         <div class="rounded-xl border border-slate-200 px-4 py-3">
-                            <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Provider</dt>
+                            <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Payout Provider</dt>
                             <dd class="mt-1 text-sm font-semibold text-slate-900">{{ $providerName }}</dd>
                         </div>
                         <div class="rounded-xl border border-slate-200 px-4 py-3">
@@ -235,7 +248,7 @@
                             <dd class="mt-1 text-sm font-semibold text-slate-900">{{ $purposeResult['response_ms'] !== null ? $purposeResult['response_ms'].' ms' : '—' }}</dd>
                         </div>
                         <div class="rounded-xl border border-slate-200 px-4 py-3">
-                            <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Provider</dt>
+                            <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Payout Provider</dt>
                             <dd class="mt-1 text-sm font-semibold text-slate-900">{{ $providerName }}</dd>
                         </div>
                         <div class="rounded-xl border border-slate-200 px-4 py-3">
@@ -296,7 +309,7 @@
                             <dd class="mt-1 text-sm font-semibold text-slate-900">{{ $stateResult['response_ms'] !== null ? $stateResult['response_ms'].' ms' : '—' }}</dd>
                         </div>
                         <div class="rounded-xl border border-slate-200 px-4 py-3">
-                            <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Provider</dt>
+                            <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Payout Provider</dt>
                             <dd class="mt-1 text-sm font-semibold text-slate-900">{{ $providerName }}</dd>
                         </div>
                         <div class="rounded-xl border border-slate-200 px-4 py-3">
@@ -333,7 +346,7 @@
                         <dd class="mt-1 text-sm font-semibold text-slate-900">{{ $selected ? $selected['name'].' · '.$selected['code'] : 'None' }}</dd>
                     </div>
                     <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-                        <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Provider</dt>
+                        <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Payout Provider</dt>
                         <dd class="mt-1 text-sm font-semibold text-slate-900">{{ $providerName }}</dd>
                     </div>
                     <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
@@ -407,7 +420,7 @@
 
                 @if($payoutConfirming)
                     <div class="mt-5 rounded-xl border border-amber-300 bg-amber-50 px-4 py-4 text-sm text-amber-950">
-                        <p class="font-semibold">This test will initiate a real VimoPay UAT payout.</p>
+                        <p class="font-semibold">This test will initiate a real {{ $providerName }} {{ $environment }} payout.</p>
                         <p class="mt-2">Vendor {{ data_get($selected, 'name', '—') }} · {{ $providerName }} · {{ $environment }}. Amount ₹{{ is_numeric($amount) ? number_format((float) $amount, 2) : '—' }}, commission ₹{{ isset($payoutEstimate['charge']) && $payoutEstimate['charge'] !== null ? number_format($payoutEstimate['charge'], 2) : '—' }}, estimated debit ₹{{ isset($payoutEstimate['total']) && $payoutEstimate['total'] !== null ? number_format($payoutEstimate['total'], 2) : '—' }}. Merchant reference {{ $merchantRefId !== '' ? $merchantRefId : '—' }}.</p>
                         <div class="mt-4 flex flex-wrap gap-3">
                             <button type="button" wire:click="confirmPayout" wire:loading.attr="disabled" wire:target="confirmPayout" class="inline-flex rounded-lg bg-amber-700 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-800 disabled:cursor-wait disabled:opacity-60">Confirm and send</button>
@@ -468,7 +481,7 @@
                             <dd class="mt-1 text-sm font-semibold text-slate-900">{{ $payoutResult['response_ms'] !== null ? $payoutResult['response_ms'].' ms' : '—' }}</dd>
                         </div>
                         <div class="rounded-xl border border-slate-200 px-4 py-3">
-                            <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Provider</dt>
+                            <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Payout Provider</dt>
                             <dd class="mt-1 text-sm font-semibold text-slate-900">{{ $providerName }}</dd>
                         </div>
                         <div class="rounded-xl border border-slate-200 px-4 py-3">
@@ -489,7 +502,7 @@
                             <dd class="mt-1 text-sm font-semibold text-slate-900">{{ $payoutSnapshot['merchant_ref'] ?: '—' }}</dd>
                         </div>
                         <div class="rounded-xl border border-slate-200 px-4 py-3">
-                            <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">VimoPay provider reference</dt>
+                            <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">{{ $providerName }} provider reference</dt>
                             <dd class="mt-1 text-sm font-semibold text-slate-900">{{ $payoutSnapshot['provider_reference'] ?: '—' }}</dd>
                         </div>
                         <div class="rounded-xl border border-slate-200 px-4 py-3">
@@ -611,7 +624,7 @@
                         <dd class="mt-1 text-sm font-semibold text-slate-900">{{ data_get($selected, 'credential_status', '—') }}</dd>
                     </div>
                     <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-                        <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Provider</dt>
+                        <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Payout Provider</dt>
                         <dd class="mt-1 text-sm font-semibold text-slate-900">{{ $providerName }}</dd>
                     </div>
                     <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
@@ -648,7 +661,7 @@
                             @foreach([
                                 'FinPe reference' => $testReport['payout']['reference'],
                                 'Merchant reference' => $testReport['payout']['merchant_ref'],
-                                'VimoPay provider reference' => $testReport['payout']['provider_reference'],
+                                $providerName.' provider reference' => $testReport['payout']['provider_reference'],
                                 'RRN' => $testReport['payout']['rrn'],
                                 'Payout amount' => $testReport['payout']['amount'],
                                 'Commission / charge' => $testReport['payout']['charge'],
@@ -673,4 +686,10 @@
             </div>
         </section>
     </div>
+    @else
+        <section class="fi-card p-6">
+            <p class="text-sm font-semibold text-slate-900">Payout Provider: {{ $providerName }}</p>
+            <p class="mt-2 text-sm text-slate-600">This provider is registered separately. Payout API testing stays on the configured payout provider.</p>
+        </section>
+    @endif
 </div>

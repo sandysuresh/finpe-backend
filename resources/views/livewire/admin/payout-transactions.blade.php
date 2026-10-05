@@ -17,7 +17,7 @@
         <table class="min-w-full">
             <thead>
                 <tr>
-                    @foreach(['FinPe reference','Vendor','Payout Provider','Amount','Payment mode','Beneficiary bank','Account','IFSC','Provider reference','Status','Created'] as $col)
+                    @foreach(['FinPe reference','Vendor','Payout Provider','Amount','Payment mode','Beneficiary bank','Account','IFSC','Provider reference','Status','Created',''] as $col)
                         <th class="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">{{ $col }}</th>
                     @endforeach
                 </tr>
@@ -34,12 +34,13 @@
                         <td class="px-3 py-3 text-sm text-slate-700">{{ $this->maskAccount($txn->account_number) }}</td>
                         <td class="px-3 py-3 text-sm text-slate-700">{{ $txn->ifsc_code ?: '—' }}</td>
                         <td class="px-3 py-3 text-sm text-slate-700">{{ $txn->bank_reference ?: '—' }}</td>
-                        <td class="px-3 py-3 text-sm text-slate-700">{{ $txn->status }}</td>
+                        <td class="px-3 py-3"><span class="inline-flex rounded-full px-2.5 py-1 text-xs font-bold ring-1 ring-inset {{ $this->statusBadgeClass($txn->status) }}">{{ ucfirst((string) $txn->status) }}</span></td>
                         <td class="px-3 py-3 text-xs text-slate-600">{{ $txn->created_at?->format('d M Y, h:i A') }}</td>
+                        <td class="px-3 py-3">@include('livewire.admin.partials.txn-actions', ['id' => $txn->id, 'reference' => $txn->reference, 'type' => $txn->type, 'livewire' => true])</td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="11" class="px-5 py-16 text-center text-sm text-slate-500">No payout transactions yet.</td>
+                        <td colspan="12" class="px-5 py-16 text-center text-sm text-slate-500">No payout transactions yet.</td>
                     </tr>
                 @endforelse
             </tbody>
@@ -95,9 +96,8 @@
                                 <p class="mt-0.5 text-sm font-semibold">{{ $detail->created_at?->format('d M Y, h:i A') ?: '—' }}</p>
                             </div>
                         </div>
-                        <a href="{{ route('admin.payout-transactions.receipt', $detail->reference) }}" class="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-500">
-                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M4 21h16"/></svg>
-                            Download receipt
+                        <a href="{{ route('admin.payout-transactions.receipt', $detail->reference) }}" class="fi-btn fi-btn-sm fi-btn-primary" style="width:auto; align-self:flex-start; height:30px; padding:0 10px; font-size:12px; text-decoration:none;">
+                            Download Receipt
                         </a>
                     </div>
                 </div>
@@ -236,9 +236,8 @@
 
                 <div class="flex shrink-0 items-center justify-between gap-3 border-t border-slate-200 bg-white px-5 py-3.5 sm:px-6">
                     <button type="button" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" wire:click="$set('detailId', null)">Close</button>
-                    <a href="{{ route('admin.payout-transactions.receipt', $detail->reference) }}" class="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800">
-                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M4 21h16"/></svg>
-                        Download receipt
+                    <a href="{{ route('admin.payout-transactions.receipt', $detail->reference) }}" class="fi-btn fi-btn-sm fi-btn-primary" style="width:auto; height:30px; padding:0 10px; font-size:12px; text-decoration:none;">
+                        Download Receipt
                     </a>
                 </div>
             </div>

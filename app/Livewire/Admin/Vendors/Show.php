@@ -2,15 +2,20 @@
 
 namespace App\Livewire\Admin\Vendors;
 
+use App\Livewire\Admin\PayoutTransactions;
 use App\Models\ApiCredential;
 use App\Models\Bank;
 use App\Models\CommissionEntry;
 use App\Models\VendorApiAccess;
 use App\Services\CommissionService;
+use App\Services\Payout\PayoutProviderRegistry;
+use App\Support\CommissionProviders;
+use Illuminate\Pagination\LengthAwarePaginator;
 use App\Models\Transaction;
 use App\Models\Vendor;
 use App\Models\VendorKycReview;
 use App\Support\AdminAudit;
+use App\Support\VendorNotify;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -31,11 +36,15 @@ class Show extends Component
 
     public array $assignedBankIds = [];
 
+    public string $payoutProviderCode = '';
+
     public function mount(Vendor $vendor): void
     {
         $this->vendor = $vendor;
         $this->kycComment = '';
         $this->assignedBankIds = $vendor->banks()->pluck('banks.id')->map(fn ($id) => (string) $id)->all();
+
+        $this->payoutProviderCode = $this->selectedPayoutProviderCode();
 
         $tab = request()->query('tab');
         if (is_string($tab) && in_array($tab, ['kyc', 'profile', 'wallet', 'transactions', 'settlements', 'beneficiaries', 'developer'], true)) {
@@ -84,6 +93,7 @@ class Show extends Component
             $before,
             'verified | '.$comment,
         );
+        VendorNotify::kycDecision($this->vendor, true, $comment);
         $this->reviewMessage = 'KYC approved. Vendor can now see KYC Approved in their panel.';
     }
 
@@ -123,6 +133,7 @@ class Show extends Component
             $before,
             'rejected | '.$comment,
         );
+        VendorNotify::kycDecision($this->vendor, false, $comment);
         $this->reviewMessage = 'KYC rejected. Approve/Reject will return after the vendor resubmits.';
     }
 
@@ -169,13 +180,43 @@ class Show extends Component
         $this->reviewMessage = 'Payout API disabled for this vendor.';
     }
 
-    public function generatePayoutCredentials(): void
+    public function updatedPayoutProviderCode(string $code): void
     {
-        if (! $this->vendor->hasEnabledApi(VendorApiAccess::PAYOUT) || $this->vendor->apiCredential) {
+        $code = strtolower(trim($code));
+        $known = collect(app(PayoutProviderRegistry::class)->catalog())
+            ->contains(fn (array $row): bool => $row['code'] === $code);
+        if (! $known) {
+            $this->payoutProviderCode = $this->selectedPayoutProviderCode();
+
             return;
         }
 
-        $this->revealedApiSecret = ApiCredential::issueFor($this->vendor);
+        if (VendorApiAccess::assignedProviderCode((int) $this->vendor->id) === $code) {
+            return;
+        }
+
+        VendorApiAccess::assignProvider((int) $this->vendor->id, $code, Auth::guard('admin')->id());
+        $this->vendor = $this->vendor->fresh();
+        $this->tab = 'developer';
+        $this->reviewMessage = 'Payout provider assigned. Existing provider credentials were left unchanged.';
+    }
+
+    public function generatePayoutCredentials(): void
+    {
+        if (! $this->vendor->hasEnabledApi(VendorApiAccess::PAYOUT) || $this->payoutProviderCode === '') {
+            return;
+        }
+
+        if (ApiCredential::forVendorProvider($this->vendor, $this->payoutProviderCode)) {
+            return;
+        }
+
+        $secret = ApiCredential::issueForProvider($this->vendor, $this->payoutProviderCode);
+        if ($secret === null) {
+            return;
+        }
+
+        $this->revealedApiSecret = $secret;
         $this->vendor = $this->vendor->fresh();
         $this->tab = 'developer';
         $this->reviewMessage = 'API credentials generated. Copy the secret now. It will not be shown again.';
@@ -183,15 +224,19 @@ class Show extends Component
 
     public function rotatePayoutCredentials(): void
     {
-        $credential = $this->vendor->apiCredential;
-        if (! $this->vendor->hasEnabledApi(VendorApiAccess::PAYOUT) || ! $credential) {
+        if (! $this->vendor->hasEnabledApi(VendorApiAccess::PAYOUT) || $this->payoutProviderCode === '') {
+            return;
+        }
+
+        $credential = ApiCredential::forVendorProvider($this->vendor, $this->payoutProviderCode);
+        if (! $credential) {
             return;
         }
 
         $this->revealedApiSecret = $credential->rotateSecret();
         $this->vendor = $this->vendor->fresh();
         $this->tab = 'developer';
-        $this->reviewMessage = 'API secret rotated. Copy the new secret now. The previous secret no longer works.';
+        $this->reviewMessage = 'API secret rotated for this payout provider. Copy the new secret now. The previous secret for this provider no longer works.';
     }
 
     public function dismissRevealedApiSecret(): void
@@ -254,7 +299,7 @@ class Show extends Component
                     ->where('type', 'payout')
                     ->where('vendor_id', $vendor->id)
                     ->whereIn('reference', $refs)
-                    ->get(['reference', 'payout_provider', 'status', 'amount'])
+                    ->get(['id', 'reference', 'payout_provider', 'status', 'amount'])
                     ->keyBy('reference');
             }
         }
@@ -286,11 +331,16 @@ class Show extends Component
 
         $settlements = $vendor->settlements()->latest()->paginate(10, ['*'], 'setPage');
 
-        $beneficiaries = $vendor->beneficiaries()->latest()->paginate(10, ['*'], 'benPage');
+        $beneficiaries = $this->payoutBeneficiaries((int) $vendor->id);
 
         $webhookLogs = $vendor->webhookLogs()->latest()->limit(15)->get();
         $allBanks = Bank::query()->where('is_active', true)->orderBy('name')->get();
         $payoutAccess = $vendor->apiAccess()->where('api_code', VendorApiAccess::PAYOUT)->first();
+        $payoutProviders = app(PayoutProviderRegistry::class)->catalog();
+        $selectedPayoutProvider = collect($payoutProviders)->firstWhere('code', $this->payoutProviderCode);
+        $payoutCredential = $this->payoutProviderCode !== ''
+            ? ApiCredential::forVendorProvider($vendor, $this->payoutProviderCode)
+            : null;
 
         return view('livewire.admin.vendors.show', compact(
             'vendor',
@@ -307,6 +357,76 @@ class Show extends Component
             'webhookLogs',
             'allBanks',
             'payoutAccess',
+            'payoutProviders',
+            'selectedPayoutProvider',
+            'payoutCredential',
         ))->layout('layouts.admin', ['title' => $vendor->business_name]);
+    }
+
+    private function selectedPayoutProviderCode(): string
+    {
+        $catalog = app(PayoutProviderRegistry::class)->catalog();
+        $assigned = VendorApiAccess::assignedProviderCode((int) $this->vendor->id);
+        if ($assigned && collect($catalog)->contains(fn (array $row): bool => $row['code'] === $assigned)) {
+            return $assigned;
+        }
+
+        return (string) (collect($catalog)->firstWhere('active', true)['code'] ?? '');
+    }
+
+    private function payoutBeneficiaries(int $vendorId): LengthAwarePaginator
+    {
+        $transactions = Transaction::query()
+            ->where('vendor_id', $vendorId)
+            ->where('type', 'payout')
+            ->whereNotNull('account_number')
+            ->where('account_number', '!=', '')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->get([
+                'beneficiary_name', 'account_number', 'ifsc_code', 'bank_name',
+                'beneficiary_bank_code', 'beneficiary_mobile', 'payout_provider',
+                'status', 'created_at',
+            ]);
+
+        $unique = [];
+        foreach ($transactions as $txn) {
+            $account = strtoupper(trim((string) $txn->account_number));
+            $ifsc = strtoupper(trim((string) $txn->ifsc_code));
+            $key = $account.'|'.$ifsc;
+            if ($account === '' || isset($unique[$key])) {
+                continue;
+            }
+
+            $name = trim((string) $txn->bank_name);
+            $code = trim((string) $txn->beneficiary_bank_code);
+            if ($name !== '' && $code !== '' && strcasecmp($name, $code) !== 0) {
+                $bank = $name.' · '.$code;
+            } else {
+                $bank = $name !== '' ? $name : $code;
+            }
+
+            $unique[$key] = [
+                'name' => $txn->beneficiary_name ?: '—',
+                'account' => PayoutTransactions::maskAccountStatic($txn->account_number),
+                'ifsc' => $txn->ifsc_code ?: '—',
+                'bank' => $bank !== '' ? $bank : '—',
+                'mobile' => PayoutTransactions::maskMobileStatic($txn->beneficiary_mobile),
+                'provider' => CommissionProviders::name($txn->payout_provider) ?: '—',
+                'last_at' => $txn->created_at?->format('d M Y, h:i A') ?: '—',
+                'status' => $txn->status ?: null,
+            ];
+        }
+
+        $rows = collect(array_values($unique));
+        $page = LengthAwarePaginator::resolveCurrentPage('benPage');
+
+        return new LengthAwarePaginator(
+            $rows->forPage($page, 10)->values(),
+            $rows->count(),
+            10,
+            $page,
+            ['path' => LengthAwarePaginator::resolveCurrentPath(), 'pageName' => 'benPage']
+        );
     }
 }

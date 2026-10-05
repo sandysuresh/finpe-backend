@@ -36,6 +36,9 @@ class Create extends Component
             // Step 1 is done). Clamp to valid range 1-7.
             $savedStep  = (int) $vendor->registration_step;
             $this->step = ($savedStep >= 1 && $savedStep <= 7) ? $savedStep : 1;
+            if (in_array($this->step, [5, 6], true)) {
+                $this->step = 7;
+            }
 
             // Populate form fields for the restored step.
             $this->loadStepData($this->step);

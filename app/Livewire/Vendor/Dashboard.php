@@ -26,11 +26,6 @@ class Dashboard extends Component
     public string $failedRate       = '0';
     public string $pendingRate      = '0';
 
-    // ── Chart data (last 7 days) ───────────────────────────────────────────
-    public array  $chartDays        = [];
-    public array  $chartCounts      = [];
-    public int    $chartMax         = 1;
-
     // ── Recent transactions ────────────────────────────────────────────────
     public array  $recentTransactions = [];
 
@@ -50,7 +45,6 @@ class Dashboard extends Component
         $this->loadWallet($vendor);
         $this->loadTodayStats($vendor);
         $this->loadMonthStats($vendor);
-        $this->loadChart($vendor);
         $this->loadRecentTransactions($vendor);
     }
 
@@ -112,25 +106,6 @@ class Dashboard extends Component
         $this->pendingRate = number_format($pending / $total * 100, 1);
     }
 
-    // ── Chart (last 7 days) ───────────────────────────────────────────────────
-    private function loadChart($vendor): void
-    {
-        $days   = [];
-        $counts = [];
-
-        for ($i = 6; $i >= 0; $i--) {
-            $date     = now()->subDays($i);
-            $days[]   = $date->format('d M');
-            $counts[] = $vendor->transactions()
-                ->whereDate('created_at', $date->toDateString())
-                ->count();
-        }
-
-        $this->chartDays   = $days;
-        $this->chartCounts = $counts;
-        $this->chartMax    = max(max($counts), 1);
-    }
-
     // ── Recent Transactions ───────────────────────────────────────────────────
     private function loadRecentTransactions($vendor): void
     {
@@ -139,7 +114,9 @@ class Dashboard extends Component
             ->limit(8)
             ->get()
             ->map(fn ($tx) => [
+                'id'               => $tx->id,
                 'reference'        => $tx->reference,
+                'raw_type'         => $tx->type,
                 'beneficiary_name' => $tx->beneficiary_name ?? '—',
                 'amount'           => number_format((float) $tx->amount, 2),
                 'type'             => ucfirst($tx->type),
@@ -152,7 +129,56 @@ class Dashboard extends Component
 
     public function render()
     {
-        return view('livewire.vendor.dashboard')
-            ->layout('layouts.vendor');
+        return view('livewire.vendor.dashboard', [
+            'activity' => $this->activity(Auth::guard('vendor')->user()),
+        ])->layout('layouts.vendor');
+    }
+
+    private function activity($vendor): array
+    {
+        $start = now()->subDays(6)->startOfDay();
+        $end = now()->endOfDay();
+        $rows = $vendor->transactions()
+            ->whereBetween('created_at', [$start, $end])
+            ->get(['created_at', 'status']);
+
+        $grouped = [];
+        foreach ($rows as $row) {
+            $day = $row->created_at->format('Y-m-d');
+            $status = (string) $row->status;
+            $grouped[$day][$status] = ($grouped[$day][$status] ?? 0) + 1;
+        }
+
+        $days = [];
+        $max = 0;
+        for ($i = 6; $i >= 0; $i--) {
+            $date = now()->subDays($i);
+            $key = $date->toDateString();
+            $bucket = $grouped[$key] ?? [];
+            $success = (int) ($bucket['success'] ?? 0);
+            $failed = (int) ($bucket['failed'] ?? 0);
+            $pending = (int) ($bucket['pending'] ?? 0);
+            unset($bucket['success'], $bucket['failed'], $bucket['pending']);
+            $other = array_sum($bucket);
+            $total = $success + $failed + $pending + $other;
+            $max = max($max, $total);
+            $days[] = [
+                'label' => $date->format('d M'),
+                'title' => $date->format('d M Y'),
+                'success' => $success,
+                'failed' => $failed,
+                'pending' => $pending,
+                'other' => $other,
+                'total' => $total,
+            ];
+        }
+
+        return [
+            'from' => $start->format('d M Y, h:i A'),
+            'to' => $end->format('d M Y, h:i A'),
+            'max' => $max,
+            'days' => $days,
+            'count' => $rows->count(),
+        ];
     }
 }

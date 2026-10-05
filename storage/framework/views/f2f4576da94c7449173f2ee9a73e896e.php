@@ -76,7 +76,7 @@
                 <table class="min-w-full">
                     <thead>
                         <tr>
-                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = ['Reference','Partner','Payout Provider','Amount','Commission / Charge','Status','Time']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $col): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = ['Reference','Partner','Payout Provider','Amount','Commission / Charge','Status','Time','']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $col): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                 <th class="px-4 py-2 text-left text-[11px] font-semibold uppercase tracking-wider"><?php echo e($col); ?></th>
                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                         </tr>
@@ -100,10 +100,11 @@
                                     <span class="inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold <?php echo e($tone); ?>"><?php echo e(ucfirst((string) $txn->status)); ?></span>
                                 </td>
                                 <td class="whitespace-nowrap px-4 py-2 text-xs text-slate-500"><?php echo e($txn->created_at?->timezone(config('app.timezone'))->format('d M, h:i A')); ?></td>
+                                <td class="whitespace-nowrap px-4 py-2"><?php echo $__env->make('livewire.admin.partials.txn-actions', ['id' => $txn->id, 'reference' => $txn->reference, 'type' => $txn->type], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?></td>
                             </tr>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                             <tr>
-                                <td colspan="7" class="px-4 py-8 text-center text-sm text-slate-500">No transactions yet.</td>
+                                <td colspan="8" class="px-4 py-8 text-center text-sm text-slate-500">No transactions yet.</td>
                             </tr>
                         <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                     </tbody>
