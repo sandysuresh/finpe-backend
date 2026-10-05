@@ -141,7 +141,7 @@
                                     <span class="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold {{ $sc }}">{{ ucfirst($tx->status) }}</span>
                                 </td>
                                 <td class="whitespace-nowrap px-5 py-4 text-xs text-slate-400">{{ $tx->created_at->format('d M Y, h:i A') }}</td>
-                                <td class="whitespace-nowrap px-5 py-4">@include('livewire.admin.partials.txn-actions', ['id' => $tx->id, 'reference' => $tx->reference, 'type' => $tx->type])</td>
+                                <td class="whitespace-nowrap px-5 py-4">@include('livewire.admin.partials.txn-actions', ['id' => $tx->id ?? null, 'reference' => $tx->reference ?? null, 'type' => $tx->type ?? null])</td>
                             </tr>
                         @endforeach
                     </tbody>
