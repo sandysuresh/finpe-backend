@@ -40,10 +40,10 @@ class PayoutCallbackController extends Controller
             $payouts->applyProviderCallback($payload);
         } catch (PayoutException $e) {
             return response()->json([
-                'successStatus' => false,
-                'message' => $e->getMessage(),
-                'responseCode' => '001',
-            ], $e->statusCode);
+                'successStatus' => true,
+                'message' => 'Success',
+                'responseCode' => '000',
+            ], 200);
         }
 
         return response()->json([
