@@ -207,7 +207,7 @@
                     <table class="min-w-full">
                         <thead class="bg-slate-50">
                             <tr>
-                                @foreach(['Reference','Beneficiary','Amount','Service','Status','Date',''] as $col)
+                                @foreach(['Reference','Beneficiary','Amount','Commission','Service','Status','Date',''] as $col)
                                     <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">{{ $col }}</th>
                                 @endforeach
                             </tr>
@@ -219,6 +219,7 @@
                                     <td class="whitespace-nowrap px-5 py-3.5 text-xs font-semibold text-slate-800">{{ $tx['reference'] }}</td>
                                     <td class="whitespace-nowrap px-5 py-3.5 text-xs text-slate-600">{{ $tx['beneficiary_name'] }}</td>
                                     <td class="whitespace-nowrap px-5 py-3.5 text-xs font-semibold text-slate-900">₹{{ $tx['amount'] }}</td>
+                                    <td class="whitespace-nowrap px-5 py-3.5 text-xs text-slate-700">{{ $tx['commission'] === null ? '—' : '₹'.$tx['commission'] }}</td>
                                     <td class="whitespace-nowrap px-5 py-3.5">
                                         <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">{{ $tx['service'] }}</span>
                                     </td>

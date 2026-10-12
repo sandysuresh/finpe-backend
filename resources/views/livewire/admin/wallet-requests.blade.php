@@ -87,7 +87,16 @@
                                 <td class="whitespace-nowrap px-5 py-4 text-sm font-bold {{ $req->status === 'approved' ? 'text-emerald-700' : ($req->status === 'rejected' ? 'text-red-700' : 'text-amber-700') }}">{{ $req->status === 'approved' ? '+' : '' }}₹{{ number_format((float)$req->amount,2) }}</td>
                                 <td class="whitespace-nowrap px-5 py-4 text-xs text-slate-600">{{ ucwords(str_replace('_',' ',$req->payment_mode)) }}</td>
                                 <td class="whitespace-nowrap px-5 py-4 font-mono text-xs text-slate-500">{{ $req->transaction_ref ?? '—' }}</td>
-                                <td class="whitespace-nowrap px-5 py-4 text-xs text-slate-500">{{ $req->bank_name ?? '—' }}</td>
+                                <td class="whitespace-nowrap px-5 py-4 text-xs text-slate-500">
+                                    <div>{{ $req->vendorBankAccount?->bank_name ?? $req->bank_name ?? '—' }}</div>
+                                    @if($req->vendorBankAccount)
+                                        <div class="font-mono">{{ $req->vendorBankAccount->account_number }}</div>
+                                        <div>{{ $req->vendorBankAccount->ifsc_code }}</div>
+                                    @endif
+                                    @if($req->receipt_path)
+                                        <a href="{{ route('admin.wallet-requests.receipt', $req->id) }}" class="mt-1 inline-block text-[11px] font-semibold text-blue-700">Receipt</a>
+                                    @endif
+                                </td>
                                 <td class="max-w-[150px] truncate px-5 py-4 text-xs text-slate-500" title="{{ $req->remarks }}">{{ $req->remarks ?? '—' }}</td>
                                 <td class="whitespace-nowrap px-5 py-4">
                                     <span class="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold {{ $sc }}">

@@ -5,12 +5,30 @@
     </div>
 
     <div class="fi-card mb-5 px-5 py-4">
-        <select wire:model.live="status" class="fi-input text-sm" aria-label="Status">
-            <option value="">Status</option>
-            <option value="pending">Pending</option>
-            <option value="success">Success</option>
-            <option value="failed">Failed</option>
-        </select>
+        <div class="flex flex-wrap items-center gap-3">
+            <input wire:model.live.debounce.300ms="search" class="fi-input text-sm w-56" placeholder="Reference, merchant ref, beneficiary">
+            <select wire:model.live="status" class="fi-input text-sm" aria-label="Status">
+                <option value="">Status</option>
+                <option value="pending">Pending</option>
+                <option value="success">Success</option>
+                <option value="failed">Failed</option>
+            </select>
+            <select wire:model.live="provider" class="fi-input text-sm" aria-label="Provider">
+                <option value="">All providers</option>
+                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $providers; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $code): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <option value="<?php echo e($code); ?>"><?php echo e(\App\Support\CommissionProviders::name($code)); ?></option>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+            </select>
+            <input type="date" wire:model.live="dateFrom" class="fi-input text-sm" aria-label="From">
+            <input type="date" wire:model.live="dateTo" class="fi-input text-sm" aria-label="To">
+            <button type="button" wire:click="resetFilters" class="rounded-lg border border-slate-200 px-3 py-2 text-sm">Reset</button>
+            <button type="button" wire:click="exportExcel" class="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white">Export Excel</button>
+        </div>
+        <div class="mt-4 grid grid-cols-3 gap-3 text-sm">
+            <div><p class="text-xs text-slate-400">Filtered payouts</p><p class="font-bold"><?php echo e(number_format($summary['count'])); ?></p></div>
+            <div><p class="text-xs text-slate-400">Amount</p><p class="font-bold">₹<?php echo e($summary['amount']); ?></p></div>
+            <div><p class="text-xs text-slate-400">Charge</p><p class="font-bold">₹<?php echo e($summary['charge']); ?></p></div>
+        </div>
     </div>
 
     <div class="fi-card overflow-x-auto">
@@ -45,7 +63,11 @@
                 <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
             </tbody>
         </table>
-        <div class="border-t border-slate-100 px-6 py-4"><?php echo e($transactions->links()); ?></div>
+        <div class="flex items-center justify-between border-t border-slate-100 px-6 py-4 text-sm text-slate-500">
+            <span><?php echo e(number_format($transactions->total())); ?> records</span>
+            <?php echo e($transactions->links()); ?>
+
+        </div>
     </div>
 
     <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($detail): ?>

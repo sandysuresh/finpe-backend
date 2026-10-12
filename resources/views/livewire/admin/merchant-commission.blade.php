@@ -54,6 +54,10 @@
                         @endforelse
                     </tbody>
                 </table>
+                <div class="flex items-center justify-between border-t border-slate-100 px-4 py-3 text-sm text-slate-500">
+                    <span>{{ number_format($entries->total()) }} records</span>
+                    {{ $entries->links() }}
+                </div>
             </div>
         </div>
     @endif

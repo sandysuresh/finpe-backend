@@ -11,7 +11,7 @@
         </div>
         <div class="fi-card p-5">
             <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Vendor groups</p>
-            <p class="mt-2 text-2xl font-bold text-slate-900">{{ number_format($rows->count()) }}</p>
+            <p class="mt-2 text-2xl font-bold text-slate-900">{{ number_format($rows->total()) }}</p>
         </div>
     </div>
 
@@ -49,6 +49,10 @@
                     @endforelse
                 </tbody>
             </table>
+        </div>
+        <div class="flex items-center justify-between border-t border-slate-100 px-5 py-4 text-sm text-slate-500">
+            <span>{{ number_format($rows->total()) }} records</span>
+            {{ $rows->links() }}
         </div>
     </div>
 </div>

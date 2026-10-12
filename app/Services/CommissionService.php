@@ -181,6 +181,10 @@ class CommissionService
         if ($rule->effective_to && $at->gt($rule->effective_to->copy()->endOfDay())) {
             return false;
         }
+        // A rule inserted after the event, even with a backdated window, was not available then.
+        if ($rule->created_at && $at->lt($rule->created_at)) {
+            return false;
+        }
 
         if ($rule->vendor_id !== null && (int) $rule->vendor_id !== (int) $context['vendor_id']) {
             return false;

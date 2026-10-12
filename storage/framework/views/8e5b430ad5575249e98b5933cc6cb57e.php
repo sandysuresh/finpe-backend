@@ -208,7 +208,7 @@
                     <table class="min-w-full">
                         <thead class="bg-slate-50">
                             <tr>
-                                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = ['Reference','Beneficiary','Amount','Service','Status','Date','']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $col): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = ['Reference','Beneficiary','Amount','Commission','Service','Status','Date','']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $col): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400"><?php echo e($col); ?></th>
                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                             </tr>
@@ -220,6 +220,7 @@
                                     <td class="whitespace-nowrap px-5 py-3.5 text-xs font-semibold text-slate-800"><?php echo e($tx['reference']); ?></td>
                                     <td class="whitespace-nowrap px-5 py-3.5 text-xs text-slate-600"><?php echo e($tx['beneficiary_name']); ?></td>
                                     <td class="whitespace-nowrap px-5 py-3.5 text-xs font-semibold text-slate-900">₹<?php echo e($tx['amount']); ?></td>
+                                    <td class="whitespace-nowrap px-5 py-3.5 text-xs text-slate-700"><?php echo e($tx['commission'] === null ? '—' : '₹'.$tx['commission']); ?></td>
                                     <td class="whitespace-nowrap px-5 py-3.5">
                                         <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500"><?php echo e($tx['service']); ?></span>
                                     </td>

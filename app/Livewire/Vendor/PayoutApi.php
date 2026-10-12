@@ -6,9 +6,13 @@ use App\Models\Transaction;
 use App\Models\VendorApiAccess;
 use App\Models\WalletLedger;
 use App\Services\Payout\PayoutProviderRegistry;
+use App\Support\RecordedCommission;
+use App\Support\SimpleXlsx;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PayoutApi extends Component
 {
@@ -23,6 +27,8 @@ class PayoutApi extends Component
     public string $dateFrom = '';
 
     public string $dateTo = '';
+
+    public string $service = '';
 
     public string $ledgerType = '';
 
@@ -63,6 +69,48 @@ class PayoutApi extends Component
     public function updatingDateTo(): void
     {
         $this->resetPage();
+    }
+
+    public function updatingService(): void
+    {
+        $this->resetPage();
+    }
+
+    public function resetFilters(): void
+    {
+        $this->reset(['status', 'search', 'dateFrom', 'dateTo', 'service', 'ledgerType']);
+        $this->resetPage();
+    }
+
+    public function exportExcel(): StreamedResponse
+    {
+        $vendor = Auth::guard('vendor')->user();
+        $rows = $this->transactionQuery($vendor->id)->with($this->commissionWith($vendor->id))->latest()->get();
+        $sheet = [[
+            'Date', 'FinPe reference', 'Merchant reference', 'Service', 'Provider', 'Status',
+            'Amount', 'Charge', 'Commission', 'Beneficiary', 'Account',
+        ]];
+        foreach ($rows as $txn) {
+            $commission = RecordedCommission::amount($txn);
+            $sheet[] = [
+                $txn->created_at?->format('Y-m-d H:i:s'),
+                $txn->reference,
+                $txn->merchant_ref,
+                $txn->service,
+                $this->providerName($txn->payout_provider),
+                $txn->status,
+                (float) $txn->amount,
+                (float) $txn->payout_charge,
+                $commission === null ? '' : $commission,
+                $txn->beneficiary_name,
+                $this->maskAccount($txn->account_number),
+            ];
+        }
+        $code = $vendor->vendor_code ?: 'vendor';
+
+        return SimpleXlsx::download($code.'-payout-transactions.xlsx', [
+            'Payout transactions' => $sheet,
+        ]);
     }
 
     public function updatingLedgerType(): void
@@ -150,6 +198,36 @@ class PayoutApi extends Component
         };
     }
 
+    private function transactionQuery(int $vendorId): Builder
+    {
+        return Transaction::query()
+            ->where('vendor_id', $vendorId)
+            ->where('type', 'payout')
+            ->when($this->status !== '', fn (Builder $query) => $query->where('status', $this->status))
+            ->when($this->service !== '', fn (Builder $query) => $query->where('service', $this->service))
+            ->when($this->search !== '', function (Builder $query) {
+                $term = '%'.$this->search.'%';
+                $query->where(function (Builder $inner) use ($term) {
+                    $inner->where('reference', 'like', $term)
+                        ->orWhere('merchant_ref', 'like', $term)
+                        ->orWhere('bank_reference', 'like', $term);
+                });
+            })
+            ->when($this->dateFrom !== '', fn (Builder $query) => $query->whereDate('created_at', '>=', $this->dateFrom))
+            ->when($this->dateTo !== '', fn (Builder $query) => $query->whereDate('created_at', '<=', $this->dateTo))
+            ->when($this->providerCode !== '', fn (Builder $query) => $query->where('payout_provider', $this->providerCode));
+    }
+
+    /**
+     * @return array<string, callable>
+     */
+    private function commissionWith(int $vendorId): array
+    {
+        return [
+            'commissionEntry' => fn ($query) => $query->where('vendor_id', $vendorId),
+        ];
+    }
+
     public function providerName(?string $code): string
     {
         return app(PayoutProviderRegistry::class)->displayName($code);
@@ -165,21 +243,8 @@ class PayoutApi extends Component
         $payoutByReference = collect();
 
         if ($enabled && $this->section === 'transactions') {
-            $transactions = Transaction::query()
-                ->where('vendor_id', $vendor->id)
-                ->where('type', 'payout')
-                ->when($this->status !== '', fn ($query) => $query->where('status', $this->status))
-                ->when($this->search !== '', function ($query) {
-                    $term = '%'.$this->search.'%';
-                    $query->where(function ($inner) use ($term) {
-                        $inner->where('reference', 'like', $term)
-                            ->orWhere('merchant_ref', 'like', $term)
-                            ->orWhere('bank_reference', 'like', $term);
-                    });
-                })
-                ->when($this->dateFrom !== '', fn ($query) => $query->whereDate('created_at', '>=', $this->dateFrom))
-                ->when($this->dateTo !== '', fn ($query) => $query->whereDate('created_at', '<=', $this->dateTo))
-                ->when($this->providerCode !== '', fn ($query) => $query->where('payout_provider', $this->providerCode))
+            $transactions = $this->transactionQuery($vendor->id)
+                ->with($this->commissionWith($vendor->id))
                 ->latest()
                 ->paginate(15);
 

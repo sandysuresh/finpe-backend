@@ -8,7 +8,7 @@ class WalletTopupRequest extends Model
 {
     protected $fillable = [
         'vendor_id','reference','amount','payment_mode',
-        'transaction_ref','bank_name','remarks',
+        'transaction_ref','bank_name','vendor_bank_account_id','receipt_path','remarks',
         'status','admin_note','approved_by','actioned_at',
     ];
 
@@ -21,4 +21,5 @@ class WalletTopupRequest extends Model
 
     public function vendor(): BelongsTo    { return $this->belongsTo(Vendor::class); }
     public function approvedBy(): BelongsTo { return $this->belongsTo(Admin::class, 'approved_by'); }
+    public function vendorBankAccount(): BelongsTo { return $this->belongsTo(VendorBankAccount::class); }
 }

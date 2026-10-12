@@ -54,7 +54,7 @@ class PayoutService
             throw new PayoutException('Amount must be greater than zero.');
         }
 
-        if ($vendor->transaction_limit && $amount > (float) $vendor->transaction_limit) {
+        if ($this->exceedsTransactionLimit($vendor, $amount)) {
             throw new PayoutException('Amount exceeds vendor transaction limit.');
         }
 
@@ -179,7 +179,7 @@ class PayoutService
             throw new PayoutException('Amount must be at least 100 and below 100000.');
         }
 
-        if ($vendor->transaction_limit && $amount > (float) $vendor->transaction_limit) {
+        if ($this->exceedsTransactionLimit($vendor, $amount)) {
             throw new PayoutException('Amount exceeds vendor transaction limit.');
         }
 
@@ -432,6 +432,13 @@ class PayoutService
             $commission->money($amount),
             $commission->money($rule->value),
         );
+    }
+
+    private function exceedsTransactionLimit(Vendor $vendor, float $amount): bool
+    {
+        $limit = round((float) $vendor->transaction_limit, 2);
+
+        return $limit > 0 && $amount > $limit;
     }
 
     private function callbackMessage(mixed $message): string

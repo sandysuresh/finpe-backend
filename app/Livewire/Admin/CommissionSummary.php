@@ -6,9 +6,12 @@ use App\Models\CommissionEntry;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 class CommissionSummary extends Component
 {
+    use WithPagination;
+
     public function mount(): void
     {
         if (! Auth::guard('admin')->user()?->hasModule('dashboard')) {
@@ -35,7 +38,7 @@ class CommissionSummary extends Component
             ])
             ->groupBy('commission_entries.vendor_id', 'vendors.business_name', 'vendors.vendor_code', 'commission_rules.provider')
             ->orderBy('vendors.business_name')
-            ->get();
+            ->paginate(15);
 
         return view('livewire.admin.commission-summary', [
             'total' => $total,

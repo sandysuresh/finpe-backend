@@ -8,9 +8,11 @@ use App\Support\AdminAccess;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 class AgentCommission extends Component
 {
+    use WithPagination;
     public string $vendorId = '';
     public string $dateFrom = '';
     public string $dateTo = '';
@@ -27,6 +29,7 @@ class AgentCommission extends Component
         if (in_array($name, ['vendorId', 'dateFrom', 'dateTo'], true) && ! AdminAccess::allows('commission', 'search')) {
             abort(403);
         }
+        $this->resetPage('entryPage');
     }
 
     public function render()
@@ -56,8 +59,7 @@ class AgentCommission extends Component
                 ->with('sourceTransaction:id,created_at')
                 ->where('vendor_id', $this->vendorId)
                 ->latest('id')
-                ->limit(50)
-                ->get();
+                ->paginate(20, pageName: 'entryPage');
 
         return view('livewire.admin.agent-commission', [
             'rows' => $rows,

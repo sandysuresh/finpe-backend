@@ -55,42 +55,56 @@ class WalletRequests extends Component
             return;
         }
 
-        DB::transaction(function () use ($request) {
+        $applied = false;
+        DB::transaction(function () use ($request, &$applied) {
+            $locked = WalletTopupRequest::query()->whereKey($request->id)->lockForUpdate()->first();
+            if (! $locked || $locked->status !== 'pending') {
+                return;
+            }
+
+            $applied = true;
             if ($this->actionType === 'approve') {
-                // Get or create wallet
-                $wallet = $request->vendor->wallet ?? Wallet::create([
-                    'vendor_id'    => $request->vendor_id,
-                    'balance'      => 0,
-                    'hold_balance' => 0,
-                ]);
+                $wallet = Wallet::query()->where('vendor_id', $locked->vendor_id)->lockForUpdate()->first()
+                    ?? Wallet::create([
+                        'vendor_id'    => $locked->vendor_id,
+                        'balance'      => 0,
+                        'hold_balance' => 0,
+                    ]);
 
-                $balanceBefore = (float) $wallet->balance;
-                $balanceAfter  = $balanceBefore + (float) $request->amount;
+                $alreadyCredited = WalletLedger::query()
+                    ->where('vendor_id', $locked->vendor_id)
+                    ->where('reference', $locked->reference)
+                    ->where('source', 'topup')
+                    ->where('type', 'credit')
+                    ->exists();
 
-                // Credit wallet
-                $wallet->increment('balance', (float) $request->amount);
+                if (! $alreadyCredited) {
+                    $balanceBefore = (float) $wallet->balance;
+                    $balanceAfter  = $balanceBefore + (float) $locked->amount;
 
-                // Write ledger entry
-                WalletLedger::create([
-                    'vendor_id'      => $request->vendor_id,
-                    'wallet_id'      => $wallet->id,
-                    'type'           => 'credit',
-                    'amount'         => $request->amount,
-                    'balance_before' => $balanceBefore,
-                    'balance_after'  => $balanceAfter,
-                    'reference'      => $request->reference,
-                    'description'    => 'Wallet top-up approved by admin',
-                    'source'         => 'topup',
-                ]);
+                    $wallet->increment('balance', (float) $locked->amount);
 
-                $request->update([
+                    WalletLedger::create([
+                        'vendor_id'      => $locked->vendor_id,
+                        'wallet_id'      => $wallet->id,
+                        'type'           => 'credit',
+                        'amount'         => $locked->amount,
+                        'balance_before' => $balanceBefore,
+                        'balance_after'  => $balanceAfter,
+                        'reference'      => $locked->reference,
+                        'description'    => 'Wallet top-up approved by admin',
+                        'source'         => 'topup',
+                    ]);
+                }
+
+                $locked->update([
                     'status'      => 'approved',
                     'admin_note'  => $this->adminNote,
                     'approved_by' => Auth::guard('admin')->id(),
                     'actioned_at' => now(),
                 ]);
             } else {
-                $request->update([
+                $locked->update([
                     'status'      => 'rejected',
                     'admin_note'  => $this->adminNote,
                     'approved_by' => Auth::guard('admin')->id(),
@@ -99,6 +113,13 @@ class WalletRequests extends Component
             }
         });
 
+        if (! $applied) {
+            $this->showApproveModal = false;
+
+            return;
+        }
+
+        $request->refresh();
         $approved = $this->actionType === 'approve';
         AdminAudit::record(
             $approved ? 'Wallet request approved' : 'Wallet request rejected',
@@ -126,7 +147,7 @@ class WalletRequests extends Component
 
     public function render()
     {
-        $requests = WalletTopupRequest::with('vendor','approvedBy')
+        $requests = WalletTopupRequest::with('vendor','approvedBy','vendorBankAccount')
             ->when($this->filterStatus, fn($q) => $q->where('status', $this->filterStatus))
             ->when($this->search, fn($q) => $q->whereHas('vendor', fn($vq) =>
                 $vq->where('business_name','like',"%{$this->search}%")

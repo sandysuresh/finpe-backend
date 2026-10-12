@@ -68,6 +68,13 @@
             <span class="text-xs text-slate-400">to</span>
             <input type="date" wire:model.live="dateTo"
                    class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400">
+            <select wire:model.live="provider" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 outline-none focus:border-blue-400">
+                <option value="">All providers</option>
+                @foreach($providers as $option)
+                    <option value="{{ $option['code'] }}">{{ $option['name'] }}</option>
+                @endforeach
+            </select>
+            <button type="button" wire:click="exportExcel" class="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white">Export Excel</button>
             <button wire:click="resetFilters"
                     class="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-50">
                 Reset
@@ -146,6 +153,10 @@
                         @endforeach
                     </tbody>
                 </table>
+            </div>
+            <div class="flex items-center justify-between border-t border-slate-100 px-5 py-4 text-sm text-slate-500">
+                <span>{{ number_format($transactions->total()) }} records</span>
+                {{ $transactions->links() }}
             </div>
         @endif
     </div>

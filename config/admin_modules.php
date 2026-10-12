@@ -8,6 +8,7 @@ return [
     'app-users' => [
         'label' => 'Users',
         'route' => 'admin.app-users.list',
+        'nav' => false,
         'inherits' => 'dashboard',
         'children' => [
             ['label' => 'All Users', 'route' => 'admin.app-users.list'],
@@ -29,6 +30,7 @@ return [
             ['label' => 'Partner Transactions', 'route' => 'admin.partners.transactions'],
             ['label' => 'Partner Commission', 'route' => 'admin.partners.commission'],
             ['label' => 'Partner Settlement', 'route' => 'admin.partners.settlement'],
+            ['label' => 'Bank Accounts', 'route' => 'admin.vendor-bank-accounts', 'module' => 'wallet-requests'],
         ],
     ],
     'merchants' => [
@@ -66,9 +68,7 @@ return [
     'wallet-requests' => [
         'label' => 'Wallet',
         'route' => 'admin.wallet-requests',
-        'children' => [
-            ['label' => 'Wallet Requests', 'route' => 'admin.wallet-requests'],
-        ],
+        'nav' => false,
     ],
     'reports' => [
         'label' => 'Reports',
@@ -76,19 +76,18 @@ return [
         'children' => [
             ['label' => 'Wallet reports', 'route' => 'admin.reports'],
             ['label' => 'Daily balance', 'route' => 'admin.daily-balance'],
+            ['label' => 'Wallet Requests', 'route' => 'admin.wallet-requests', 'module' => 'wallet-requests'],
         ],
     ],
     'payout-api' => [
         'label' => 'Payout API',
         'route' => 'admin.payout-api',
+        'nav' => false,
     ],
     'banks' => [
         'label' => 'Bank & API',
         'route' => 'admin.banks',
-        'children' => [
-            ['label' => 'Banks', 'route' => 'admin.banks'],
-            ['label' => 'API Logs', 'route' => 'admin.api-logs'],
-        ],
+        'nav' => false,
     ],
     'users' => [
         'label' => 'Administration',
@@ -100,6 +99,9 @@ return [
             ['label' => 'Approval Workflow', 'route' => 'admin.approval-workflow'],
             ['label' => 'Audit Logs', 'route' => 'admin.audit-logs'],
             ['label' => 'System Settings', 'route' => 'admin.system-settings'],
+            ['label' => 'Payout API', 'route' => 'admin.payout-api', 'module' => 'payout-api'],
+            ['label' => 'Bank & API', 'route' => 'admin.banks', 'module' => 'banks'],
+            ['label' => 'API Logs', 'route' => 'admin.api-logs', 'module' => 'banks'],
         ],
     ],
 ];

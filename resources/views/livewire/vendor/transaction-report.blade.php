@@ -4,11 +4,11 @@
             <h1 class="text-2xl font-bold text-slate-900">Transaction Report</h1>
             <p class="mt-1 text-sm text-slate-500">Full history of all your payment transactions.</p>
         </div>
-        <button class="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+        <button type="button" wire:click="exportExcel" class="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
             <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
             </svg>
-            Export CSV
+            Export Excel
         </button>
     </div>
 
@@ -37,8 +37,9 @@
                 </svg>
             </div>
             <div>
-                <p class="text-xs text-slate-400">Success Vol.</p>
-                <p class="text-base font-bold text-slate-900">₹{{ $summary['volume'] }}</p>
+                <p class="text-xs text-slate-400">Recorded commission</p>
+                <p class="text-base font-bold text-slate-900">₹{{ number_format($summary['commission'], 2) }}</p>
+                <p class="text-[11px] text-slate-400">Success vol. ₹{{ $summary['volume'] }}</p>
             </div>
         </div>
     </div>
@@ -67,6 +68,13 @@
                 <option value="imps">IMPS</option>
                 <option value="neft">NEFT</option>
                 <option value="rtgs">RTGS</option>
+            </select>
+            <select wire:model.live="provider"
+                    class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 outline-none focus:border-violet-400">
+                <option value="">All Providers</option>
+                @foreach($providers as $item)
+                    <option value="{{ $item['code'] }}">{{ $item['name'] }}</option>
+                @endforeach
             </select>
             <input type="date" wire:model.live="dateFrom"
                    class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-violet-400">
@@ -101,7 +109,7 @@
                     <div class="absolute -right-5 bottom-4 h-2.5 w-2.5 rounded-full bg-amber-200"></div>
                 </div>
 
-                @if($search || $status || $service || $dateFrom || $dateTo)
+                @if($search || $status || $service || $provider || $dateFrom || $dateTo)
                     {{-- Filtered empty state --}}
                     <h3 class="text-base font-semibold text-slate-800">No transactions match your filters</h3>
                     <p class="mt-2 max-w-sm text-sm text-slate-400">
@@ -154,7 +162,7 @@
                 <table class="min-w-full">
                     <thead class="bg-slate-50">
                         <tr>
-                            @foreach(['Reference','Beneficiary','Amount','Service','Status','Date',''] as $col)
+                            @foreach(['Reference','Beneficiary','Amount','Charge','Commission','Service','Provider','Status','Date',''] as $col)
                                 <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">{{ $col }}</th>
                             @endforeach
                         </tr>
@@ -172,9 +180,15 @@
                                 <td class="whitespace-nowrap px-5 py-4 font-mono text-xs font-semibold text-slate-800">{{ $tx->reference }}</td>
                                 <td class="whitespace-nowrap px-5 py-4 text-xs text-slate-600">{{ $tx->beneficiary_name ?? '—' }}</td>
                                 <td class="whitespace-nowrap px-5 py-4 text-sm font-bold text-slate-900">₹{{ number_format((float)$tx->amount,2) }}</td>
+                                <td class="whitespace-nowrap px-5 py-4 text-sm text-slate-700">₹{{ number_format((float)$tx->payout_charge,2) }}</td>
+                                <td class="whitespace-nowrap px-5 py-4 text-sm text-slate-700">
+                                    @php $commission = \App\Support\RecordedCommission::amount($tx); @endphp
+                                    {{ $commission === null ? '—' : '₹'.number_format($commission, 2) }}
+                                </td>
                                 <td class="whitespace-nowrap px-5 py-4">
                                     <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-semibold text-slate-500">{{ strtoupper($tx->service) }}</span>
                                 </td>
+                                <td class="whitespace-nowrap px-5 py-4 text-xs text-slate-600">{{ $tx->payout_provider ? app(\App\Services\Payout\PayoutProviderRegistry::class)->displayName($tx->payout_provider) : '—' }}</td>
                                 <td class="whitespace-nowrap px-5 py-4">
                                     <span class="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold {{ $sc }}">{{ ucfirst($tx->status) }}</span>
                                 </td>

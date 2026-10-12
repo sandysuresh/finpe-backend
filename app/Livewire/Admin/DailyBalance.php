@@ -2,7 +2,8 @@
 
 namespace App\Livewire\Admin;
 
-use App\Support\SampleWalletReport;
+use App\Models\Vendor;
+use App\Support\DailyBalanceReport;
 use App\Support\SimpleXlsx;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -18,6 +19,8 @@ class DailyBalance extends Component
     public string $dateTo = '';
 
     public string $onDate = '';
+
+    public string $breakdown = 'consolidated';
 
     public function mount(): void
     {
@@ -68,13 +71,22 @@ class DailyBalance extends Component
         }
 
         $report = $this->report();
-        $rows = [['Date', 'Opening', 'Credit', 'Debit', 'Closing']];
+        $vendorWise = $this->breakdown === 'vendor';
+        $rows = [$vendorWise
+            ? ['Date', 'Vendor', 'Opening', 'Credit', 'Debit', 'Closing']
+            : ['Date', 'Opening', 'Credit', 'Debit', 'Closing']];
 
-        foreach ($report['days'] as $day) {
-            $rows[] = [$day['date'], $day['opening'], $day['credit'], $day['debit'], $day['closing']];
+        if ($vendorWise) {
+            foreach ($report['vendors'] as $line) {
+                $rows[] = [$line['date'], $line['vendor'], $line['opening'], $line['credit'], $line['debit'], $line['closing']];
+            }
+            $rows[] = ['Period', '', $report['opening'], $report['credit'], $report['debit'], $report['closing']];
+        } else {
+            foreach ($report['days'] as $day) {
+                $rows[] = [$day['date'], $day['opening'], $day['credit'], $day['debit'], $day['closing']];
+            }
+            $rows[] = ['Period', $report['opening'], $report['credit'], $report['debit'], $report['closing']];
         }
-
-        $rows[] = ['Period', $report['opening'], $report['credit'], $report['debit'], $report['closing']];
 
         return SimpleXlsx::download('daily-balance.xlsx', [
             'Daily balance' => $rows,
@@ -84,8 +96,9 @@ class DailyBalance extends Component
     public function render()
     {
         return view('livewire.admin.daily-balance', [
-            'vendors' => SampleWalletReport::vendors(),
+            'vendors' => Vendor::query()->orderBy('business_name')->get(['id', 'vendor_code', 'business_name']),
             'report' => $this->report(),
+            'vendorWise' => $this->breakdown === 'vendor',
             'singleDay' => $this->dateFrom !== '' && $this->dateFrom === $this->dateTo,
         ])->layout('layouts.admin', ['title' => 'Daily balance']);
     }
@@ -94,7 +107,9 @@ class DailyBalance extends Component
     {
         [$from, $to] = $this->range();
 
-        return SampleWalletReport::daily($this->vendor !== '' ? $this->vendor : null, $from, $to);
+        $vendorId = $this->vendor !== '' ? (int) $this->vendor : null;
+
+        return app(DailyBalanceReport::class)->build($vendorId, $from, $to);
     }
 
     private function range(): array

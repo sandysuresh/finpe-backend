@@ -29,6 +29,10 @@ class AdminModules
         $items = [];
 
         foreach (self::all() as $key => $module) {
+            if (array_key_exists('nav', $module) && $module['nav'] === false) {
+                continue;
+            }
+
             if (! $admin->hasModule($module['inherits'] ?? $key)) {
                 continue;
             }
@@ -41,7 +45,8 @@ class AdminModules
             $children = [];
             foreach ($module['children'] ?? [] as $child) {
                 $childRoute = $child['route'] ?? null;
-                if (! $childRoute || ! \Illuminate\Support\Facades\Route::has($childRoute)) {
+                $childModule = $child['module'] ?? ($module['inherits'] ?? $key);
+                if (! $childRoute || ! \Illuminate\Support\Facades\Route::has($childRoute) || ! $admin->hasModule($childModule)) {
                     continue;
                 }
 

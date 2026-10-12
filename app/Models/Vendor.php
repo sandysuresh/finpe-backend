@@ -44,6 +44,7 @@ class Vendor extends Authenticatable
     public function merchants(): HasMany          { return $this->hasMany(Merchant::class); }
     public function aepsTransactions(): HasMany   { return $this->hasMany(AepsTransaction::class); }
     public function beneficiaries(): HasMany       { return $this->hasMany(Beneficiary::class); }
+    public function bankAccounts(): HasMany        { return $this->hasMany(VendorBankAccount::class); }
     public function settlements(): HasMany         { return $this->hasMany(Settlement::class); }
     public function apiCredential(): HasOne        { return $this->hasOne(ApiCredential::class); }
     public function apiAccess(): HasMany           { return $this->hasMany(VendorApiAccess::class); }

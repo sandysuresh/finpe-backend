@@ -49,6 +49,15 @@
                 @endif
                 <input wire:model.live="dateFrom" type="date" class="fi-input text-sm" aria-label="From date">
                 <input wire:model.live="dateTo" type="date" class="fi-input text-sm" aria-label="To date">
+                @if($section === 'transactions')
+                    <select wire:model.live="service" class="fi-input text-sm" aria-label="Service">
+                        <option value="">All services</option>
+                        <option value="imps">IMPS</option>
+                        <option value="neft">NEFT</option>
+                    </select>
+                    <button type="button" wire:click="resetFilters" class="fi-btn fi-btn-secondary">Clear filters</button>
+                    <button type="button" wire:click="exportExcel" class="fi-btn fi-btn-primary">Export Excel</button>
+                @endif
             </div>
         @endif
 
@@ -57,7 +66,7 @@
                 <table class="min-w-full">
                     <thead>
                         <tr>
-                            @foreach(['Date / time','FinPe reference','Merchant reference','Provider reference','RRN','Payout provider','Amount','Charge','Total debited','Beneficiary','Status',''] as $col)
+                            @foreach(['Date / time','FinPe reference','Merchant reference','Provider reference','RRN','Payout provider','Amount','Charge','Commission','Total debited','Beneficiary','Status',''] as $col)
                                 <th class="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">{{ $col }}</th>
                             @endforeach
                         </tr>
@@ -73,6 +82,10 @@
                                 <td class="px-3 py-3 text-sm font-semibold text-slate-900">{{ $this->providerName($txn->payout_provider) }}</td>
                                 <td class="px-3 py-3 text-sm text-slate-900">₹{{ number_format((float) $txn->amount, 2) }}</td>
                                 <td class="px-3 py-3 text-sm text-slate-900">₹{{ number_format((float) $txn->payout_charge, 2) }}</td>
+                                <td class="px-3 py-3 text-sm text-slate-900">
+                                    @php $commission = \App\Support\RecordedCommission::amount($txn); @endphp
+                                    {{ $commission === null ? '—' : '₹'.number_format($commission, 2) }}
+                                </td>
                                 <td class="px-3 py-3 text-sm font-semibold text-slate-900">₹{{ number_format((float) $txn->amount + (float) $txn->payout_charge, 2) }}</td>
                                 <td class="px-3 py-3 text-sm text-slate-700">{{ $txn->beneficiary_name ?: '—' }} · {{ $this->maskAccount($txn->account_number) }}</td>
                                 <td class="px-3 py-3"><span class="inline-flex rounded-full px-2.5 py-1 text-xs font-bold ring-1 ring-inset {{ $this->statusBadgeClass($txn->status) }}">{{ ucfirst((string) $txn->status) }}</span></td>
@@ -80,7 +93,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="12" class="px-5 py-16 text-center text-sm text-slate-500">No payout transactions yet.</td>
+                                <td colspan="13" class="px-5 py-16 text-center text-sm text-slate-500">No payout transactions yet.</td>
                             </tr>
                         @endforelse
                     </tbody>

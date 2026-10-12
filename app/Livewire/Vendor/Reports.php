@@ -4,6 +4,8 @@ namespace App\Livewire\Vendor;
 
 use App\Models\Transaction;
 use App\Models\WalletLedger;
+use App\Services\Payout\PayoutProviderRegistry;
+use App\Support\RecordedCommission;
 use App\Support\SimpleXlsx;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
@@ -24,6 +26,10 @@ class Reports extends Component
     public string $status = '';
 
     public string $txnType = '';
+
+    public string $provider = '';
+
+    public string $search = '';
 
     public function updatingDateFrom(): void
     {
@@ -50,9 +56,19 @@ class Reports extends Component
         $this->resetPages();
     }
 
+    public function updatingProvider(): void
+    {
+        $this->resetPages();
+    }
+
+    public function updatingSearch(): void
+    {
+        $this->resetPages();
+    }
+
     public function resetFilters(): void
     {
-        $this->reset(['dateFrom', 'dateTo', 'ledgerType', 'status', 'txnType']);
+        $this->reset(['dateFrom', 'dateTo', 'ledgerType', 'status', 'txnType', 'provider', 'search']);
         $this->resetPages();
     }
 
@@ -61,11 +77,11 @@ class Reports extends Component
         $vendorId = $this->vendorId();
         $summary = $this->summary($vendorId);
         $ledger = $this->ledgerQuery($vendorId)->orderBy('created_at')->orderBy('id')->get();
-        $transactions = $this->transactionQuery($vendorId)->latest()->get();
+        $transactions = $this->transactionQuery($vendorId)->with($this->commissionWith($vendorId))->latest()->get();
         $linked = $this->transactionsForLedger($vendorId, $ledger->pluck('reference'));
 
         $summaryRows = [
-            ['Opening balance', 'Credit', 'Debit', 'Closing balance', 'Transactions', 'Payout amount', 'Payout charge'],
+            ['Opening balance', 'Credit', 'Debit', 'Closing balance', 'Transactions', 'Transaction amount', 'Charge', 'Recorded commission'],
             [
                 $summary['opening'],
                 $summary['credit'],
@@ -74,6 +90,7 @@ class Reports extends Component
                 $summary['transactions'],
                 $summary['payout_amount'],
                 $summary['payout_charge'],
+                $summary['commission'],
             ],
         ];
 
@@ -100,9 +117,11 @@ class Reports extends Component
 
         $transactionRows = [[
             'Date', 'FinPe reference', 'Merchant reference', 'Type', 'Service', 'Status',
-            'Amount', 'Charge', 'Beneficiary', 'Provider reference', 'RRN',
+            'Amount', 'Charge', 'Commission', 'Beneficiary', 'Provider', 'Provider reference', 'RRN',
         ]];
+        $providers = app(PayoutProviderRegistry::class);
         foreach ($transactions as $txn) {
+            $commission = RecordedCommission::amount($txn);
             $transactionRows[] = [
                 $txn->created_at?->format('Y-m-d H:i:s'),
                 $txn->reference,
@@ -112,7 +131,9 @@ class Reports extends Component
                 $txn->status,
                 (float) $txn->amount,
                 (float) $txn->payout_charge,
+                $commission === null ? '' : $commission,
                 $txn->beneficiary_name,
+                $providers->displayName($txn->payout_provider),
                 $txn->bank_reference,
                 $txn->rrn,
             ];
@@ -131,13 +152,14 @@ class Reports extends Component
     {
         $vendorId = $this->vendorId();
         $ledger = $this->ledgerQuery($vendorId)->latest()->paginate(15, pageName: 'ledgerPage');
-        $transactions = $this->transactionQuery($vendorId)->latest()->paginate(15, pageName: 'txnPage');
+        $transactions = $this->transactionQuery($vendorId)->with($this->commissionWith($vendorId))->latest()->paginate(15, pageName: 'txnPage');
 
         return view('livewire.vendor.reports', [
             'summary' => $this->summary($vendorId),
             'ledger' => $ledger,
             'payouts' => $this->transactionsForLedger($vendorId, $ledger->getCollection()->pluck('reference')),
             'transactions' => $transactions,
+            'providers' => $this->providerOptions($vendorId),
             'txnTypes' => Transaction::query()
                 ->where('vendor_id', $vendorId)
                 ->whereNotNull('type')
@@ -184,7 +206,44 @@ class Reports extends Component
             ->when($this->dateFrom !== '', fn (Builder $query) => $query->whereDate('created_at', '>=', $this->dateFrom))
             ->when($this->dateTo !== '', fn (Builder $query) => $query->whereDate('created_at', '<=', $this->dateTo))
             ->when($this->status !== '', fn (Builder $query) => $query->where('status', $this->status))
-            ->when($this->txnType !== '', fn (Builder $query) => $query->where('type', $this->txnType));
+            ->when($this->txnType !== '', fn (Builder $query) => $query->where('type', $this->txnType))
+            ->when($this->provider !== '', fn (Builder $query) => $query->where('payout_provider', $this->provider))
+            ->when($this->search !== '', function (Builder $query) {
+                $term = '%'.$this->search.'%';
+                $query->where(function (Builder $inner) use ($term) {
+                    $inner->where('reference', 'like', $term)
+                        ->orWhere('merchant_ref', 'like', $term)
+                        ->orWhere('bank_reference', 'like', $term);
+                });
+            });
+    }
+
+    /**
+     * @return array<string, callable>
+     */
+    private function commissionWith(int $vendorId): array
+    {
+        return [
+            'commissionEntry' => fn ($query) => $query->where('vendor_id', $vendorId),
+        ];
+    }
+
+    /**
+     * @return list<array{code: string, name: string}>
+     */
+    private function providerOptions(int $vendorId): array
+    {
+        $providers = app(PayoutProviderRegistry::class);
+
+        return Transaction::query()
+            ->where('vendor_id', $vendorId)
+            ->whereNotNull('payout_provider')
+            ->where('payout_provider', '!=', '')
+            ->distinct()
+            ->orderBy('payout_provider')
+            ->pluck('payout_provider')
+            ->map(fn ($code) => ['code' => (string) $code, 'name' => $providers->displayName((string) $code)])
+            ->all();
     }
 
     private function transactionsForLedger(int $vendorId, $references)
@@ -204,28 +263,60 @@ class Reports extends Component
     private function summary(int $vendorId): array
     {
         $ledger = $this->ledgerQuery($vendorId);
-        $first = (clone $ledger)->orderBy('created_at')->orderBy('id')->first();
-        $last = (clone $ledger)->orderByDesc('created_at')->orderByDesc('id')->first();
         $transactions = $this->transactionQuery($vendorId);
-        $carried = null;
-        if (! $first && $this->ledgerType === '' && $this->status === '' && $this->txnType === '') {
-            $carried = WalletLedger::query()
-                ->where('vendor_id', $vendorId)
-                ->when($this->dateFrom !== '', fn (Builder $query) => $query->whereDate('created_at', '<', $this->dateFrom))
-                ->orderByDesc('created_at')
-                ->orderByDesc('id')
-                ->first();
-        }
-        $carriedBalance = $carried ? (float) $carried->balance_after : 0.0;
+        $credit = (float) (clone $ledger)->where('type', 'credit')->sum('amount');
+        $debit = (float) (clone $ledger)->where('type', 'debit')->sum('amount');
+        $opening = $this->openingBalance($vendorId);
 
         return [
-            'opening' => $first ? (float) $first->balance_before : $carriedBalance,
-            'credit' => (float) (clone $ledger)->where('type', 'credit')->sum('amount'),
-            'debit' => (float) (clone $ledger)->where('type', 'debit')->sum('amount'),
-            'closing' => $last ? (float) $last->balance_after : $carriedBalance,
+            'opening' => $opening,
+            'credit' => $credit,
+            'debit' => $debit,
+            'closing' => round($opening + $credit - $debit, 2),
             'transactions' => (clone $transactions)->count(),
             'payout_amount' => (float) (clone $transactions)->sum('amount'),
             'payout_charge' => (float) (clone $transactions)->sum('payout_charge'),
+            'commission' => RecordedCommission::total($transactions, $vendorId),
         ];
+    }
+
+    private function openingBalance(int $vendorId): float
+    {
+        $walletScoped = $this->ledgerType === '' && $this->status === '' && $this->txnType === '';
+        $prior = WalletLedger::query()
+            ->where('vendor_id', $vendorId)
+            ->when($this->dateFrom !== '', fn (Builder $query) => $query->whereDate('created_at', '<', $this->dateFrom))
+            ->when(in_array($this->ledgerType, ['credit', 'debit'], true), fn (Builder $query) => $query->where('type', $this->ledgerType))
+            ->when($this->status !== '' || $this->txnType !== '', function (Builder $query) use ($vendorId) {
+                $query->whereExists(function ($sub) use ($vendorId) {
+                    $sub->selectRaw('1')
+                        ->from('transactions')
+                        ->whereColumn('transactions.reference', 'wallet_ledger.reference')
+                        ->where('transactions.vendor_id', $vendorId)
+                        ->when($this->status !== '', fn ($inner) => $inner->where('transactions.status', $this->status))
+                        ->when($this->txnType !== '', fn ($inner) => $inner->where('transactions.type', $this->txnType));
+                });
+            });
+
+        if ($walletScoped && $this->dateFrom === '') {
+            return (float) (WalletLedger::query()
+                ->where('vendor_id', $vendorId)
+                ->orderBy('created_at')
+                ->orderBy('id')
+                ->value('balance_before') ?? 0);
+        }
+
+        if ($walletScoped) {
+            return (float) ((clone $prior)->orderByDesc('created_at')->orderByDesc('id')->value('balance_after') ?? 0);
+        }
+
+        if ($this->dateFrom === '') {
+            return 0.0;
+        }
+
+        $credits = (float) (clone $prior)->where('type', 'credit')->sum('amount');
+        $debits = (float) (clone $prior)->where('type', 'debit')->sum('amount');
+
+        return round($credits - $debits, 2);
     }
 }

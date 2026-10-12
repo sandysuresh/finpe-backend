@@ -51,6 +51,11 @@ Route::middleware('auth:admin')->prefix('admin')->name('admin.')->group(function
         ->where('vendor', '[A-Za-z0-9\-_]+')
         ->name('vendors.show');
     Route::get('/wallet-requests', \App\Livewire\Admin\WalletRequests::class)->middleware('admin.module:wallet-requests')->name('wallet-requests');
+    Route::get('/wallet-requests/{id}/receipt', [\App\Http\Controllers\WalletTopupReceiptController::class, 'admin'])
+        ->middleware('admin.module:wallet-requests')
+        ->whereNumber('id')
+        ->name('wallet-requests.receipt');
+    Route::get('/vendor-bank-accounts', \App\Livewire\Admin\VendorBankAccounts::class)->middleware('admin.module:wallet-requests')->name('vendor-bank-accounts');
     Route::middleware('admin.module:transactions')->group(function () {
         Route::get('/transactions', \App\Livewire\Admin\Transactions::class)->name('transactions');
         Route::get('/transactions/history', \App\Livewire\Admin\Transactions::class)->name('txn-history');
@@ -101,6 +106,10 @@ Route::post('/vendor/logout', [VendorAuthController::class, 'logout'])
 Route::middleware('auth:vendor')->prefix('vendor')->name('vendor.')->group(function () {
     Route::get('/dashboard', \App\Livewire\Vendor\Dashboard::class)->name('dashboard');
     Route::get('/wallet', \App\Livewire\Vendor\Wallet::class)->name('wallet');
+    Route::get('/wallet-requests/{id}/receipt', [\App\Http\Controllers\WalletTopupReceiptController::class, 'vendor'])
+        ->whereNumber('id')
+        ->name('wallet-requests.receipt');
+    Route::get('/bank-accounts', \App\Livewire\Vendor\BankAccounts::class)->name('bank-accounts');
     Route::get('/send-money', \App\Livewire\Vendor\SendMoney::class)->name('send-money');
     Route::get('/beneficiaries', \App\Livewire\Vendor\Beneficiaries::class)->name('beneficiaries');
     Route::get('/transactions', \App\Livewire\Vendor\TransactionReport::class)->name('transactions');

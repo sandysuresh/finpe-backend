@@ -110,6 +110,7 @@ class Dashboard extends Component
     private function loadRecentTransactions($vendor): void
     {
         $this->recentTransactions = $vendor->transactions()
+            ->with(['commissionEntry' => fn ($query) => $query->where('vendor_id', $vendor->id)])
             ->latest()
             ->limit(8)
             ->get()
@@ -119,6 +120,7 @@ class Dashboard extends Component
                 'raw_type'         => $tx->type,
                 'beneficiary_name' => $tx->beneficiary_name ?? '—',
                 'amount'           => number_format((float) $tx->amount, 2),
+                'commission'       => ($recorded = \App\Support\RecordedCommission::amount($tx)) === null ? null : number_format($recorded, 2),
                 'type'             => ucfirst($tx->type),
                 'service'          => strtoupper($tx->service),
                 'status'           => $tx->status,

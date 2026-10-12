@@ -246,7 +246,12 @@
                                 <td class="whitespace-nowrap px-5 py-4 text-sm font-bold text-slate-900">₹{{ number_format((float)$req->amount,2) }}</td>
                                 <td class="whitespace-nowrap px-5 py-4 text-xs text-slate-600">{{ ucwords(str_replace('_',' ',$req->payment_mode)) }}</td>
                                 <td class="whitespace-nowrap px-5 py-4 font-mono text-xs text-slate-500">{{ $req->transaction_ref ?? '—' }}</td>
-                                <td class="whitespace-nowrap px-5 py-4 text-xs text-slate-500">{{ $req->bank_name ?? '—' }}</td>
+                                <td class="whitespace-nowrap px-5 py-4 text-xs text-slate-500">
+                                    {{ $req->vendorBankAccount?->label() ?? $req->bank_name ?? '—' }}
+                                    @if($req->receipt_path)
+                                        <a href="{{ route('vendor.wallet-requests.receipt', $req->id) }}" class="mt-1 block text-[11px] font-semibold text-violet-700">Receipt</a>
+                                    @endif
+                                </td>
                                 <td class="max-w-[150px] truncate px-5 py-4 text-xs text-slate-500">{{ $req->remarks ?? '—' }}</td>
                                 <td class="whitespace-nowrap px-5 py-4">
                                     <span class="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold {{ $sc }}">
@@ -330,10 +335,24 @@
                     @error('transactionRef')<p class="mt-1 text-xs text-red-500">{{ $message }}</p>@enderror
                 </div>
 
-                {{-- Bank Name --}}
                 <div>
-                    <label class="mb-1.5 block text-sm font-semibold text-slate-700">Bank Name</label>
-                    <input wire:model="bankName" type="text" class="fi-input text-sm" placeholder="e.g. SBI, HDFC">
+                    <label class="mb-1.5 block text-sm font-semibold text-slate-700">Bank Account <span class="text-red-500">*</span></label>
+                    <select wire:model="bankAccountId" class="fi-input text-sm">
+                        <option value="">Select an approved bank account</option>
+                        @foreach($approvedBanks as $bank)
+                            <option value="{{ $bank->id }}">{{ $bank->label() }}</option>
+                        @endforeach
+                    </select>
+                    @error('bankAccountId')<p class="mt-1 text-xs text-red-500">{{ $message }}</p>@enderror
+                    @if($approvedBanks->isEmpty())
+                        <p class="mt-1 text-xs text-amber-700">Add a bank account and wait for admin approval before requesting money.</p>
+                    @endif
+                </div>
+
+                <div>
+                    <label class="mb-1.5 block text-sm font-semibold text-slate-700">Receipt <span class="text-slate-400">(optional)</span></label>
+                    <input wire:model="receipt" type="file" accept=".jpg,.jpeg,.png,.pdf" class="fi-input text-sm">
+                    @error('receipt')<p class="mt-1 text-xs text-red-500">{{ $message }}</p>@enderror
                 </div>
 
                 {{-- Remarks --}}

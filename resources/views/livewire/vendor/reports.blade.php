@@ -13,6 +13,7 @@
             ['Transactions', $summary['transactions'], 'text-slate-900'],
             ['Transaction amount', $summary['payout_amount'], 'text-slate-900'],
             ['Charge', $summary['payout_charge'], 'text-slate-900'],
+            ['Recorded commission', $summary['commission'], 'text-slate-900'],
         ] as [$label, $value, $color])
             <div class="fi-card p-5">
                 <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">{{ $label }}</p>
@@ -63,6 +64,19 @@
                     @endforeach
                 </select>
             </div>
+            <div>
+                <label class="mb-1.5 block text-xs font-semibold text-slate-600">Provider</label>
+                <select wire:model.live="provider" class="fi-input text-sm" style="height:40px; width:160px;">
+                    <option value="">All providers</option>
+                    @foreach($providers as $item)
+                        <option value="{{ $item['code'] }}">{{ $item['name'] }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="mb-1.5 block text-xs font-semibold text-slate-600">Reference</label>
+                <input type="search" wire:model.live.debounce.300ms="search" class="fi-input text-sm" style="height:40px; width:200px;" placeholder="FinPe, merchant, provider">
+            </div>
             <div style="display:flex; gap:8px; margin-left:auto;">
                 <button type="button" wire:click="resetFilters" class="fi-btn fi-btn-secondary">Reset</button>
                 <button type="button" wire:click="exportExcel" class="fi-btn fi-btn-primary">Export Excel</button>
@@ -70,7 +84,7 @@
         </div>
     </div>
 
-    <p class="mb-5 text-sm text-slate-500">Opening is the balance before the first matching ledger entry. Closing is the balance after the last matching entry. Ledger type filters the wallet table. Date, status, and transaction type filter both tables.</p>
+    <p class="mb-5 text-sm text-slate-500">Opening is the balance before the first matching ledger entry. Closing is the balance after the last matching entry. Ledger type filters the wallet table. Date, status, and transaction type filter both tables. Provider and reference filter the transaction table. Commission is the recorded snapshot, not the payout charge.</p>
 
     <div class="fi-card mb-5 overflow-hidden">
         <div class="border-b border-slate-100 px-5 py-4">
@@ -120,7 +134,7 @@
             <table class="min-w-full">
                 <thead>
                     <tr>
-                        @foreach(['Date / time','FinPe reference','Merchant reference','Type','Service','Amount','Charge','Beneficiary','Status',''] as $col)
+                        @foreach(['Date / time','FinPe reference','Merchant reference','Type','Service','Amount','Charge','Commission','Beneficiary','Status',''] as $col)
                             <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">{{ $col }}</th>
                         @endforeach
                     </tr>
@@ -135,13 +149,17 @@
                             <td class="px-4 py-3 text-sm text-slate-700">{{ strtoupper((string) $txn->service) }}</td>
                             <td class="px-4 py-3 text-sm font-semibold text-slate-900">₹{{ number_format((float) $txn->amount, 2) }}</td>
                             <td class="px-4 py-3 text-sm text-slate-900">₹{{ number_format((float) $txn->payout_charge, 2) }}</td>
+                            <td class="px-4 py-3 text-sm text-slate-900">
+                                @php $commission = \App\Support\RecordedCommission::amount($txn); @endphp
+                                {{ $commission === null ? '—' : '₹'.number_format($commission, 2) }}
+                            </td>
                             <td class="px-4 py-3 text-sm text-slate-700">{{ $txn->beneficiary_name ?: '—' }}</td>
                             <td class="px-4 py-3 text-sm text-slate-700">{{ ucfirst((string) $txn->status) }}</td>
                             <td class="px-4 py-3">@include('livewire.vendor.partials.txn-actions', ['id' => $txn->id, 'reference' => $txn->reference, 'type' => $txn->type])</td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="10" class="px-5 py-12 text-center text-sm text-slate-500">No transactions for these filters.</td>
+                            <td colspan="11" class="px-5 py-12 text-center text-sm text-slate-500">No transactions for these filters.</td>
                         </tr>
                     @endforelse
                 </tbody>

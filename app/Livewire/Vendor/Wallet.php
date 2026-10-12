@@ -2,15 +2,18 @@
 namespace App\Livewire\Vendor;
 
 use App\Models\Transaction;
+use App\Models\VendorBankAccount;
 use App\Models\WalletTopupRequest;
 use App\Support\AdminNotify;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 
 class Wallet extends Component
 {
+    use WithFileUploads;
     use WithPagination;
 
     // ── Balances ──────────────────────────────────────────────────────────────
@@ -27,7 +30,8 @@ class Wallet extends Component
     public string $amount          = '';
     public string $paymentMode     = 'bank_transfer';
     public string $transactionRef  = '';
-    public string $bankName        = '';
+    public string $bankAccountId  = '';
+    public $receipt                = null;
     public string $remarks         = '';
     public string $successMsg      = '';
     public string $errorMsg        = '';
@@ -54,7 +58,7 @@ class Wallet extends Component
 
     public function openModal(): void
     {
-        $this->reset(['amount','paymentMode','transactionRef','bankName','remarks','successMsg','errorMsg']);
+        $this->reset(['amount','paymentMode','transactionRef','bankAccountId','receipt','remarks','successMsg','errorMsg']);
         $this->paymentMode = 'bank_transfer';
         $this->showModal   = true;
     }
@@ -65,24 +69,43 @@ class Wallet extends Component
         $this->errorMsg   = '';
 
         $this->validate([
-            'amount'        => 'required|numeric|min:1|max:10000000',
-            'paymentMode'   => 'required|string',
-            'transactionRef'=> 'nullable|string|max:100',
-            'bankName'      => 'nullable|string|max:100',
-            'remarks'       => 'nullable|string|max:500',
+            'amount'         => 'required|numeric|min:1|max:10000000',
+            'paymentMode'    => 'required|string',
+            'transactionRef' => 'nullable|string|max:100',
+            'bankAccountId'  => 'required|integer',
+            'receipt'        => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'remarks'        => 'nullable|string|max:500',
         ]);
 
         $vendor = Auth::guard('vendor')->user();
+        $account = VendorBankAccount::query()
+            ->where('vendor_id', $vendor->id)
+            ->where('status', 'approved')
+            ->whereKey((int) $this->bankAccountId)
+            ->first();
+
+        if (! $account) {
+            $this->addError('bankAccountId', 'Select one of your approved bank accounts.');
+
+            return;
+        }
+
+        $reference = 'TUP-'.strtoupper(Str::random(8));
+        $receiptPath = $this->receipt
+            ? $this->receipt->store('wallet-receipts/'.$vendor->id, 'local')
+            : null;
 
         $request = WalletTopupRequest::create([
-            'vendor_id'       => $vendor->id,
-            'reference'       => 'TUP-' . strtoupper(Str::random(8)),
-            'amount'          => $this->amount,
-            'payment_mode'    => $this->paymentMode,
-            'transaction_ref' => $this->transactionRef,
-            'bank_name'       => $this->bankName,
-            'remarks'         => $this->remarks,
-            'status'          => 'pending',
+            'vendor_id'              => $vendor->id,
+            'reference'              => $reference,
+            'amount'                 => $this->amount,
+            'payment_mode'           => $this->paymentMode,
+            'transaction_ref'        => $this->transactionRef,
+            'bank_name'              => $account->label(),
+            'vendor_bank_account_id' => $account->id,
+            'receipt_path'           => $receiptPath,
+            'remarks'                => $this->remarks,
+            'status'                 => 'pending',
         ]);
 
         AdminNotify::walletTopup($vendor, $request->reference, (string) $request->amount, $request->id);
@@ -90,7 +113,7 @@ class Wallet extends Component
         $this->showModal  = false;
         $this->successMsg = 'Add money request submitted! Admin will review and credit your wallet shortly.';
         $this->tab        = 'requests';
-        $this->reset(['amount','paymentMode','transactionRef','bankName','remarks']);
+        $this->reset(['amount','paymentMode','transactionRef','bankAccountId','receipt','remarks']);
     }
 
     public function resetFilters(): void
@@ -130,9 +153,10 @@ class Wallet extends Component
         }
 
         // Topup requests
-        $topupRequests = $vendor->topupRequests()->latest()->paginate(10, ['*'], 'req_page');
+        $topupRequests = $vendor->topupRequests()->with('vendorBankAccount')->latest()->paginate(10, ['*'], 'req_page');
+        $approvedBanks = $vendor->bankAccounts()->where('status', 'approved')->orderBy('bank_name')->get();
 
-        return view('livewire.vendor.wallet', compact('ledger','topupRequests','payoutByReference'))
+        return view('livewire.vendor.wallet', compact('ledger','topupRequests','payoutByReference','approvedBanks'))
             ->layout('layouts.vendor', ['title' => 'Wallet']);
     }
 }

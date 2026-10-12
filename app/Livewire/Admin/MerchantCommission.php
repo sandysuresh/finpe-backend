@@ -9,9 +9,11 @@ use App\Support\AdminAccess;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 class MerchantCommission extends Component
 {
+    use WithPagination;
     public string $vendorId = '';
     public string $merchantId = '';
     public string $dateFrom = '';
@@ -29,6 +31,7 @@ class MerchantCommission extends Component
         if (in_array($name, ['vendorId', 'merchantId', 'dateFrom', 'dateTo'], true) && ! AdminAccess::allows('commission', 'search')) {
             abort(403);
         }
+        $this->resetPage('entryPage');
     }
 
     public function render()
@@ -65,8 +68,7 @@ class MerchantCommission extends Component
                 ->where('merchant_id', $this->merchantId)
                 ->when($this->vendorId !== '', fn ($q) => $q->where('vendor_id', $this->vendorId))
                 ->latest('id')
-                ->limit(50)
-                ->get();
+                ->paginate(20, pageName: 'entryPage');
 
         return view('livewire.admin.merchant-commission', [
             'rows' => $rows,

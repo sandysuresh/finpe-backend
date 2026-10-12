@@ -68,6 +68,13 @@
             <span class="text-xs text-slate-400">to</span>
             <input type="date" wire:model.live="dateTo"
                    class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400">
+            <select wire:model.live="provider" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 outline-none focus:border-blue-400">
+                <option value="">All providers</option>
+                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $providers; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $option): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <option value="<?php echo e($option['code']); ?>"><?php echo e($option['name']); ?></option>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+            </select>
+            <button type="button" wire:click="exportExcel" class="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white">Export Excel</button>
             <button wire:click="resetFilters"
                     class="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-50">
                 Reset
@@ -143,11 +150,16 @@
                                     <span class="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold <?php echo e($sc); ?>"><?php echo e(ucfirst($tx->status)); ?></span>
                                 </td>
                                 <td class="whitespace-nowrap px-5 py-4 text-xs text-slate-400"><?php echo e($tx->created_at->format('d M Y, h:i A')); ?></td>
-                                <td class="whitespace-nowrap px-5 py-4"><?php echo $__env->make('livewire.admin.partials.txn-actions', ['id' => $tx->id, 'reference' => $tx->reference, 'type' => $tx->type], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?></td>
+                                <td class="whitespace-nowrap px-5 py-4"><?php echo $__env->make('livewire.admin.partials.txn-actions', ['id' => $tx->id ?? null, 'reference' => $tx->reference ?? null, 'type' => $tx->type ?? null], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?></td>
                             </tr>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                     </tbody>
                 </table>
+            </div>
+            <div class="flex items-center justify-between border-t border-slate-100 px-5 py-4 text-sm text-slate-500">
+                <span><?php echo e(number_format($transactions->total())); ?> records</span>
+                <?php echo e($transactions->links()); ?>
+
             </div>
         <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
     </div>
