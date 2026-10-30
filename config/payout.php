@@ -15,3 +15,4 @@ return [
         'payout_states' => 'https://prod.vidual.in/masterapi/api/master/statelist',
     ],
 ];
+
