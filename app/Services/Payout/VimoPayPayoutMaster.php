@@ -5,6 +5,7 @@ namespace App\Services\Payout;
 use App\Exceptions\AepsException;
 use App\Exceptions\PayoutException;
 use App\Services\Aeps\VimoPayClient;
+use Illuminate\Support\Facades\Log;
 
 class VimoPayPayoutMaster implements PayoutMasterProvider
 {
@@ -56,11 +57,40 @@ class VimoPayPayoutMaster implements PayoutMasterProvider
             ];
         }
 
+        if ($operation === 'payout_states') {
+            $this->logStateCatalog($data);
+        }
+
         return [
             'success' => true,
             'message' => $this->safeMessage($envelope['message'] ?? null),
             'data' => $data,
         ];
+    }
+
+    /**
+     * @param  list<array{description: string, code: string}>  $data
+     */
+    private function logStateCatalog(array $data): void
+    {
+        Log::info('payout_state_catalog', [
+            'row_count' => count($data),
+            'states' => array_map(function (array $row): array {
+                $code = (string) ($row['code'] ?? '');
+                $description = (string) ($row['description'] ?? '');
+                if (preg_match('/bearer\s+[A-Za-z0-9._\-]+|sk_|pk_|secret|salt|encrypt|https?:\/\//i', $description) === 1) {
+                    $description = '';
+                }
+
+                return [
+                    'trimmed_code' => trim($code),
+                    'description' => mb_substr(trim($description), 0, 120),
+                    'raw_length' => strlen($code),
+                    'leading_whitespace' => preg_match('/^\s/u', $code) === 1,
+                    'trailing_whitespace' => preg_match('/\s$/u', $code) === 1,
+                ];
+            }, $data),
+        ]);
     }
 
     private function safeMessage(mixed $message): string

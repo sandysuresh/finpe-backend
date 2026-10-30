@@ -1,0 +1,46 @@
+{
+    "label": "NOT the captured VimoPay HTTP response",
+    "transaction_id": 15,
+    "finpe_reference": "TXN-MYBJO6DUJK",
+    "cannot_recover_exact_provider_response": true,
+    "http_status": {
+        "value": null,
+        "evidence": "NOT AVAILABLE"
+    },
+    "raw_response_body": {
+        "value": null,
+        "evidence": "NOT AVAILABLE"
+    },
+    "parsed_provider_json": {
+        "value": null,
+        "evidence": "NOT AVAILABLE"
+    },
+    "responseCode": {
+        "value": null,
+        "evidence": "NOT AVAILABLE"
+    },
+    "responseMessage": {
+        "value": null,
+        "evidence": "NOT AVAILABLE"
+    },
+    "txnStatusCode": {
+        "value": null,
+        "evidence": "NOT AVAILABLE"
+    },
+    "txnId": {
+        "value": null,
+        "evidence": "NOT AVAILABLE"
+    },
+    "rrn": {
+        "value": null,
+        "evidence": "STORED ON FINPE TRANSACTION",
+        "note": "column is null"
+    },
+    "stored_on_finpe_transaction": {
+        "status": "failed",
+        "failure_reason": "State Not found",
+        "bank_reference": null,
+        "created_at": "2026-10-30 13:10:52",
+        "updated_at": "2026-10-30 13:10:52"
+    }
+}

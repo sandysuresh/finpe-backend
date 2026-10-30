@@ -1,0 +1,41 @@
+Transaction 15 is the only payout with amount 1000.00.
+It is not Transaction 12 (amount 100.00, TXN-USA45LRH8T) and not the testing diagnostic (merchant ref DIAG-CURRENT-NOT-TXN12).
+
+FinPe reference: TXN-MYBJO6DUJK
+merchantRefId: UAT-20261030131047-lxoanc
+Created and updated: 2026-10-30 13:10:52
+Admin audit confirmPayout: 2026-10-30 13:10:53
+Vendor id: 2
+Status: failed
+Stored failure reason: State Not found
+Local debit 1100.00 was refunded in the same second. Wallet returned to 1150.00.
+
+ACTUALLY CAPTURED
+- None of the outbound payout HTTP request.
+- None of the provider HTTP response.
+- State-list diagnostic logs at 13:09:35 and 13:09:38 (not the payout). Punjab entry: trimmed_code PB, description Punjab, raw_length 2, leading_whitespace false, trailing_whitespace false.
+- Audit actions only: testAuthorization, bank list, purpose list, state list, reviewPayout, confirmPayout. Audit detail fields are empty.
+
+STORED ON FINPE TRANSACTION
+- amount 1000.00, local charge 100.00, mode imps, bank 013, purpose 004
+- beneficiaryLocation PB, hex 5042, length 2
+- IFSC HDFC0001307, name sandeep kumar
+- account and mobile stored but masked in the JSON files
+- failure_reason State Not found
+- bank_reference null, rrn null
+
+NOT AVAILABLE / CANNOT BE RECOVERED
+- HTTP method and endpoint actually used
+- plaintext JSON immediately before encryption
+- encrypted requestBody
+- request headers
+- latitude, longitude, udf1, udf2, udf3
+- HTTP status, raw body, decrypted provider JSON
+- responseCode, responseMessage, txnStatusCode, txnId
+
+RECONSTRUCTED FROM CODE (not this request)
+- Current code would POST the configured LIVE URL https://prod.vidual.in/payoutapi/api/Payment/payout
+- Current code copies beneficiaryLocation onto the provider payload without further trimming
+- A failed row is stored only when the provider status maps to failed. The exact provider code was not saved.
+
+No VimoPay call was made for this investigation. No wallet, transaction, code, or configuration change was made.

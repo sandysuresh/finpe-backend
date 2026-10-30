@@ -1,0 +1,58 @@
+{
+    "label": "NOT the captured VimoPay HTTP request",
+    "transaction_id": 15,
+    "finpe_reference": "TXN-MYBJO6DUJK",
+    "cannot_recover_exact_wire_request": true,
+    "http": {
+        "method": {
+            "value": null,
+            "evidence": "NOT AVAILABLE"
+        },
+        "endpoint": {
+            "value": null,
+            "evidence": "NOT AVAILABLE"
+        },
+        "configured_live_endpoint_not_captured_on_this_request": {
+            "value": "https://prod.vidual.in/payoutapi/api/Payment/payout",
+            "evidence": "RECONSTRUCTED FROM CODE"
+        }
+    },
+    "headers": {
+        "value": null,
+        "evidence": "NOT AVAILABLE"
+    },
+    "plaintext_json_before_encryption": {
+        "value": null,
+        "evidence": "NOT AVAILABLE"
+    },
+    "encrypted_requestBody": {
+        "value": null,
+        "evidence": "NOT AVAILABLE"
+    },
+    "stored_on_finpe_transaction": {
+        "evidence": "STORED ON FINPE TRANSACTION",
+        "merchantRefId": "UAT-20261030131047-lxoanc",
+        "amount": "1000.00",
+        "payout_charge_local_only": "100.00",
+        "beneficiaryBank": "013",
+        "paymentPurpose": "004",
+        "paymentMode_stored_as_service": "imps",
+        "beneficiaryLocation": "PB",
+        "beneficiaryLocation_hex": "5042",
+        "beneficiaryLocation_length": 2,
+        "beneficiaryIFSC": "HDFC0001307",
+        "beneficiaryName": "sandeep kumar",
+        "beneficiaryAccountNumber_masked": "**********4170",
+        "beneficiaryMobileNumber_masked": "******8071"
+    },
+    "not_stored": [
+        "lat",
+        "long",
+        "udf1",
+        "udf2",
+        "udf3",
+        "plaintext JSON",
+        "encrypted requestBody",
+        "headers"
+    ]
+}

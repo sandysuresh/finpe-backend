@@ -388,7 +388,7 @@
                         <select wire:model="beneficiaryState" class="fi-input mt-1 w-full text-sm">
                             <option value="">Select from state list</option>
                             <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $payoutStates; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $state): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                <option value="<?php echo e($state['code']); ?>"><?php echo e($state['code']); ?><?php echo e($state['description'] !== '' ? ' · '.$state['description'] : ''); ?></option>
+                                <option value="<?php echo e($state['key']); ?>"><?php echo e(trim($state['code'])); ?><?php echo e($state['description'] !== '' ? ' · '.$state['description'] : ''); ?></option>
                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                         </select>
                     </label>

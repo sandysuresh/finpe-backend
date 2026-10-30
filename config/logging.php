@@ -45,5 +45,11 @@ return [
         ],
         'null' => ['driver' => 'monolog', 'handler' => NullHandler::class],
         'emergency' => ['path' => storage_path('logs/laravel.log')],
+        'vimopay' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/vimopay-payout.log'),
+            'level' => 'info',
+            'replace_placeholders' => false,
+        ],
     ],
 ];

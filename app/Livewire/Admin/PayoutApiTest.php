@@ -51,7 +51,7 @@ class PayoutApiTest extends Component
     /** @var array{success: bool, http_status: int|null, message: string, total: int, purposes: list<array{code: string, description: string}>, response_ms: int|null}|null */
     public ?array $purposeResult = null;
 
-    /** @var array{success: bool, http_status: int|null, message: string, total: int, states: list<array{code: string, description: string}>, response_ms: int|null}|null */
+    /** @var array{success: bool, http_status: int|null, message: string, total: int, states: list<array{key: string, code: string, description: string}>, response_ms: int|null}|null */
     public ?array $stateResult = null;
 
     /** @var array{outcome: string, http_status: int|null, message: string, reference: ?string, merchant_ref: ?string, provider_reference: ?string, provider_status: ?string, amount: float|null, charge: float|null, total_debited: float|null, wallet_before: float|null, wallet_after: float|null, account_mask: string, mobile_mask: string, response_ms: int|null}|null */
@@ -73,7 +73,7 @@ class PayoutApiTest extends Component
     /** @var list<array{code: string, description: string}> */
     public array $payoutPurposes = [];
 
-    /** @var list<array{code: string, description: string}> */
+    /** @var list<array{key: string, code: string, description: string}> */
     public array $payoutStates = [];
 
     public bool $payoutCatalogsLoaded = false;
@@ -332,16 +332,7 @@ class PayoutApiTest extends Component
         $payload = $response->getData(true);
         $payload = is_array($payload) ? $payload : [];
         $data = is_array($payload['data'] ?? null) ? $payload['data'] : [];
-        $states = [];
-        foreach (array_slice($data, 0, 5) as $row) {
-            if (! is_array($row)) {
-                continue;
-            }
-            $states[] = [
-                'code' => $this->plainBankField($row['code'] ?? null),
-                'description' => $this->plainBankField($row['description'] ?? null),
-            ];
-        }
+        $states = $this->stateCatalogRows(['data' => $data], 5);
 
         $success = $response->getStatusCode() < 400 && ($payload['success'] ?? false) === true;
         $this->recordStateResult(
@@ -404,6 +395,13 @@ class PayoutApiTest extends Component
             return;
         }
 
+        $location = $this->rawStateCode($this->beneficiaryState);
+        if ($location === null) {
+            $this->recordPayoutFailure('Choose a state from the tested state list.', null);
+
+            return;
+        }
+
         $vendor->loadMissing('wallet');
         $before = $vendor->wallet ? round((float) $vendor->wallet->balance, 2) : null;
         $payload = [
@@ -416,7 +414,7 @@ class PayoutApiTest extends Component
             'beneficiaryIFSC' => strtoupper(trim($this->beneficiaryIfsc)),
             'beneficiaryMobileNumber' => trim($this->beneficiaryMobile),
             'beneficiaryName' => trim($this->beneficiaryName),
-            'beneficiaryLocation' => $this->beneficiaryState,
+            'beneficiaryLocation' => $location,
             'lat' => trim($this->payoutLat),
             'long' => trim($this->payoutLong),
             'udf1' => '',
@@ -857,7 +855,7 @@ class PayoutApiTest extends Component
         try {
             $master = app(PayoutMasterProvider::class);
             $this->payoutPurposes = $this->catalogRows($master->purposes());
-            $this->payoutStates = $this->catalogRows($master->states());
+            $this->payoutStates = $this->stateCatalogRows($master->states());
         } catch (Throwable) {
             $this->payoutPurposes = [];
             $this->payoutStates = [];
@@ -870,7 +868,7 @@ class PayoutApiTest extends Component
             $this->payoutPurposes = $this->previewRows($this->purposeResult['purposes'] ?? []);
         }
         if ($this->payoutStates === []) {
-            $this->payoutStates = $this->previewRows($this->stateResult['states'] ?? []);
+            $this->payoutStates = $this->stateCatalogRows(['data' => $this->stateResult['states'] ?? []]);
         }
     }
 
@@ -900,6 +898,76 @@ class PayoutApiTest extends Component
         }
 
         return $rows;
+    }
+
+    /**
+     * @param  array{data?: mixed}  $result
+     * @return list<array{key: string, code: string, description: string}>
+     */
+    private function stateCatalogRows(array $result, ?int $limit = 500): array
+    {
+        $rows = [];
+        $data = is_array($result['data'] ?? null) ? $result['data'] : [];
+        foreach ($data as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+            $built = $this->stateCatalogRow($row['code'] ?? null, $row['description'] ?? null);
+            if ($built === null) {
+                continue;
+            }
+            $rows[] = $built;
+            if ($limit !== null && count($rows) >= $limit) {
+                break;
+            }
+        }
+
+        return $rows;
+    }
+
+    /**
+     * @return array{key: string, code: string, description: string}|null
+     */
+    private function stateCatalogRow(mixed $code, mixed $description): ?array
+    {
+        if (! is_scalar($code)) {
+            return null;
+        }
+
+        $raw = (string) $code;
+        if (mb_strlen($raw) > 120) {
+            $raw = mb_substr($raw, 0, 120);
+        }
+        if (trim($raw) === '' || preg_match('/bearer\s+[A-Za-z0-9._\-]+|sk_|pk_|secret|salt|encrypt/i', $raw) === 1) {
+            return null;
+        }
+
+        return [
+            'key' => hash('sha256', $raw),
+            'code' => $raw,
+            'description' => $this->plainBankField($description),
+        ];
+    }
+
+    private function rawStateCode(string $key): ?string
+    {
+        if ($key === '') {
+            return null;
+        }
+
+        foreach ($this->payoutStates as $state) {
+            $code = $state['code'] ?? null;
+            if (! is_string($code) || $code === '' || ($state['key'] ?? '') !== $key) {
+                continue;
+            }
+            if (! hash_equals(hash('sha256', $code), $key)) {
+                return null;
+            }
+
+            return $code;
+        }
+
+        return null;
     }
 
     /**
@@ -971,7 +1039,7 @@ class PayoutApiTest extends Component
         if (preg_match('/^\d{10}$/', $mobile) !== 1) {
             return 'Beneficiary mobile must be a 10-digit number.';
         }
-        if (! $this->catalogHas($this->payoutStates, $this->beneficiaryState)) {
+        if ($this->rawStateCode($this->beneficiaryState) === null) {
             return 'Choose a state from the tested state list.';
         }
         if (! $this->catalogHas($this->payoutPurposes, $this->paymentPurpose)) {

@@ -387,7 +387,7 @@
                         <select wire:model="beneficiaryState" class="fi-input mt-1 w-full text-sm">
                             <option value="">Select from state list</option>
                             @foreach($payoutStates as $state)
-                                <option value="{{ $state['code'] }}">{{ $state['code'] }}{{ $state['description'] !== '' ? ' · '.$state['description'] : '' }}</option>
+                                <option value="{{ $state['key'] }}">{{ trim($state['code']) }}{{ $state['description'] !== '' ? ' · '.$state['description'] : '' }}</option>
                             @endforeach
                         </select>
                     </label>
