@@ -37,8 +37,8 @@
                 </svg>
             </div>
             <div>
-                <p class="text-xs text-slate-400">Recorded commission</p>
-                <p class="text-base font-bold text-slate-900">₹<?php echo e(number_format($summary['commission'], 2)); ?></p>
+                <p class="text-xs text-slate-400">FinPe commission</p>
+                <p class="text-base font-bold text-slate-900">₹<?php echo e(number_format($summary['charge'], 2)); ?></p>
                 <p class="text-[11px] text-slate-400">Success vol. ₹<?php echo e($summary['volume']); ?></p>
             </div>
         </div>
@@ -61,6 +61,7 @@
                 <option value="success">Success</option>
                 <option value="failed">Failed</option>
                 <option value="pending">Pending</option>
+                <option value="reversed">Reversed</option>
             </select>
             <select wire:model.live="service"
                     class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 outline-none focus:border-violet-400">
@@ -162,7 +163,7 @@
                 <table class="min-w-full">
                     <thead class="bg-slate-50">
                         <tr>
-                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = ['Reference','Beneficiary','Amount','Charge','Commission','Service','Provider','Status','Date','']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $col): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = ['Reference','Beneficiary','Amount','FinPe commission','Total wallet debit','Service','Provider','Status','Failure','Date','']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $col): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                 <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400"><?php echo e($col); ?></th>
                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                         </tr>
@@ -171,8 +172,8 @@
                         <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $transactions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $tx): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                             <?php
                                 $sc = match($tx->status) {
-                                    'success' => 'bg-emerald-50 text-emerald-700',
-                                    'failed'  => 'bg-red-50 text-red-600',
+                                    'success', 'completed' => 'bg-emerald-50 text-emerald-700',
+                                    'failed', 'cancelled', 'rejected' => 'bg-red-50 text-red-600',
                                     default   => 'bg-amber-50 text-amber-700',
                                 };
                             ?>
@@ -180,21 +181,18 @@
                                 <td class="whitespace-nowrap px-5 py-4 font-mono text-xs font-semibold text-slate-800"><?php echo e($tx->reference); ?></td>
                                 <td class="whitespace-nowrap px-5 py-4 text-xs text-slate-600"><?php echo e($tx->beneficiary_name ?? '—'); ?></td>
                                 <td class="whitespace-nowrap px-5 py-4 text-sm font-bold text-slate-900">₹<?php echo e(number_format((float)$tx->amount,2)); ?></td>
-                                <td class="whitespace-nowrap px-5 py-4 text-sm text-slate-700">₹<?php echo e(number_format((float)$tx->payout_charge,2)); ?></td>
-                                <td class="whitespace-nowrap px-5 py-4 text-sm text-slate-700">
-                                    <?php $commission = \App\Support\RecordedCommission::amount($tx); ?>
-                                    <?php echo e($commission === null ? '—' : '₹'.number_format($commission, 2)); ?>
-
-                                </td>
+                                <td class="whitespace-nowrap px-5 py-4 text-sm text-slate-700">₹<?php echo e(number_format((float)($tx->payout_charge ?? 0),2)); ?></td>
+                                <td class="whitespace-nowrap px-5 py-4 text-sm font-semibold text-slate-900">₹<?php echo e(number_format((float)($tx->total_debited ?? $tx->amount), 2)); ?></td>
                                 <td class="whitespace-nowrap px-5 py-4">
                                     <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-semibold text-slate-500"><?php echo e(strtoupper($tx->service)); ?></span>
                                 </td>
-                                <td class="whitespace-nowrap px-5 py-4 text-xs text-slate-600"><?php echo e($tx->payout_provider ? app(\App\Services\Payout\PayoutProviderRegistry::class)->displayName($tx->payout_provider) : '—'); ?></td>
+                                <td class="whitespace-nowrap px-5 py-4 text-xs text-slate-600"><?php echo e($tx->payout_provider ? \App\Support\CommissionProviders::name($tx->payout_provider) : '—'); ?></td>
                                 <td class="whitespace-nowrap px-5 py-4">
                                     <span class="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold <?php echo e($sc); ?>"><?php echo e(ucfirst($tx->status)); ?></span>
                                 </td>
+                                <td class="max-w-[16rem] px-5 py-4 text-xs text-slate-600"><?php echo e($tx->failure_reason ?? '—'); ?></td>
                                 <td class="whitespace-nowrap px-5 py-4 text-xs text-slate-400"><?php echo e($tx->created_at->format('d M Y, h:i A')); ?></td>
-                                <td class="whitespace-nowrap px-5 py-4"><?php echo $__env->make('livewire.vendor.partials.txn-actions', ['id' => $tx->id, 'reference' => $tx->reference, 'type' => $tx->type], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?></td>
+                                <td class="whitespace-nowrap px-5 py-4"><?php echo $__env->make('livewire.vendor.partials.txn-actions', ['id' => $tx->id, 'reference' => $tx->reference, 'type' => $tx->type, 'source' => $tx->source ?? 'transaction'], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?></td>
                             </tr>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                     </tbody>

@@ -2,13 +2,13 @@
 
 namespace App\Livewire\Vendor;
 
-use App\Models\Transaction;
 use App\Models\VendorApiAccess;
 use App\Models\WalletLedger;
+use App\Support\AssignedPayoutProviders;
 use App\Services\Payout\PayoutProviderRegistry;
-use App\Support\RecordedCommission;
+use App\Support\CommissionProviders;
 use App\Support\SimpleXlsx;
-use Illuminate\Database\Eloquent\Builder;
+use App\Support\VisibleTransactions;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -34,6 +34,8 @@ class PayoutApi extends Component
 
     public ?int $detailId = null;
 
+    public string $detailSource = 'transaction';
+
     public string $providerCode = '';
 
     public function mount(PayoutProviderRegistry $providers): void
@@ -47,7 +49,7 @@ class PayoutApi extends Component
         $id = (int) request()->query('view', 0);
         if ($id > 0) {
             $this->section = 'transactions';
-            $this->show($id);
+            $this->show($id, (string) request()->query('source', 'transaction'));
         }
     }
 
@@ -85,13 +87,12 @@ class PayoutApi extends Component
     public function exportExcel(): StreamedResponse
     {
         $vendor = Auth::guard('vendor')->user();
-        $rows = $this->transactionQuery($vendor->id)->with($this->commissionWith($vendor->id))->latest()->get();
+        $rows = app(VisibleTransactions::class)->collect($this->filters($vendor->id));
         $sheet = [[
             'Date', 'FinPe reference', 'Merchant reference', 'Service', 'Provider', 'Status',
-            'Amount', 'Charge', 'Commission', 'Beneficiary', 'Account',
+            'Amount', 'FinPe commission', 'Total wallet debit', 'Beneficiary', 'Account',
         ]];
         foreach ($rows as $txn) {
-            $commission = RecordedCommission::amount($txn);
             $sheet[] = [
                 $txn->created_at?->format('Y-m-d H:i:s'),
                 $txn->reference,
@@ -101,7 +102,7 @@ class PayoutApi extends Component
                 $txn->status,
                 (float) $txn->amount,
                 (float) $txn->payout_charge,
-                $commission === null ? '' : $commission,
+                (float) ($txn->total_debited ?? ((float) $txn->amount + (float) $txn->payout_charge)),
                 $txn->beneficiary_name,
                 $this->maskAccount($txn->account_number),
             ];
@@ -123,7 +124,7 @@ class PayoutApi extends Component
         $code = strtolower(trim($code));
         $known = collect(app(PayoutProviderRegistry::class)->catalog())
             ->contains(fn (array $row): bool => $row['code'] === $code);
-        if (! $known || $code === $this->providerCode) {
+        if (! $known || $code === $this->providerCode || ! AssignedPayoutProviders::allows((int) Auth::guard('vendor')->id(), $code)) {
             return;
         }
 
@@ -143,16 +144,20 @@ class PayoutApi extends Component
         $this->resetPage();
     }
 
-    public function show(int $id): void
+    public function show(int $id, string $source = 'transaction'): void
     {
-        $vendorId = Auth::guard('vendor')->id();
-        $txn = Transaction::query()
-            ->where('vendor_id', $vendorId)
-            ->where('type', 'payout')
-            ->whereKey($id)
-            ->first(['id', 'payout_provider']);
+        $vendorId = (int) Auth::guard('vendor')->id();
+        $allowed = AssignedPayoutProviders::codes($vendorId);
+        $source = $source === 'alliancepe' ? 'alliancepe' : 'transaction';
+        if (! in_array($source === 'alliancepe' ? CommissionProviders::ALLIANCEPE : CommissionProviders::VIMOPAY, $allowed, true)) {
+            $this->detailId = null;
+
+            return;
+        }
+        $txn = app(VisibleTransactions::class)->findForVendor($vendorId, $id, $source, $allowed);
         $this->detailId = $txn?->id;
-        $code = strtolower(trim((string) $txn?->payout_provider));
+        $this->detailSource = $txn ? $source : 'transaction';
+        $code = strtolower(trim((string) ($txn->payout_provider ?? '')));
         if ($code !== '' && collect(app(PayoutProviderRegistry::class)->catalog())->contains(fn (array $row): bool => $row['code'] === $code)) {
             $this->providerCode = $code;
         }
@@ -192,50 +197,46 @@ class PayoutApi extends Component
     public function statusBadgeClass(?string $status): string
     {
         return match ((string) $status) {
-            'success' => 'bg-emerald-100 text-emerald-800 ring-emerald-600/20',
-            'failed' => 'bg-red-100 text-red-800 ring-red-600/20',
+            'success', 'completed' => 'bg-emerald-100 text-emerald-800 ring-emerald-600/20',
+            'failed', 'cancelled', 'rejected' => 'bg-red-100 text-red-800 ring-red-600/20',
             default => 'bg-amber-100 text-amber-900 ring-amber-600/20',
         };
     }
 
-    private function transactionQuery(int $vendorId): Builder
-    {
-        return Transaction::query()
-            ->where('vendor_id', $vendorId)
-            ->where('type', 'payout')
-            ->when($this->status !== '', fn (Builder $query) => $query->where('status', $this->status))
-            ->when($this->service !== '', fn (Builder $query) => $query->where('service', $this->service))
-            ->when($this->search !== '', function (Builder $query) {
-                $term = '%'.$this->search.'%';
-                $query->where(function (Builder $inner) use ($term) {
-                    $inner->where('reference', 'like', $term)
-                        ->orWhere('merchant_ref', 'like', $term)
-                        ->orWhere('bank_reference', 'like', $term);
-                });
-            })
-            ->when($this->dateFrom !== '', fn (Builder $query) => $query->whereDate('created_at', '>=', $this->dateFrom))
-            ->when($this->dateTo !== '', fn (Builder $query) => $query->whereDate('created_at', '<=', $this->dateTo))
-            ->when($this->providerCode !== '', fn (Builder $query) => $query->where('payout_provider', $this->providerCode));
-    }
-
     /**
-     * @return array<string, callable>
+     * @return array{vendor_id: int, payouts_only: bool, always_include_alliance: bool, status: string, service: string, search: string, date_from: string, date_to: string, provider: string}
      */
-    private function commissionWith(int $vendorId): array
+    private function filters(int $vendorId): array
     {
+        $allowed = AssignedPayoutProviders::codes($vendorId);
+
         return [
-            'commissionEntry' => fn ($query) => $query->where('vendor_id', $vendorId),
+            'vendor_id' => $vendorId,
+            'payouts_only' => true,
+            'always_include_alliance' => in_array(CommissionProviders::ALLIANCEPE, $allowed, true),
+            'allowed_providers' => $allowed,
+            'status' => $this->status,
+            'service' => $this->service,
+            'search' => $this->search,
+            'date_from' => $this->dateFrom,
+            'date_to' => $this->dateTo,
+            'provider' => $this->providerCode,
         ];
     }
 
     public function providerName(?string $code): string
     {
-        return app(PayoutProviderRegistry::class)->displayName($code);
+        $name = CommissionProviders::name($code);
+
+        return $name && $name !== strtolower(trim((string) $code))
+            ? $name
+            : app(PayoutProviderRegistry::class)->displayName($code);
     }
 
     public function render()
     {
         $vendor = Auth::guard('vendor')->user();
+        AssignedPayoutProviders::assertAllows($vendor, CommissionProviders::VIMOPAY);
         $enabled = $vendor->hasEnabledApi(VendorApiAccess::PAYOUT);
         $transactions = null;
         $detail = null;
@@ -243,23 +244,18 @@ class PayoutApi extends Component
         $payoutByReference = collect();
 
         if ($enabled && $this->section === 'transactions') {
-            $transactions = $this->transactionQuery($vendor->id)
-                ->with($this->commissionWith($vendor->id))
-                ->latest()
-                ->paginate(15);
+            $transactions = app(VisibleTransactions::class)->paginate($this->filters((int) $vendor->id), 15, $this->getPage());
 
             $detail = $this->detailId
-                ? Transaction::query()
-                    ->where('vendor_id', $vendor->id)
-                    ->where('type', 'payout')
-                    ->whereKey($this->detailId)
-                    ->first()
+                ? app(VisibleTransactions::class)->findForVendor((int) $vendor->id, (int) $this->detailId, $this->detailSource, AssignedPayoutProviders::codes($vendor))
                 : null;
         }
 
         if ($enabled && $this->section === 'wallet') {
             $ledger = WalletLedger::query()
-                ->where('vendor_id', $vendor->id)
+                ->where('vendor_id', $vendor->id);
+            AssignedPayoutProviders::restrictLedger($ledger, $vendor);
+            $ledger = $ledger
                 ->when($this->ledgerType !== '', fn ($query) => $query->where('type', $this->ledgerType))
                 ->when($this->dateFrom !== '', fn ($query) => $query->whereDate('created_at', '>=', $this->dateFrom))
                 ->when($this->dateTo !== '', fn ($query) => $query->whereDate('created_at', '<=', $this->dateTo))
@@ -269,12 +265,7 @@ class PayoutApi extends Component
 
             $refs = $ledger->getCollection()->pluck('reference')->filter()->unique()->values();
             if ($refs->isNotEmpty()) {
-                $payoutByReference = Transaction::query()
-                    ->where('vendor_id', $vendor->id)
-                    ->where('type', 'payout')
-                    ->whereIn('reference', $refs)
-                    ->get(['id', 'reference', 'amount', 'payout_charge', 'payout_provider', 'status'])
-                    ->keyBy('reference');
+                $payoutByReference = app(VisibleTransactions::class)->payoutsByReference((int) $vendor->id, $refs, AssignedPayoutProviders::codes($vendor));
             }
         }
 

@@ -37,8 +37,8 @@
                 </svg>
             </div>
             <div>
-                <p class="text-xs text-slate-400">Recorded commission</p>
-                <p class="text-base font-bold text-slate-900">₹{{ number_format($summary['commission'], 2) }}</p>
+                <p class="text-xs text-slate-400">FinPe commission</p>
+                <p class="text-base font-bold text-slate-900">₹{{ number_format($summary['charge'], 2) }}</p>
                 <p class="text-[11px] text-slate-400">Success vol. ₹{{ $summary['volume'] }}</p>
             </div>
         </div>
@@ -61,6 +61,7 @@
                 <option value="success">Success</option>
                 <option value="failed">Failed</option>
                 <option value="pending">Pending</option>
+                <option value="reversed">Reversed</option>
             </select>
             <select wire:model.live="service"
                     class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 outline-none focus:border-violet-400">
@@ -129,13 +130,6 @@
                         Once you start sending money, all your transactions will appear here with full details and status tracking.
                     </p>
                     <div class="mt-6 flex items-center gap-3">
-                        <a href="{{ route('vendor.send-money') }}"
-                           class="flex items-center gap-2 rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-violet-700">
-                            <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
-                            </svg>
-                            Send Money
-                        </a>
                         <a href="{{ route('vendor.wallet') }}"
                            class="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
                             Add Money First
@@ -145,7 +139,7 @@
                     <div class="mt-8 grid max-w-lg grid-cols-3 gap-4">
                         @foreach([
                             ['1','Add Money','Top up your wallet with a request to admin'],
-                            ['2','Send Money','Transfer funds to any bank account'],
+                            ['2','Payout','Use your assigned payout vendor'],
                             ['3','Track Here','All transactions appear in this report'],
                         ] as [$n,$t,$d])
                             <div class="rounded-xl border border-slate-100 bg-slate-50 p-4 text-center">
@@ -162,7 +156,7 @@
                 <table class="min-w-full">
                     <thead class="bg-slate-50">
                         <tr>
-                            @foreach(['Reference','Beneficiary','Amount','Charge','Commission','Service','Provider','Status','Date',''] as $col)
+                            @foreach(['Reference','Beneficiary','Amount','FinPe commission','Total wallet debit','Service','Provider','Status','Failure','Date',''] as $col)
                                 <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">{{ $col }}</th>
                             @endforeach
                         </tr>
@@ -171,8 +165,8 @@
                         @foreach($transactions as $tx)
                             @php
                                 $sc = match($tx->status) {
-                                    'success' => 'bg-emerald-50 text-emerald-700',
-                                    'failed'  => 'bg-red-50 text-red-600',
+                                    'success', 'completed' => 'bg-emerald-50 text-emerald-700',
+                                    'failed', 'cancelled', 'rejected' => 'bg-red-50 text-red-600',
                                     default   => 'bg-amber-50 text-amber-700',
                                 };
                             @endphp
@@ -180,20 +174,18 @@
                                 <td class="whitespace-nowrap px-5 py-4 font-mono text-xs font-semibold text-slate-800">{{ $tx->reference }}</td>
                                 <td class="whitespace-nowrap px-5 py-4 text-xs text-slate-600">{{ $tx->beneficiary_name ?? '—' }}</td>
                                 <td class="whitespace-nowrap px-5 py-4 text-sm font-bold text-slate-900">₹{{ number_format((float)$tx->amount,2) }}</td>
-                                <td class="whitespace-nowrap px-5 py-4 text-sm text-slate-700">₹{{ number_format((float)$tx->payout_charge,2) }}</td>
-                                <td class="whitespace-nowrap px-5 py-4 text-sm text-slate-700">
-                                    @php $commission = \App\Support\RecordedCommission::amount($tx); @endphp
-                                    {{ $commission === null ? '—' : '₹'.number_format($commission, 2) }}
-                                </td>
+                                <td class="whitespace-nowrap px-5 py-4 text-sm text-slate-700">₹{{ number_format((float)($tx->payout_charge ?? 0),2) }}</td>
+                                <td class="whitespace-nowrap px-5 py-4 text-sm font-semibold text-slate-900">₹{{ number_format((float)($tx->total_debited ?? $tx->amount), 2) }}</td>
                                 <td class="whitespace-nowrap px-5 py-4">
                                     <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-semibold text-slate-500">{{ strtoupper($tx->service) }}</span>
                                 </td>
-                                <td class="whitespace-nowrap px-5 py-4 text-xs text-slate-600">{{ $tx->payout_provider ? app(\App\Services\Payout\PayoutProviderRegistry::class)->displayName($tx->payout_provider) : '—' }}</td>
+                                <td class="whitespace-nowrap px-5 py-4 text-xs text-slate-600">{{ $tx->payout_provider ? \App\Support\CommissionProviders::name($tx->payout_provider) : '—' }}</td>
                                 <td class="whitespace-nowrap px-5 py-4">
                                     <span class="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold {{ $sc }}">{{ ucfirst($tx->status) }}</span>
                                 </td>
+                                <td class="max-w-[16rem] px-5 py-4 text-xs text-slate-600">{{ $tx->failure_reason ?? '—' }}</td>
                                 <td class="whitespace-nowrap px-5 py-4 text-xs text-slate-400">{{ $tx->created_at->format('d M Y, h:i A') }}</td>
-                                <td class="whitespace-nowrap px-5 py-4">@include('livewire.vendor.partials.txn-actions', ['id' => $tx->id, 'reference' => $tx->reference, 'type' => $tx->type])</td>
+                                <td class="whitespace-nowrap px-5 py-4">@include('livewire.vendor.partials.txn-actions', ['id' => $tx->id, 'reference' => $tx->reference, 'type' => $tx->type, 'source' => $tx->source ?? 'transaction'])</td>
                             </tr>
                         @endforeach
                     </tbody>

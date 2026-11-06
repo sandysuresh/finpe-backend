@@ -3,6 +3,7 @@
         <div>
             <h1 class="text-2xl font-bold text-slate-900">{{ $vendor->business_name }}</h1>
             <p class="mt-1 text-sm text-slate-500">{{ $vendor->vendor_code }} · {{ $vendor->pmt_code }}</p>
+            <p class="mt-1 text-sm font-semibold text-slate-700">Assigned vendors: {{ $assignedProviderNames !== '' ? $assignedProviderNames : 'None' }}</p>
         </div>
         <div class="flex items-center gap-3">
             @if((int) $vendor->registration_step < 7)
@@ -53,6 +54,23 @@
             <p class="text-xs text-slate-400">API</p>
             <p class="mt-2 text-sm font-bold {{ $vendor->api_enabled ? 'text-emerald-600' : 'text-slate-400' }}">{{ $vendor->api_enabled ? 'Enabled' : 'Disabled' }}</p>
         </div>
+    </div>
+
+    <div class="fi-card mb-6 p-6">
+        <h2 class="text-sm font-semibold text-slate-900">Assign Vendors</h2>
+        <p class="mt-1 text-xs text-slate-500">Choose the payout vendors this partner can use. Both can be assigned together.</p>
+        <div class="mt-4 flex flex-wrap gap-4">
+            @foreach(\App\Support\CommissionProviders::options() as $code => $label)
+                <label class="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                    <input type="checkbox" value="{{ $code }}" wire:model="assignedProviderCodes" class="rounded border-slate-300 text-blue-700">
+                    <span class="font-semibold text-slate-800">{{ $label }}</span>
+                    <span class="text-xs {{ in_array($code, $assignedProviderCodes, true) ? 'text-emerald-700' : 'text-slate-400' }}">
+                        {{ in_array($code, $assignedProviderCodes, true) ? 'Assigned' : 'Not assigned' }}
+                    </span>
+                </label>
+            @endforeach
+        </div>
+        <button type="button" wire:click="saveAssignedProviders" class="fi-btn fi-btn-primary mt-4">Save assignments</button>
     </div>
 
     @if($reviewMessage)
@@ -423,7 +441,7 @@
                                         @endif
                                     </td>
                                     <td class="px-5 py-3">{{ $providerName ?: '' }}</td>
-                                    <td class="px-5 py-3">@include('livewire.admin.partials.txn-actions', ['id' => $payout?->id, 'reference' => $payout?->reference, 'type' => $payout ? 'payout' : null])</td>
+                                    <td class="px-5 py-3">@include('livewire.admin.partials.txn-actions', ['id' => $payout?->id, 'reference' => $payout?->reference, 'type' => $payout ? 'payout' : null, 'source' => $payout->source ?? 'transaction'])</td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -493,8 +511,10 @@
                             <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Payout Provider</th>
                             <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Beneficiary</th>
                             <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Amount</th>
-                            <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Commission</th>
+                            <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">FinPe commission</th>
+                            <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Total wallet debit</th>
                             <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Status</th>
+                            <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Failure</th>
                             <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Date</th>
                             <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400"></th>
                         </tr>
@@ -506,7 +526,8 @@
                                 <td class="px-5 py-3">{{ $txn->type === 'payout' ? (\App\Support\CommissionProviders::name($txn->payout_provider) ?: '—') : '—' }}</td>
                                 <td class="px-5 py-3">{{ $txn->beneficiary_name ?? '—' }}</td>
                                 <td class="px-5 py-3">₹{{ number_format((float) $txn->amount, 2) }}</td>
-                                <td class="px-5 py-3">{{ $txn->commissionEntry ? '₹'.number_format((float) $txn->commissionEntry->commission_amount, 2) : '—' }}</td>
+                                <td class="px-5 py-3">{{ $txn->type === 'payout' ? '₹'.number_format((float) ($txn->payout_charge ?? 0), 2) : '—' }}</td>
+                                <td class="px-5 py-3">{{ $txn->type === 'payout' ? '₹'.number_format((float) ($txn->total_debited ?? $txn->amount), 2) : '—' }}</td>
                                 <td class="px-5 py-3">
                                     @php
                                         $txnStatusClass = match((string) $txn->status) {
@@ -517,8 +538,9 @@
                                     @endphp
                                     <span class="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold {{ $txnStatusClass }}">{{ ucfirst($txn->status) }}</span>
                                 </td>
+                                <td class="px-5 py-3 text-xs text-slate-600">{{ $txn->failure_reason ?? '—' }}</td>
                                 <td class="px-5 py-3">{{ $txn->created_at->format('d M Y H:i') }}</td>
-                                <td class="px-5 py-3">@include('livewire.admin.partials.txn-actions', ['id' => $txn->id, 'reference' => $txn->reference, 'type' => $txn->type])</td>
+                                <td class="px-5 py-3">@include('livewire.admin.partials.txn-actions', ['id' => $txn->id, 'reference' => $txn->reference, 'type' => $txn->type, 'source' => $txn->source ?? 'transaction'])</td>
                             </tr>
                         @endforeach
                     </tbody>

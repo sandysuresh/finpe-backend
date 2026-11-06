@@ -11,7 +11,7 @@ class Vendor extends Authenticatable
     use Notifiable, HasEncryptedRouteKey;
 
     protected $fillable = [
-        'vendor_code','pmt_code','business_name','contact_name',
+        'vendor_code','pmt_code','business_name','logo_path','contact_name',
         'email','password','phone','address','country',
         'kyc_status','kyc_comment','kyc_reviewed_at','kyc_reviewed_by',
         'status','api_enabled','transaction_limit',
@@ -48,6 +48,7 @@ class Vendor extends Authenticatable
     public function settlements(): HasMany         { return $this->hasMany(Settlement::class); }
     public function apiCredential(): HasOne        { return $this->hasOne(ApiCredential::class); }
     public function apiAccess(): HasMany           { return $this->hasMany(VendorApiAccess::class); }
+    public function payoutProviders(): HasMany     { return $this->hasMany(VendorPayoutProvider::class); }
 
     public function hasEnabledApi(string $apiCode): bool
     {

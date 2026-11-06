@@ -1,11 +1,10 @@
 <?php
 namespace App\Livewire\Vendor;
 
-use App\Models\Transaction;
-use App\Services\Payout\PayoutProviderRegistry;
-use App\Support\RecordedCommission;
+use App\Support\AssignedPayoutProviders;
+use App\Support\CommissionProviders;
 use App\Support\SimpleXlsx;
-use Illuminate\Database\Eloquent\Builder;
+use App\Support\VisibleTransactions;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -66,26 +65,27 @@ class TransactionReport extends Component
     public function exportExcel(): StreamedResponse
     {
         $vendor = Auth::guard('vendor')->user();
-        $rows = $this->query($vendor->id)->with($this->commissionWith($vendor->id))->latest()->get();
-        $providers = app(PayoutProviderRegistry::class);
+        $rows = app(VisibleTransactions::class)->collect($this->filters($vendor->id));
         $sheet = [[
-            'Date', 'FinPe reference', 'Merchant reference', 'Type', 'Service', 'Provider',
-            'Status', 'Amount', 'Charge', 'Commission', 'Beneficiary',
+            'Date', 'FinPe reference', 'Merchant reference', 'Type', 'Service', 'Provider', 'Provider reference', 'UTR',
+            'Status', 'Amount', 'FinPe commission', 'Total wallet debit', 'Beneficiary', 'Failure reason',
         ]];
         foreach ($rows as $txn) {
-            $commission = RecordedCommission::amount($txn);
             $sheet[] = [
                 $txn->created_at?->format('Y-m-d H:i:s'),
                 $txn->reference,
                 $txn->merchant_ref,
                 $txn->type,
                 $txn->service,
-                $providers->displayName($txn->payout_provider),
+                CommissionProviders::name($txn->payout_provider),
+                $txn->bank_reference,
+                $txn->rrn,
                 $txn->status,
                 (float) $txn->amount,
-                (float) $txn->payout_charge,
-                $commission === null ? '' : $commission,
+                (float) ($txn->payout_charge ?? 0),
+                (float) ($txn->total_debited ?? $txn->amount),
                 $txn->beneficiary_name,
+                $txn->failure_reason,
             ];
         }
 
@@ -97,73 +97,46 @@ class TransactionReport extends Component
     public function render()
     {
         $vendor = Auth::guard('vendor')->user();
-        $filtered = $this->query($vendor->id);
-        $transactions = (clone $filtered)
-            ->with($this->commissionWith($vendor->id))
-            ->latest()
-            ->paginate(15);
-
+        $feed = app(VisibleTransactions::class);
+        $filters = $this->filters($vendor->id);
+        $transactions = $feed->paginate($filters, 15, $this->getPage());
+        $counts = $feed->summary($filters);
         $summary = [
-            'total' => (clone $filtered)->count(),
-            'success' => (clone $filtered)->where('status', 'success')->count(),
-            'failed' => (clone $filtered)->where('status', 'failed')->count(),
-            'pending' => (clone $filtered)->where('status', 'pending')->count(),
-            'volume' => number_format((float) (clone $filtered)->where('status', 'success')->sum('amount'), 2),
-            'commission' => RecordedCommission::total($filtered, $vendor->id),
+            'total' => $counts['total'],
+            'success' => $counts['success'],
+            'failed' => $counts['failed'],
+            'pending' => $counts['pending'],
+            'volume' => number_format($counts['volume'], 2),
+            'charge' => $counts['charge'],
         ];
 
         return view('livewire.vendor.transaction-report', [
             'transactions' => $transactions,
             'summary' => $summary,
-            'providers' => $this->providerOptions($vendor->id),
+            'providers' => $feed->providers($vendor->id, AssignedPayoutProviders::codes($vendor)),
         ])->layout('layouts.vendor', ['title' => 'Transaction Report']);
     }
 
-    private function query(int $vendorId): Builder
-    {
-        return Transaction::query()
-            ->where('vendor_id', $vendorId)
-            ->when($this->search !== '', function (Builder $query) {
-                $term = '%'.$this->search.'%';
-                $query->where(function (Builder $inner) use ($term) {
-                    $inner->where('reference', 'like', $term)
-                        ->orWhere('merchant_ref', 'like', $term)
-                        ->orWhere('bank_reference', 'like', $term)
-                        ->orWhere('beneficiary_name', 'like', $term);
-                });
-            })
-            ->when($this->status !== '', fn (Builder $query) => $query->where('status', $this->status))
-            ->when($this->service !== '', fn (Builder $query) => $query->where('service', $this->service))
-            ->when($this->provider !== '', fn (Builder $query) => $query->where('payout_provider', $this->provider))
-            ->when($this->dateFrom !== '', fn (Builder $query) => $query->whereDate('created_at', '>=', $this->dateFrom))
-            ->when($this->dateTo !== '', fn (Builder $query) => $query->whereDate('created_at', '<=', $this->dateTo));
-    }
-
     /**
-     * @return array<string, callable>
+     * @return array{vendor_id: int, search: string, status: string, service: string, provider: string, date_from: string, date_to: string}
      */
-    private function commissionWith(int $vendorId): array
+    private function filters(int $vendorId): array
     {
+        $allowed = AssignedPayoutProviders::codes($vendorId);
+        $provider = strtolower(trim($this->provider));
+        if ($provider !== '' && ! in_array($provider, $allowed, true)) {
+            $provider = '__unassigned__';
+        }
+
         return [
-            'commissionEntry' => fn ($query) => $query->where('vendor_id', $vendorId),
+            'vendor_id' => $vendorId,
+            'search' => $this->search,
+            'status' => $this->status,
+            'service' => $this->service,
+            'provider' => $provider,
+            'date_from' => $this->dateFrom,
+            'date_to' => $this->dateTo,
+            'allowed_providers' => $allowed,
         ];
-    }
-
-    /**
-     * @return list<array{code: string, name: string}>
-     */
-    private function providerOptions(int $vendorId): array
-    {
-        $providers = app(PayoutProviderRegistry::class);
-
-        return Transaction::query()
-            ->where('vendor_id', $vendorId)
-            ->whereNotNull('payout_provider')
-            ->where('payout_provider', '!=', '')
-            ->distinct()
-            ->orderBy('payout_provider')
-            ->pluck('payout_provider')
-            ->map(fn ($code) => ['code' => (string) $code, 'name' => $providers->displayName((string) $code)])
-            ->all();
     }
 }

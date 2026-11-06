@@ -6,6 +6,8 @@ class CommissionProviders
 {
     public const VIMOPAY = 'vimopay';
 
+    public const ALLIANCEPE = 'alliancepe';
+
     /**
      * @return array<string, string>
      */
@@ -13,6 +15,7 @@ class CommissionProviders
     {
         return [
             self::VIMOPAY => 'VimoPay',
+            self::ALLIANCEPE => 'AlliancePe',
         ];
     }
 

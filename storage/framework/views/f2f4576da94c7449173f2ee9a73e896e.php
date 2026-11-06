@@ -76,7 +76,7 @@
                 <table class="min-w-full">
                     <thead>
                         <tr>
-                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = ['Reference','Partner','Payout Provider','Amount','Commission / Charge','Status','Time','']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $col): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = ['Reference','Partner','Payout Provider','Amount','FinPe commission','Status','Time','']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $col): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                 <th class="px-4 py-2 text-left text-[11px] font-semibold uppercase tracking-wider"><?php echo e($col); ?></th>
                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                         </tr>
@@ -85,8 +85,8 @@
                         <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__empty_1 = true; $__currentLoopData = $recentTransactions->take(5); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $txn): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                             <?php
                                 $tone = match($txn->status) {
-                                    'success' => 'bg-emerald-50 text-emerald-700',
-                                    'failed' => 'bg-red-50 text-red-700',
+                                    'success', 'completed' => 'bg-emerald-50 text-emerald-700',
+                                    'failed', 'cancelled', 'rejected' => 'bg-red-50 text-red-700',
                                     default => 'bg-amber-50 text-amber-700',
                                 };
                             ?>
@@ -100,7 +100,7 @@
                                     <span class="inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold <?php echo e($tone); ?>"><?php echo e(ucfirst((string) $txn->status)); ?></span>
                                 </td>
                                 <td class="whitespace-nowrap px-4 py-2 text-xs text-slate-500"><?php echo e($txn->created_at?->timezone(config('app.timezone'))->format('d M, h:i A')); ?></td>
-                                <td class="whitespace-nowrap px-4 py-2"><?php echo $__env->make('livewire.admin.partials.txn-actions', ['id' => $txn->id, 'reference' => $txn->reference, 'type' => $txn->type], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?></td>
+                                <td class="whitespace-nowrap px-4 py-2"><?php echo $__env->make('livewire.admin.partials.txn-actions', ['id' => $txn->id, 'reference' => $txn->reference, 'type' => $txn->type, 'source' => $txn->source ?? 'transaction'], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?></td>
                             </tr>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                             <tr>

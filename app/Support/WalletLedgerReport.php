@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Models\AlliancePePayout;
 use App\Models\Transaction;
 use App\Models\Vendor;
 use App\Models\WalletLedger;
@@ -158,10 +159,15 @@ class WalletLedgerReport
      */
     public function providerOptions(): array
     {
-        return array_map(
+        $rows = array_map(
             fn (array $row) => ['code' => $row['code'], 'name' => $row['name']],
             $this->providers->catalog()
         );
+        if (! collect($rows)->contains(fn (array $row) => $row['code'] === CommissionProviders::ALLIANCEPE)) {
+            $rows[] = ['code' => CommissionProviders::ALLIANCEPE, 'name' => CommissionProviders::name(CommissionProviders::ALLIANCEPE)];
+        }
+
+        return $rows;
     }
 
     /**
@@ -177,13 +183,20 @@ class WalletLedgerReport
      */
     public function statuses(): array
     {
-        return Transaction::query()
+        $statuses = Transaction::query()
             ->whereNotNull('status')
             ->where('status', '!=', '')
             ->distinct()
             ->orderBy('status')
             ->pluck('status')
             ->all();
+
+        return array_values(array_unique(array_merge($statuses, AlliancePePayout::query()
+            ->whereNotNull('status')
+            ->where('status', '!=', '')
+            ->distinct()
+            ->pluck('status')
+            ->all())));
     }
 
     /**
@@ -305,14 +318,23 @@ class WalletLedgerReport
             ])
             ->when($filters['vendor_id'], fn (Builder $inner) => $inner->where('wallet_ledger.vendor_id', $filters['vendor_id']))
             ->when($filters['provider'] !== '', function (Builder $inner) use ($filters) {
-                $inner->whereExists(function ($sub) use ($filters) {
-                    $this->matchTransaction($sub)->where('transactions.payout_provider', $filters['provider']);
+                $provider = strtolower((string) $filters['provider']);
+                if ($provider === CommissionProviders::ALLIANCEPE) {
+                    $inner->whereExists(function ($sub) {
+                        $sub->selectRaw('1')
+                            ->from('alliancepe_payouts')
+                            ->whereColumn('alliancepe_payouts.vendor_id', 'wallet_ledger.vendor_id')
+                            ->whereColumn('alliancepe_payouts.merchant_order_id', 'wallet_ledger.reference');
+                    });
+
+                    return;
+                }
+                $inner->whereExists(function ($sub) use ($provider) {
+                    $this->matchTransaction($sub)->where('transactions.payout_provider', $provider);
                 });
             })
             ->when($filters['status'] !== '', function (Builder $inner) use ($filters) {
-                $inner->whereExists(function ($sub) use ($filters) {
-                    $this->matchTransaction($sub)->where('transactions.status', $filters['status']);
-                });
+                app(VisibleTransactions::class)->constrainLedger($inner, (string) $filters['status'], '');
             })
             ->when($filters['search'] !== '', function (Builder $inner) use ($filters) {
                 $term = '%'.$filters['search'].'%';
@@ -382,14 +404,17 @@ class WalletLedgerReport
         });
     }
 
-    private function transactionColumn(string $column): Builder
+    private function transactionColumn(string $column): \Illuminate\Contracts\Database\Query\Expression
     {
-        return Transaction::query()
-            ->select('transactions.'.$column)
-            ->whereColumn('transactions.vendor_id', 'wallet_ledger.vendor_id')
-            ->whereColumn('transactions.reference', 'wallet_ledger.reference')
-            ->orderBy('transactions.id')
-            ->limit(1);
+        $column = in_array($column, ['status', 'payout_provider', 'type', 'reference'], true) ? $column : 'status';
+        $alliance = match ($column) {
+            'payout_provider' => "'".CommissionProviders::ALLIANCEPE."'",
+            'type' => "'payout'",
+            'reference' => 'alliancepe_payouts.merchant_order_id',
+            default => 'alliancepe_payouts.status',
+        };
+
+        return DB::raw("COALESCE((SELECT transactions.{$column} FROM transactions WHERE transactions.vendor_id = wallet_ledger.vendor_id AND transactions.reference = wallet_ledger.reference ORDER BY transactions.id LIMIT 1), (SELECT {$alliance} FROM alliancepe_payouts WHERE alliancepe_payouts.vendor_id = wallet_ledger.vendor_id AND alliancepe_payouts.merchant_order_id = wallet_ledger.reference ORDER BY alliancepe_payouts.id LIMIT 1))");
     }
 
     private function matchTransaction($sub)

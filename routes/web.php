@@ -80,6 +80,7 @@ Route::middleware('auth:admin')->prefix('admin')->name('admin.')->group(function
             ->name('aeps-transactions.show');
     });
     Route::get('/payout-api', \App\Livewire\Admin\PayoutApiTest::class)->middleware('admin.module:payout-api')->name('payout-api');
+    Route::get('/alliancepe-payouts', \App\Livewire\Admin\AlliancePePayouts::class)->middleware('admin.module:alliancepe')->name('alliancepe-payouts');
     Route::get('/reports', \App\Livewire\Admin\Reports::class)->middleware('admin.module:reports')->name('reports');
     Route::get('/daily-balance', \App\Livewire\Admin\DailyBalance::class)->middleware('admin.module:reports')->name('daily-balance');
     Route::get('/reports/{report}', \App\Livewire\Admin\ReportShow::class)
@@ -110,11 +111,15 @@ Route::middleware('auth:vendor')->prefix('vendor')->name('vendor.')->group(funct
         ->whereNumber('id')
         ->name('wallet-requests.receipt');
     Route::get('/bank-accounts', \App\Livewire\Vendor\BankAccounts::class)->name('bank-accounts');
-    Route::get('/send-money', \App\Livewire\Vendor\SendMoney::class)->name('send-money');
-    Route::get('/beneficiaries', \App\Livewire\Vendor\Beneficiaries::class)->name('beneficiaries');
+    Route::get('/send-money', function () {
+        abort(404);
+    })->name('send-money');
+    Route::get('/beneficiaries', \App\Livewire\Vendor\Beneficiaries::class)->middleware('vendor.provider:any')->name('beneficiaries');
     Route::get('/transactions', \App\Livewire\Vendor\TransactionReport::class)->name('transactions');
-    Route::get('/payout-api', \App\Livewire\Vendor\PayoutApi::class)->name('payout-api');
+    Route::get('/payout-api', \App\Livewire\Vendor\PayoutApi::class)->middleware('vendor.provider:vimopay')->name('payout-api');
+    Route::get('/alliancepe-payouts', \App\Livewire\Vendor\AlliancePePayout::class)->middleware('vendor.provider:alliancepe')->name('alliancepe-payouts');
     Route::get('/payout-transactions/{reference}/receipt', \App\Http\Controllers\Vendor\PayoutReceiptController::class)
+        ->middleware('vendor.provider:vimopay')
         ->where('reference', '[A-Za-z0-9\-]+')
         ->name('payout-transactions.receipt');
     Route::get('/reports', \App\Livewire\Vendor\Reports::class)->name('reports');
@@ -122,4 +127,5 @@ Route::middleware('auth:vendor')->prefix('vendor')->name('vendor.')->group(funct
     Route::get('/developer', \App\Livewire\Vendor\Developer::class)->name('developer');
     Route::get('/aeps/api-documentation', \App\Http\Controllers\Admin\AepsApiDocController::class)->name('aeps.api-documentation');
     Route::get('/profile', \App\Livewire\Vendor\Profile::class)->name('profile');
+    Route::get('/profile/logo', \App\Livewire\Vendor\Logo::class)->name('logo');
 });

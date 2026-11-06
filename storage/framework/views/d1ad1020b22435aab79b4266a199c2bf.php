@@ -12,8 +12,7 @@
             ['Closing balance', $summary['closing'], 'text-violet-800'],
             ['Transactions', $summary['transactions'], 'text-slate-900'],
             ['Transaction amount', $summary['payout_amount'], 'text-slate-900'],
-            ['Charge', $summary['payout_charge'], 'text-slate-900'],
-            ['Recorded commission', $summary['commission'], 'text-slate-900'],
+            ['FinPe commission', $summary['payout_charge'], 'text-slate-900'],
         ]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as [$label, $value, $color]): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
             <div class="fi-card p-5">
                 <p class="text-xs font-semibold uppercase tracking-wider text-slate-400"><?php echo e($label); ?></p>
@@ -55,6 +54,12 @@
                     <option value="success">Success</option>
                     <option value="pending">Pending</option>
                     <option value="failed">Failed</option>
+                    <option value="reversed">Reversed</option>
+                    <option value="processing">Processing</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                    <option value="on_hold">On hold</option>
+                    <option value="rejected">Rejected</option>
                 </select>
             </div>
             <div>
@@ -86,7 +91,7 @@
         </div>
     </div>
 
-    <p class="mb-5 text-sm text-slate-500">Opening is the balance before the first matching ledger entry. Closing is the balance after the last matching entry. Ledger type filters the wallet table. Date, status, and transaction type filter both tables. Provider and reference filter the transaction table. Commission is the recorded snapshot, not the payout charge.</p>
+    <p class="mb-5 text-sm text-slate-500">Opening is the balance before the first matching ledger entry. Closing is the balance after the last matching entry. Ledger type filters the wallet table. Date, status, and transaction type filter both tables. Provider and reference filter the transaction table. FinPe commission is the amount included in the wallet debit.</p>
 
     <div class="fi-card mb-5 overflow-hidden">
         <div class="border-b border-slate-100 px-5 py-4">
@@ -96,7 +101,7 @@
             <table class="min-w-full">
                 <thead>
                     <tr>
-                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = ['Date / time','Reference','Description','Type','Amount','Opening','Closing','Payout amount','Charge','Status','']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $col): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = ['Date / time','Reference','Description','Type','Amount','Opening','Closing','Payout amount','FinPe commission','Status','']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $col): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                             <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider"><?php echo e($col); ?></th>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                     </tr>
@@ -115,7 +120,7 @@
                             <td class="px-4 py-3 text-sm text-slate-900"><?php echo e($txn ? '₹'.number_format((float) $txn->amount, 2) : '—'); ?></td>
                             <td class="px-4 py-3 text-sm text-slate-900"><?php echo e($txn ? '₹'.number_format((float) $txn->payout_charge, 2) : '—'); ?></td>
                             <td class="px-4 py-3 text-sm text-slate-700"><?php echo e($txn ? ucfirst((string) $txn->status) : '—'); ?></td>
-                            <td class="px-4 py-3"><?php echo $__env->make('livewire.vendor.partials.txn-actions', ['id' => $txn?->id, 'reference' => $txn?->reference, 'type' => $txn?->type], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?></td>
+                            <td class="px-4 py-3"><?php echo $__env->make('livewire.vendor.partials.txn-actions', ['id' => $txn?->id, 'reference' => $txn?->reference, 'type' => $txn?->type, 'source' => $txn->source ?? 'transaction'], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?></td>
                         </tr>
                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                         <tr>
@@ -136,7 +141,7 @@
             <table class="min-w-full">
                 <thead>
                     <tr>
-                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = ['Date / time','FinPe reference','Merchant reference','Type','Service','Amount','Charge','Commission','Beneficiary','Status','']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $col): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = ['Date / time','FinPe reference','Merchant reference','Type','Service','Provider','Amount','FinPe commission','Total wallet debit','Beneficiary','Status','Failure','']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $col): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                             <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider"><?php echo e($col); ?></th>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                     </tr>
@@ -149,20 +154,18 @@
                             <td class="px-4 py-3 text-sm text-slate-700"><?php echo e($txn->merchant_ref ?: '—'); ?></td>
                             <td class="px-4 py-3 text-sm text-slate-700"><?php echo e(ucfirst((string) $txn->type)); ?></td>
                             <td class="px-4 py-3 text-sm text-slate-700"><?php echo e(strtoupper((string) $txn->service)); ?></td>
+                            <td class="px-4 py-3 text-sm text-slate-700"><?php echo e(($txn->type ?? null) === 'payout' ? (\App\Support\CommissionProviders::name($txn->payout_provider) ?: '—') : '—'); ?></td>
                             <td class="px-4 py-3 text-sm font-semibold text-slate-900">₹<?php echo e(number_format((float) $txn->amount, 2)); ?></td>
-                            <td class="px-4 py-3 text-sm text-slate-900">₹<?php echo e(number_format((float) $txn->payout_charge, 2)); ?></td>
-                            <td class="px-4 py-3 text-sm text-slate-900">
-                                <?php $commission = \App\Support\RecordedCommission::amount($txn); ?>
-                                <?php echo e($commission === null ? '—' : '₹'.number_format($commission, 2)); ?>
-
-                            </td>
+                            <td class="px-4 py-3 text-sm text-slate-900">₹<?php echo e(number_format((float) ($txn->payout_charge ?? 0), 2)); ?></td>
+                            <td class="px-4 py-3 text-sm font-semibold text-slate-900">₹<?php echo e(number_format((float) ($txn->total_debited ?? $txn->amount), 2)); ?></td>
                             <td class="px-4 py-3 text-sm text-slate-700"><?php echo e($txn->beneficiary_name ?: '—'); ?></td>
                             <td class="px-4 py-3 text-sm text-slate-700"><?php echo e(ucfirst((string) $txn->status)); ?></td>
-                            <td class="px-4 py-3"><?php echo $__env->make('livewire.vendor.partials.txn-actions', ['id' => $txn->id, 'reference' => $txn->reference, 'type' => $txn->type], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?></td>
+                            <td class="px-4 py-3 text-xs text-slate-600"><?php echo e($txn->failure_reason ?? '—'); ?></td>
+                            <td class="px-4 py-3"><?php echo $__env->make('livewire.vendor.partials.txn-actions', ['id' => $txn->id, 'reference' => $txn->reference, 'type' => $txn->type, 'source' => $txn->source ?? 'transaction'], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?></td>
                         </tr>
                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                         <tr>
-                            <td colspan="11" class="px-5 py-12 text-center text-sm text-slate-500">No transactions for these filters.</td>
+                            <td colspan="13" class="px-5 py-12 text-center text-sm text-slate-500">No transactions for these filters.</td>
                         </tr>
                     <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                 </tbody>

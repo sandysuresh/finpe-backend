@@ -5,9 +5,9 @@ namespace App\Livewire\Admin;
 use App\Models\CommissionEntry;
 use App\Models\Merchant;
 use App\Models\Settlement;
-use App\Models\Transaction;
 use App\Models\Vendor;
 use App\Models\WalletTopupRequest;
+use App\Support\VisibleTransactions;
 use Livewire\Component;
 
 class Dashboard extends Component
@@ -16,8 +16,9 @@ class Dashboard extends Component
     {
         $pendingKyc = Vendor::query()->where('kyc_status', 'submitted')->count();
         $pendingWallet = WalletTopupRequest::query()->where('status', 'pending')->count();
-        $failed = Transaction::query()->where('status', 'failed')->count();
-        $volume = (float) Transaction::query()->where('status', 'success')->sum('amount');
+        $counts = app(VisibleTransactions::class)->summary([]);
+        $failed = $counts['failed'];
+        $volume = $counts['volume'];
         $settled = (float) Settlement::query()->where('status', 'settled')->sum('net_amount');
         $commission = (float) CommissionEntry::query()
             ->where('status', CommissionEntry::STATUS_RECORDED)
@@ -25,7 +26,7 @@ class Dashboard extends Component
 
         $primary = [
             ['label' => 'Transaction Volume', 'value' => '₹ '.number_format($volume, 2), 'hint' => 'Successful payouts', 'tone' => 'blue', 'icon' => 'volume', 'href' => route('admin.txn-success')],
-            ['label' => 'Total Transactions', 'value' => number_format(Transaction::query()->count()), 'hint' => 'All partner payouts', 'tone' => 'indigo', 'icon' => 'txn', 'href' => route('admin.transactions')],
+            ['label' => 'Total Transactions', 'value' => number_format($counts['total']), 'hint' => 'VimoPay and AlliancePe payouts', 'tone' => 'indigo', 'icon' => 'txn', 'href' => route('admin.transactions')],
             ['label' => 'Total Partners', 'value' => number_format(Vendor::query()->count()), 'hint' => 'Partner accounts', 'tone' => 'emerald', 'icon' => 'partners', 'href' => route('admin.vendors')],
             ['label' => 'Pending KYC', 'value' => number_format($pendingKyc), 'hint' => 'Waiting for review', 'tone' => 'amber', 'icon' => 'kyc', 'href' => route('admin.partners.kyc')],
         ];
@@ -49,7 +50,7 @@ class Dashboard extends Component
             'primary' => $primary,
             'secondary' => $secondary,
             'alerts' => $alerts,
-            'recentTransactions' => Transaction::query()->with('vendor')->latest()->limit(8)->get(),
+            'recentTransactions' => app(VisibleTransactions::class)->recent([], 8),
         ])->layout('layouts.admin', ['title' => 'Dashboard']);
     }
 }

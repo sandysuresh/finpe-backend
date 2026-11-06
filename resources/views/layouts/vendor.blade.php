@@ -14,31 +14,38 @@
        style="transform:translateX(-100%); transition:transform .2s;">
 
     <div class="flex h-[70px] shrink-0 items-center gap-3 border-b border-slate-800 px-5">
-        <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-600 text-white">
-            <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 3 20 7.5v9L12 21l-8-4.5v-9L12 3Z"/>
-                <path d="m8 10 4-2 4 2-4 2-4-2Zm0 4 4 2 4-2"/>
-            </svg>
-        </div>
-        <div class="leading-tight">
-            <div class="text-[17px] font-bold text-white">FinPe</div>
-            <div class="text-[11px] font-medium text-slate-300">Vendor Portal</div>
-        </div>
+        @if(auth('vendor')->user()->logo_path)
+            <img src="{{ asset('storage/'.auth('vendor')->user()->logo_path) }}" alt="{{ auth('vendor')->user()->business_name }}" class="h-9 max-w-[9rem] object-contain">
+        @else
+            <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-600 text-white">
+                <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 3 20 7.5v9L12 21l-8-4.5v-9L12 3Z"/>
+                    <path d="m8 10 4-2 4 2-4 2-4-2Zm0 4 4 2 4-2"/>
+                </svg>
+            </div>
+            <div class="leading-tight">
+                <div class="text-[17px] font-bold text-white">FinPe</div>
+                <div class="text-[11px] font-medium text-slate-300">Vendor Portal</div>
+            </div>
+        @endif
     </div>
 
     <nav class="flex-1 overflow-y-auto px-3 py-4">
         @php
+        $assignedProviders = \App\Support\AssignedPayoutProviders::codes(auth('vendor')->user());
         $nav = [
             ['Dashboard',    'vendor.dashboard',    'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'],
-            ['Send Money',   'vendor.send-money',   'M12 19l9 2-9-18-9 18 9-2zm0 0v-8'],
             ['Wallet',       'vendor.wallet',       'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z'],
             ['Bank Accounts','vendor.bank-accounts','M3 10h18M3 6h18M3 14h18M3 18h18'],
-            ['Beneficiaries','vendor.beneficiaries','M17 20h5v-2a4 4 0 00-4-4h-1M9 20H4v-2a4 4 0 014-4h1m8-5a4 4 0 11-8 0 4 4 0 018 0z'],
+            ['Beneficiaries','vendor.beneficiaries','M17 20h5v-2a4 4 0 00-4-4h-1M9 20H4v-2a4 4 0 014-4h1m8-5a4 4 0 11-8 0 4 4 0 018 0z', $assignedProviders !== []],
             ['Transactions', 'vendor.transactions', 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'],
-            ['Payout API',   'vendor.payout-api',   'M17 9V7a5 5 0 00-10 0v2M5 9h14v11a1 1 0 01-1 1H6a1 1 0 01-1-1V9zm7 4v3'],
+            ['Payout API',   'vendor.payout-api',   'M17 9V7a5 5 0 00-10 0v2M5 9h14v11a1 1 0 01-1 1H6a1 1 0 01-1-1V9zm7 4v3', in_array('vimopay', $assignedProviders, true)],
+            ['AlliancePe',   'vendor.alliancepe-payouts', 'M17 9V7a5 5 0 00-10 0v2M5 9h14v11a1 1 0 01-1 1H6a1 1 0 01-1-1V9zm7 4v3', in_array('alliancepe', $assignedProviders, true)],
             ['Reports',      'vendor.reports',      'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'],
             ['Profile & KYC','vendor.profile',      'M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z'],
+            ['Upload Logo',  'vendor.logo',         'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M8 8h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z'],
         ];
+        $nav = array_values(array_filter($nav, fn (array $item) => ($item[3] ?? true) === true));
         @endphp
         <p class="mb-2 px-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400">Menu</p>
         @foreach($nav as [$label,$route,$icon])
@@ -84,6 +91,9 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
             </svg>
         </button>
+        @if(auth('vendor')->user()->logo_path)
+            <img src="{{ asset('storage/'.auth('vendor')->user()->logo_path) }}" alt="{{ auth('vendor')->user()->business_name }}" class="h-9 max-w-[9rem] object-contain">
+        @endif
         <div class="hidden text-sm font-medium text-slate-600 lg:block">{{ now()->format('l, d F Y') }}</div>
         <div class="ml-auto flex items-center gap-3">
             @php $kyc = auth('vendor')->user()->kyc_status; @endphp

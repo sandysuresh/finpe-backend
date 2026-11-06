@@ -14,7 +14,7 @@
                 <thead>
                     <tr>
                         @if($section === 'transactions')
-                            @foreach(['Reference','Partner','Amount','Commission','Status','Time'] as $col)
+                            @foreach(['Reference','Partner','Provider','Amount','FinPe commission','Total wallet debit','Status','Failure','Time'] as $col)
                                 <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">{{ $col }}</th>
                             @endforeach
                         @elseif($section === 'wallet')
@@ -42,9 +42,12 @@
                             @if($section === 'transactions')
                                 <td class="px-5 py-3 text-sm font-medium text-slate-900">{{ $row->reference }}</td>
                                 <td class="px-5 py-3 text-sm text-slate-700">{{ $row->vendor->business_name ?? '—' }}</td>
+                                <td class="px-5 py-3 text-sm text-slate-700">{{ ($row->type ?? null) === 'payout' ? (\App\Support\CommissionProviders::name($row->payout_provider) ?: '—') : '—' }}</td>
                                 <td class="px-5 py-3 text-sm text-slate-800">₹ {{ number_format((float) $row->amount, 2) }}</td>
-                                <td class="px-5 py-3 text-sm text-slate-800">{{ $row->commissionEntry ? '₹'.number_format((float) $row->commissionEntry->commission_amount, 2) : '—' }}</td>
+                                <td class="px-5 py-3 text-sm text-slate-800">{{ ($row->type ?? null) === 'payout' ? '₹'.number_format((float) ($row->payout_charge ?? 0), 2) : '—' }}</td>
+                                <td class="px-5 py-3 text-sm text-slate-800">{{ ($row->type ?? null) === 'payout' ? '₹'.number_format((float) ($row->total_debited ?? $row->amount), 2) : '—' }}</td>
                                 <td class="px-5 py-3 text-sm text-slate-700">{{ ucfirst((string) $row->status) }}</td>
+                                <td class="px-5 py-3 text-xs text-slate-600">{{ $row->failure_reason ?? '—' }}</td>
                                 <td class="px-5 py-3 text-xs text-slate-500">{{ $row->created_at?->format('d M Y, h:i A') }}</td>
                             @elseif($section === 'wallet')
                                 <td class="px-5 py-3 text-sm font-semibold text-slate-900">{{ $row->business_name }}</td>

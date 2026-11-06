@@ -33,7 +33,7 @@ class CommissionSummary extends Component
                 'vendors.business_name',
                 'vendors.vendor_code',
                 'commission_rules.provider',
-                DB::raw("count(distinct case when commission_entries.source_type = 'transactions' then commission_entries.source_id end) as payout_count"),
+                DB::raw("count(distinct case when commission_entries.source_type in ('transactions', 'alliancepe_payouts') then concat(commission_entries.source_type, '-', commission_entries.source_id) end) as payout_count"),
                 DB::raw('sum(commission_entries.commission_amount) as total_commission'),
             ])
             ->groupBy('commission_entries.vendor_id', 'vendors.business_name', 'vendors.vendor_code', 'commission_rules.provider')

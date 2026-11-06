@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\BankServiceController;
 use App\Http\Controllers\Api\V1\Aeps\AepsCatalogController;
 use App\Http\Controllers\Api\V1\Aeps\AepsMerchantController;
 use App\Http\Controllers\Api\V1\Aeps\AepsTransactionController;
+use App\Http\Controllers\AlliancePe\AlliancePeWebhookController;
 use App\Http\Controllers\Api\V1\PayoutCallbackController;
 use App\Http\Controllers\Api\V1\PayoutController;
 use App\Http\Controllers\Api\V1\PayoutMasterController;
@@ -17,14 +18,18 @@ Route::get('/health', fn () => response()->json(['success' => true]))
 Route::post('/v1/payout/callback', PayoutCallbackController::class)
     ->middleware('throttle:60,1');
 
+Route::post('/webhooks/alliancepe/payouts', AlliancePeWebhookController::class)
+    ->middleware('throttle:60,1')
+    ->name('alliancepe.webhook');
+
 Route::prefix('v1')->middleware(['throttle:vendor-api', 'vendor.api', 'vendor.api.log'])->group(function () {
     Route::get('/balance', [BalanceController::class, 'show']);
     Route::get('/banks', [AssignedBankController::class, 'index']);
-    Route::get('/payout/banks', [PayoutMasterController::class, 'banks']);
-    Route::get('/payout/purposes', [PayoutMasterController::class, 'purposes']);
-    Route::get('/payout/states', [PayoutMasterController::class, 'states']);
+    Route::get('/payout/banks', [PayoutMasterController::class, 'banks'])->middleware('vendor.provider:vimopay');
+    Route::get('/payout/purposes', [PayoutMasterController::class, 'purposes'])->middleware('vendor.provider:vimopay');
+    Route::get('/payout/states', [PayoutMasterController::class, 'states'])->middleware('vendor.provider:vimopay');
     Route::get('/payouts', [PayoutController::class, 'index']);
-    Route::post('/payouts', [PayoutController::class, 'store']);
+    Route::post('/payouts', [PayoutController::class, 'store'])->middleware('vendor.provider:vimopay');
     Route::get('/payouts/{reference}', [PayoutController::class, 'show']);
     Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE'], '/bank/{bankCode}/{slug}', [BankServiceController::class, 'handle'])
         ->where(['bankCode' => '[A-Za-z0-9_-]+', 'slug' => '[A-Za-z0-9_-]+']);

@@ -184,7 +184,7 @@
                                     ₹<?php echo e(number_format((float)$entry->balance_after,2)); ?>
 
                                 </td>
-                                <td class="whitespace-nowrap px-5 py-4"><?php echo $__env->make('livewire.vendor.partials.txn-actions', ['id' => $payout?->id, 'reference' => $payout?->reference, 'type' => $payout ? 'payout' : null], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?></td>
+                                <td class="whitespace-nowrap px-5 py-4"><?php echo $__env->make('livewire.vendor.partials.txn-actions', ['id' => $payout?->id, 'reference' => $payout?->reference, 'type' => $payout ? 'payout' : null, 'source' => $payout->source ?? 'transaction'], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?></td>
                             </tr>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                     </tbody>

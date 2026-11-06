@@ -301,6 +301,8 @@ class VimoPayClient
         if (strtolower(trim((string) config('services.vimopay.environment'))) === 'live') {
             $configured = config('payout.live_endpoints.'.$name);
             if (is_string($configured) && $configured !== '') {
+                $this->assertEndpointMatchesEnvironment('live', $configured);
+
                 return $configured;
             }
         }
@@ -309,27 +311,29 @@ class VimoPayClient
             throw new AepsException('Only the UAT paths from VimoPay specification v1.0.13 are configured.', 500);
         }
 
-        return match ($name) {
-            'authorize' => '/aepsapi/api/signature/authorizeuat',
-            'payout_authorize' => '/aepsapi/api/signature/authorizeuat',
-            'banks' => '/masterapi/api/master/banklistuat',
-            'bank_iin' => '/aepsapi/api/payment/bankiinuat',
-            'states' => '/masterapi/api/master/statelistuat',
-            'payout_banks' => '/masterapi/api/master/banklistuat',
-            'payout_purposes' => '/masterapi/api/master/purposelistuat',
-            'payout_states' => '/masterapi/api/master/statelistuat',
-            'payout_transfer' => '/payoutapi/api/payment/payoutsuat',
-            'districts' => '/aepsapi/api/payment/acquiredistrictuat',
-            'register' => '/aepsapi/api/payment/merchantonboarduat',
-            'send_otp' => '/aepsapi/api/payment/sendotpuat',
-            'resend_otp' => '/aepsapi/api/payment/resendotpuat',
-            'verify_otp' => '/aepsapi/api/payment/validateotpuat',
-            'ekyc' => '/aepsapi/api/payment/merchantekycuat',
-            'two_factor' => '/aepsapi/api/payment/2fauat',
-            'transaction_otp' => '/aepsapi/api/Payment/AepsTransactionOtpuat',
-            'transact' => '/aepsapi/api/payment/aepsuat',
-            default => throw new AepsException('Unknown AePS provider operation.', 500),
-        };
+        $configured = config('payout.uat_endpoints.'.$name);
+        if (! is_string($configured) || $configured === '') {
+            throw new AepsException('Unknown AePS provider operation.', 500);
+        }
+
+        $this->assertEndpointMatchesEnvironment('uat', $configured);
+
+        return $configured;
+    }
+
+    private function assertEndpointMatchesEnvironment(string $environment, string $url): void
+    {
+        $lower = strtolower($url);
+        $liveHost = str_contains($lower, 'prod.vidual.in');
+        $relativeUatPath = str_starts_with($url, '/') && ! str_contains($url, '://');
+
+        if ($environment === 'live' && ($relativeUatPath || str_ends_with($lower, 'uat') || ! str_starts_with($lower, 'https://'))) {
+            throw new AepsException('Only the UAT paths from VimoPay specification v1.0.13 are configured.', 500);
+        }
+
+        if ($environment === 'uat' && ($liveHost || ! $relativeUatPath)) {
+            throw new AepsException('Only the UAT paths from VimoPay specification v1.0.13 are configured.', 500);
+        }
     }
 
     private function tokenCacheKey(): string

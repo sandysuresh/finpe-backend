@@ -465,11 +465,11 @@
                             <dd class="mt-1 text-sm font-semibold text-slate-900">{{ $payoutResult['amount'] !== null ? '₹'.number_format($payoutResult['amount'], 2) : '—' }}</dd>
                         </div>
                         <div class="rounded-xl border border-slate-200 px-4 py-3">
-                            <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Commission / charge</dt>
+                            <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">FinPe commission</dt>
                             <dd class="mt-1 text-sm font-semibold text-slate-900">{{ $payoutResult['charge'] !== null ? '₹'.number_format($payoutResult['charge'], 2) : '—' }}</dd>
                         </div>
                         <div class="rounded-xl border border-slate-200 px-4 py-3">
-                            <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Total debited</dt>
+                            <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Total wallet debit</dt>
                             <dd class="mt-1 text-sm font-semibold text-slate-900">{{ $payoutResult['total_debited'] !== null ? '₹'.number_format($payoutResult['total_debited'], 2) : '—' }}</dd>
                         </div>
                         <div class="rounded-xl border border-slate-200 px-4 py-3">
@@ -522,11 +522,11 @@
                             <dd class="mt-1 text-sm font-semibold text-slate-900">₹{{ number_format($payoutSnapshot['amount'], 2) }}</dd>
                         </div>
                         <div class="rounded-xl border border-slate-200 px-4 py-3">
-                            <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Commission / charge</dt>
+                            <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">FinPe commission</dt>
                             <dd class="mt-1 text-sm font-semibold text-slate-900">₹{{ number_format($payoutSnapshot['charge'], 2) }}</dd>
                         </div>
                         <div class="rounded-xl border border-slate-200 px-4 py-3">
-                            <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Total debited</dt>
+                            <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Total wallet debit</dt>
                             <dd class="mt-1 text-sm font-semibold text-slate-900">₹{{ number_format($payoutSnapshot['total'], 2) }}</dd>
                         </div>
                         <div class="rounded-xl border border-slate-200 px-4 py-3">
@@ -664,8 +664,8 @@
                                 $providerName.' provider reference' => $testReport['payout']['provider_reference'],
                                 'RRN' => $testReport['payout']['rrn'],
                                 'Payout amount' => $testReport['payout']['amount'],
-                                'Commission / charge' => $testReport['payout']['charge'],
-                                'Total debited' => $testReport['payout']['total'],
+                                'FinPe commission' => $testReport['payout']['charge'],
+                                'Total wallet debit' => $testReport['payout']['total'],
                                 'Final status' => $testReport['payout']['status'],
                                 'Wallet debit' => $testReport['payout']['wallet_debit'],
                                 'Commission entry' => $testReport['payout']['commission'],

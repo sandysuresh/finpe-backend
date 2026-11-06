@@ -2,11 +2,12 @@
 
 namespace App\Livewire\Admin;
 
+use App\Models\AlliancePePayout;
 use App\Models\Transaction;
 use App\Models\Vendor;
 use App\Support\CommissionProviders;
 use App\Support\SimpleXlsx;
-use Illuminate\Database\Eloquent\Builder;
+use App\Support\VisibleTransactions;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Livewire\Component;
@@ -81,12 +82,12 @@ class Transactions extends Component
     public function exportExcel(): StreamedResponse
     {
         $rows = [[
-            'Date', 'Reference', 'Partner', 'Vendor code', 'Provider', 'Beneficiary',
-            'Amount', 'Charge', 'Commission', 'Service', 'Status',
+            'Date', 'Reference', 'Partner', 'Vendor code', 'Provider', 'Provider reference', 'UTR', 'Beneficiary',
+            'Amount', 'FinPe commission', 'Total wallet debit', 'Service', 'Status', 'Failure reason',
         ]];
-        $exportRows = Transaction::query()->count() === 0
+        $exportRows = $this->usingSample()
             ? $this->filterSamples($this->sampleTransactions())
-            : $this->filtered()->with(['vendor', 'commissionEntry'])->latest()->get();
+            : app(VisibleTransactions::class)->collect($this->filters());
         foreach ($exportRows as $txn) {
             $rows[] = [
                 $txn->created_at?->format('Y-m-d H:i:s'),
@@ -94,12 +95,15 @@ class Transactions extends Component
                 $txn->vendor?->business_name,
                 $txn->vendor?->vendor_code,
                 ($txn->type ?? null) === 'payout' ? (CommissionProviders::name($txn->payout_provider) ?: '') : '',
+                $txn->bank_reference ?? '',
+                $txn->rrn ?? '',
                 $txn->beneficiary_name,
                 (float) $txn->amount,
-                (float) $txn->payout_charge,
-                $txn->commissionEntry ? (float) $txn->commissionEntry->commission_amount : '',
+                (float) ($txn->payout_charge ?? 0),
+                (float) ($txn->total_debited ?? $txn->amount),
                 $txn->service,
                 $txn->status,
+                $txn->failure_reason ?? '',
             ];
         }
 
@@ -110,58 +114,49 @@ class Transactions extends Component
 
     public function render()
     {
-        $usingSample = Transaction::query()->count() === 0;
+        $usingSample = $this->usingSample();
 
         if ($usingSample) {
             $filtered = $this->filterSamples($this->sampleTransactions());
             $transactions = $this->paginateCollection($filtered);
             $summary = $this->summaryFromCollection($filtered);
         } else {
-            $filtered = $this->filtered();
-            $transactions = (clone $filtered)->with(['vendor', 'commissionEntry'])->latest()->paginate(15);
+            $feed = app(VisibleTransactions::class);
+            $transactions = $feed->paginate($this->filters(), 15, $this->getPage());
+            $counts = $feed->summary($this->filters(), false);
             $summary = [
-                'total' => (clone $filtered)->count(),
-                'success' => (clone $filtered)->where('status', 'success')->count(),
-                'failed' => (clone $filtered)->where('status', 'failed')->count(),
-                'pending' => (clone $filtered)->where('status', 'pending')->count(),
-                'volume' => number_format((float) (clone $filtered)->where('status', 'success')->sum('amount'), 2),
+                'total' => $counts['total'],
+                'success' => $counts['success'],
+                'failed' => $counts['failed'],
+                'pending' => $counts['pending'],
+                'volume' => number_format($counts['volume'], 2),
             ];
         }
 
-        $providers = Transaction::query()
-            ->whereNotNull('payout_provider')
-            ->where('payout_provider', '!=', '')
-            ->distinct()
-            ->orderBy('payout_provider')
-            ->pluck('payout_provider')
-            ->map(fn ($code) => ['code' => (string) $code, 'name' => CommissionProviders::name((string) $code) ?: (string) $code])
-            ->all();
+        $providers = app(VisibleTransactions::class)->providers();
 
         return view('livewire.admin.transactions', compact('transactions', 'summary', 'usingSample', 'providers'))
             ->layout('layouts.admin', ['title' => $this->heading]);
     }
 
-    private function filtered(): Builder
+    private function usingSample(): bool
     {
-        return Transaction::query()
-            ->when($this->search !== '', function (Builder $query) {
-                $term = '%'.$this->search.'%';
-                $query->where(function (Builder $inner) use ($term) {
-                    $inner->where('reference', 'like', $term)
-                        ->orWhere('merchant_ref', 'like', $term)
-                        ->orWhere('beneficiary_name', 'like', $term)
-                        ->orWhereHas('vendor', function (Builder $vendor) use ($term) {
-                            $vendor->where('business_name', 'like', $term)
-                                ->orWhere('vendor_code', 'like', $term);
-                        });
-                });
-            })
-            ->when($this->status === 'reversed', fn (Builder $query) => $query->whereIn('status', ['reversed', 'refund', 'refunded']))
-            ->when($this->status !== '' && $this->status !== 'reversed', fn (Builder $query) => $query->where('status', $this->status))
-            ->when($this->service !== '', fn (Builder $query) => $query->where('service', $this->service))
-            ->when($this->provider !== '', fn (Builder $query) => $query->where('payout_provider', $this->provider))
-            ->when($this->dateFrom !== '', fn (Builder $query) => $query->whereDate('created_at', '>=', $this->dateFrom))
-            ->when($this->dateTo !== '', fn (Builder $query) => $query->whereDate('created_at', '<=', $this->dateTo));
+        return Transaction::query()->count() === 0 && AlliancePePayout::query()->count() === 0;
+    }
+
+    /**
+     * @return array{search: string, status: string, service: string, provider: string, date_from: string, date_to: string}
+     */
+    private function filters(): array
+    {
+        return [
+            'search' => $this->search,
+            'status' => $this->status,
+            'service' => $this->service,
+            'provider' => $this->provider,
+            'date_from' => $this->dateFrom,
+            'date_to' => $this->dateTo,
+        ];
     }
 
     private function summaryFromCollection(Collection $rows): array
@@ -238,6 +233,12 @@ class Transactions extends Component
                 'amount' => $row[1],
                 'service' => $row[2],
                 'status' => $row[3],
+                'type' => null,
+                'source' => 'transaction',
+                'payout_provider' => null,
+                'payout_charge' => 0,
+                'total_debited' => $row[1],
+                'failure_reason' => null,
                 'beneficiary_name' => $row[4],
                 'vendor' => $vendor,
                 'vendor_name' => $vendor?->business_name ?? 'Sample Vendor',

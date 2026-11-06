@@ -84,6 +84,11 @@ return [
         'route' => 'admin.payout-api',
         'nav' => false,
     ],
+    'alliancepe' => [
+        'label' => 'AlliancePe',
+        'route' => 'admin.alliancepe-payouts',
+        'nav' => false,
+    ],
     'banks' => [
         'label' => 'Bank & API',
         'route' => 'admin.banks',
@@ -100,6 +105,7 @@ return [
             ['label' => 'Audit Logs', 'route' => 'admin.audit-logs'],
             ['label' => 'System Settings', 'route' => 'admin.system-settings'],
             ['label' => 'Payout API', 'route' => 'admin.payout-api', 'module' => 'payout-api'],
+            ['label' => 'AlliancePe', 'route' => 'admin.alliancepe-payouts', 'module' => 'alliancepe'],
             ['label' => 'Bank & API', 'route' => 'admin.banks', 'module' => 'banks'],
             ['label' => 'API Logs', 'route' => 'admin.api-logs', 'module' => 'banks'],
         ],

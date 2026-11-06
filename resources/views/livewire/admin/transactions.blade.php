@@ -97,7 +97,7 @@
                 <table class="min-w-full">
                     <thead class="bg-slate-50">
                         <tr>
-                            @foreach(['Reference','Partner','Payout Provider','Beneficiary','Amount','Commission','Rate','Commission Status','Commission Date','Service','Status','Date',''] as $col)
+                            @foreach(['Reference','Partner','Payout Provider','Beneficiary','Amount','FinPe commission','Total wallet debit','Rate','Commission status','Commission date','Service','Status','Failure','Date',''] as $col)
                                 <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">{{ $col }}</th>
                             @endforeach
                         </tr>
@@ -106,8 +106,8 @@
                         @foreach($transactions as $tx)
                             @php
                                 $sc = match($tx->status) {
-                                    'success' => 'bg-emerald-50 text-emerald-700',
-                                    'failed'  => 'bg-red-50 text-red-600',
+                                    'success', 'completed' => 'bg-emerald-50 text-emerald-700',
+                                    'failed', 'cancelled', 'rejected' => 'bg-red-50 text-red-600',
                                     default   => 'bg-amber-50 text-amber-700',
                                 };
                                 $vendor = $tx->vendor ?? null;
@@ -128,8 +128,9 @@
                                 </td>
                                 <td class="whitespace-nowrap px-5 py-4 text-sm font-semibold text-slate-900">{{ ($tx->type ?? null) === 'payout' ? (\App\Support\CommissionProviders::name($tx->payout_provider ?? null) ?: '—') : '—' }}</td>
                                 <td class="whitespace-nowrap px-5 py-4 text-xs text-slate-600">{{ $tx->beneficiary_name ?? '—' }}</td>
-                                <td class="whitespace-nowrap px-5 py-4 text-sm font-bold {{ $tx->status === 'success' ? 'text-emerald-700' : ($tx->status === 'failed' ? 'text-red-700' : 'text-amber-700') }}">₹{{ number_format((float)$tx->amount, 2) }}</td>
-                                <td class="whitespace-nowrap px-5 py-4 text-sm font-semibold text-slate-900">{{ $commission ? '₹'.number_format((float) $commission->commission_amount, 2) : '—' }}</td>
+                                <td class="whitespace-nowrap px-5 py-4 text-sm font-bold {{ $tx->status === 'success' || $tx->status === 'completed' ? 'text-emerald-700' : ($tx->status === 'failed' ? 'text-red-700' : 'text-amber-700') }}">₹{{ number_format((float)$tx->amount, 2) }}</td>
+                                <td class="whitespace-nowrap px-5 py-4 text-sm text-slate-700">{{ ($tx->type ?? null) === 'payout' && (float) ($tx->payout_charge ?? 0) > 0 ? '₹'.number_format((float) $tx->payout_charge, 2) : '—' }}</td>
+                                <td class="whitespace-nowrap px-5 py-4 text-sm font-semibold text-slate-900">{{ ($tx->type ?? null) === 'payout' ? '₹'.number_format((float) ($tx->total_debited ?? ((float) $tx->amount + (float) ($tx->payout_charge ?? 0))), 2) : '—' }}</td>
                                 <td class="whitespace-nowrap px-5 py-4 text-sm text-slate-700">
                                     @if(! $commission)
                                         —
@@ -147,8 +148,9 @@
                                 <td class="whitespace-nowrap px-5 py-4">
                                     <span class="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold {{ $sc }}">{{ ucfirst($tx->status) }}</span>
                                 </td>
+                                <td class="max-w-[16rem] px-5 py-4 text-xs text-slate-600">{{ $tx->failure_reason ?? '—' }}</td>
                                 <td class="whitespace-nowrap px-5 py-4 text-xs text-slate-400">{{ $tx->created_at->format('d M Y, h:i A') }}</td>
-                                <td class="whitespace-nowrap px-5 py-4">@include('livewire.admin.partials.txn-actions', ['id' => $tx->id ?? null, 'reference' => $tx->reference ?? null, 'type' => $tx->type ?? null])</td>
+                                <td class="whitespace-nowrap px-5 py-4">@include('livewire.admin.partials.txn-actions', ['id' => $tx->id ?? null, 'reference' => $tx->reference ?? null, 'type' => $tx->type ?? null, 'source' => $tx->source ?? 'transaction'])</td>
                             </tr>
                         @endforeach
                     </tbody>

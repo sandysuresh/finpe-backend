@@ -3,6 +3,7 @@
         <div>
             <h1 class="text-2xl font-bold text-slate-900"><?php echo e($vendor->business_name); ?></h1>
             <p class="mt-1 text-sm text-slate-500"><?php echo e($vendor->vendor_code); ?> · <?php echo e($vendor->pmt_code); ?></p>
+            <p class="mt-1 text-sm font-semibold text-slate-700">Assigned vendors: <?php echo e($assignedProviderNames !== '' ? $assignedProviderNames : 'None'); ?></p>
         </div>
         <div class="flex items-center gap-3">
             <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if((int) $vendor->registration_step < 7): ?>
@@ -53,6 +54,24 @@
             <p class="text-xs text-slate-400">API</p>
             <p class="mt-2 text-sm font-bold <?php echo e($vendor->api_enabled ? 'text-emerald-600' : 'text-slate-400'); ?>"><?php echo e($vendor->api_enabled ? 'Enabled' : 'Disabled'); ?></p>
         </div>
+    </div>
+
+    <div class="fi-card mb-6 p-6">
+        <h2 class="text-sm font-semibold text-slate-900">Assign Vendors</h2>
+        <p class="mt-1 text-xs text-slate-500">Choose the payout vendors this partner can use. Both can be assigned together.</p>
+        <div class="mt-4 flex flex-wrap gap-4">
+            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = \App\Support\CommissionProviders::options(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $code => $label): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <label class="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                    <input type="checkbox" value="<?php echo e($code); ?>" wire:model="assignedProviderCodes" class="rounded border-slate-300 text-blue-700">
+                    <span class="font-semibold text-slate-800"><?php echo e($label); ?></span>
+                    <span class="text-xs <?php echo e(in_array($code, $assignedProviderCodes, true) ? 'text-emerald-700' : 'text-slate-400'); ?>">
+                        <?php echo e(in_array($code, $assignedProviderCodes, true) ? 'Assigned' : 'Not assigned'); ?>
+
+                    </span>
+                </label>
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+        </div>
+        <button type="button" wire:click="saveAssignedProviders" class="fi-btn fi-btn-primary mt-4">Save assignments</button>
     </div>
 
     <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($reviewMessage): ?>
@@ -436,7 +455,7 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                                         <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                     </td>
                                     <td class="px-5 py-3"><?php echo e($providerName ?: ''); ?></td>
-                                    <td class="px-5 py-3"><?php echo $__env->make('livewire.admin.partials.txn-actions', ['id' => $payout?->id, 'reference' => $payout?->reference, 'type' => $payout ? 'payout' : null], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?></td>
+                                    <td class="px-5 py-3"><?php echo $__env->make('livewire.admin.partials.txn-actions', ['id' => $payout?->id, 'reference' => $payout?->reference, 'type' => $payout ? 'payout' : null, 'source' => $payout->source ?? 'transaction'], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?></td>
                                 </tr>
                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                         </tbody>
@@ -506,8 +525,10 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                             <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Payout Provider</th>
                             <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Beneficiary</th>
                             <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Amount</th>
-                            <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Commission</th>
+                            <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">FinPe commission</th>
+                            <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Total wallet debit</th>
                             <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Status</th>
+                            <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Failure</th>
                             <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400">Date</th>
                             <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-400"></th>
                         </tr>
@@ -519,7 +540,8 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                                 <td class="px-5 py-3"><?php echo e($txn->type === 'payout' ? (\App\Support\CommissionProviders::name($txn->payout_provider) ?: '—') : '—'); ?></td>
                                 <td class="px-5 py-3"><?php echo e($txn->beneficiary_name ?? '—'); ?></td>
                                 <td class="px-5 py-3">₹<?php echo e(number_format((float) $txn->amount, 2)); ?></td>
-                                <td class="px-5 py-3"><?php echo e($txn->commissionEntry ? '₹'.number_format((float) $txn->commissionEntry->commission_amount, 2) : '—'); ?></td>
+                                <td class="px-5 py-3"><?php echo e($txn->type === 'payout' ? '₹'.number_format((float) ($txn->payout_charge ?? 0), 2) : '—'); ?></td>
+                                <td class="px-5 py-3"><?php echo e($txn->type === 'payout' ? '₹'.number_format((float) ($txn->total_debited ?? $txn->amount), 2) : '—'); ?></td>
                                 <td class="px-5 py-3">
                                     <?php
                                         $txnStatusClass = match((string) $txn->status) {
@@ -530,8 +552,9 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                                     ?>
                                     <span class="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold <?php echo e($txnStatusClass); ?>"><?php echo e(ucfirst($txn->status)); ?></span>
                                 </td>
+                                <td class="px-5 py-3 text-xs text-slate-600"><?php echo e($txn->failure_reason ?? '—'); ?></td>
                                 <td class="px-5 py-3"><?php echo e($txn->created_at->format('d M Y H:i')); ?></td>
-                                <td class="px-5 py-3"><?php echo $__env->make('livewire.admin.partials.txn-actions', ['id' => $txn->id, 'reference' => $txn->reference, 'type' => $txn->type], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?></td>
+                                <td class="px-5 py-3"><?php echo $__env->make('livewire.admin.partials.txn-actions', ['id' => $txn->id, 'reference' => $txn->reference, 'type' => $txn->type, 'source' => $txn->source ?? 'transaction'], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?></td>
                             </tr>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                     </tbody>

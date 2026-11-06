@@ -7,13 +7,6 @@
             <p class="mt-1 text-sm text-slate-500">Here's your account overview for today.</p>
         </div>
         <div class="flex items-center gap-2">
-            <a href="<?php echo e(route('vendor.send-money')); ?>"
-               class="flex items-center gap-2 rounded-xl bg-violet-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-800">
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
-                </svg>
-                Send Money
-            </a>
             <a href="<?php echo e(route('vendor.wallet')); ?>"
                class="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50">
                 <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -199,8 +192,8 @@
                         </svg>
                     </div>
                     <p class="mt-3 text-sm font-medium text-slate-700">No transactions yet</p>
-                    <a href="<?php echo e(route('vendor.send-money')); ?>" class="mt-4 rounded-xl bg-violet-600 px-4 py-2 text-xs font-semibold text-white hover:bg-violet-700">
-                        Send Money
+                    <a href="<?php echo e(route('vendor.wallet')); ?>" class="mt-4 rounded-xl bg-violet-600 px-4 py-2 text-xs font-semibold text-white hover:bg-violet-700">
+                        Wallet
                     </a>
                 </div>
             <?php else: ?>
@@ -208,7 +201,7 @@
                     <table class="min-w-full">
                         <thead class="bg-slate-50">
                             <tr>
-                                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = ['Reference','Beneficiary','Amount','Commission','Service','Status','Date','']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $col): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = ['Reference','Beneficiary','Amount','FinPe commission','Service','Status','Date','']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $col): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400"><?php echo e($col); ?></th>
                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                             </tr>
@@ -228,7 +221,7 @@
                                         <span class="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold <?php echo e($bc); ?>"><?php echo e(ucfirst($tx['status'])); ?></span>
                                     </td>
                                     <td class="whitespace-nowrap px-5 py-3.5 text-[11px] text-slate-400"><?php echo e($tx['date']); ?></td>
-                                    <td class="whitespace-nowrap px-5 py-3.5"><?php echo $__env->make('livewire.vendor.partials.txn-actions', ['id' => $tx['id'], 'reference' => $tx['reference'], 'type' => $tx['raw_type']], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?></td>
+                                    <td class="whitespace-nowrap px-5 py-3.5"><?php echo $__env->make('livewire.vendor.partials.txn-actions', ['id' => $tx['id'], 'reference' => $tx['reference'], 'type' => $tx['raw_type'], 'source' => $tx['source'] ?? 'transaction'], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?></td>
                                 </tr>
                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                         </tbody>
@@ -243,7 +236,6 @@
                 <h3 class="mb-4 text-sm font-semibold text-slate-900">Quick Actions</h3>
                 <div class="space-y-2">
                     <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = [
-                        ['Send Money',        route('vendor.send-money'),   'M12 19l9 2-9-18-9 18 9-2zm0 0v-8'],
                         ['Wallet / Add Money',route('vendor.wallet'),       'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z'],
                         ['Transaction Report',route('vendor.transactions'), 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'],
                         ['API & Developer',   route('vendor.developer'),    'M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4'],

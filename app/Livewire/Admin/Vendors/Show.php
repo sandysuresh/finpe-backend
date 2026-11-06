@@ -9,7 +9,10 @@ use App\Models\CommissionEntry;
 use App\Models\VendorApiAccess;
 use App\Services\CommissionService;
 use App\Services\Payout\PayoutProviderRegistry;
+use App\Models\AlliancePePayout;
+use App\Support\AssignedPayoutProviders;
 use App\Support\CommissionProviders;
+use App\Support\VisibleTransactions;
 use Illuminate\Pagination\LengthAwarePaginator;
 use App\Models\Transaction;
 use App\Models\Vendor;
@@ -38,6 +41,8 @@ class Show extends Component
 
     public string $payoutProviderCode = '';
 
+    public array $assignedProviderCodes = [];
+
     public function mount(Vendor $vendor): void
     {
         $this->vendor = $vendor;
@@ -45,6 +50,7 @@ class Show extends Component
         $this->assignedBankIds = $vendor->banks()->pluck('banks.id')->map(fn ($id) => (string) $id)->all();
 
         $this->payoutProviderCode = $this->selectedPayoutProviderCode();
+        $this->assignedProviderCodes = AssignedPayoutProviders::codes($vendor);
 
         $tab = request()->query('tab');
         if (is_string($tab) && in_array($tab, ['kyc', 'profile', 'wallet', 'transactions', 'settlements', 'beneficiaries', 'developer'], true)) {
@@ -255,6 +261,18 @@ class Show extends Component
             : 'Vendor API access disabled.';
     }
 
+    public function saveAssignedProviders(): void
+    {
+        if (! Auth::guard('admin')->user()?->hasModule('vendors')) {
+            abort(403);
+        }
+
+        AssignedPayoutProviders::sync($this->vendor, $this->assignedProviderCodes, Auth::guard('admin')->id());
+        $this->vendor = $this->vendor->fresh();
+        $this->assignedProviderCodes = AssignedPayoutProviders::codes($this->vendor);
+        $this->reviewMessage = 'Payout vendor assignment saved.';
+    }
+
     public function saveAssignedBanks(): void
     {
         $ids = collect($this->assignedBankIds)->map(fn ($id) => (int) $id)->filter()->unique()->all();
@@ -295,18 +313,15 @@ class Show extends Component
         if ($ledger && $ledger->isNotEmpty()) {
             $refs = $ledger->getCollection()->pluck('reference')->filter()->unique()->values();
             if ($refs->isNotEmpty()) {
-                $payoutByReference = Transaction::query()
-                    ->where('type', 'payout')
-                    ->where('vendor_id', $vendor->id)
-                    ->whereIn('reference', $refs)
-                    ->get(['id', 'reference', 'payout_provider', 'status', 'amount'])
-                    ->keyBy('reference');
+                $payoutByReference = app(VisibleTransactions::class)->payoutsByReference((int) $vendor->id, $refs);
             }
         }
 
         $topups = $vendor->topupRequests()->latest()->paginate(10, ['*'], 'topPage');
 
-        $transactions = $vendor->transactions()->with('commissionEntry')->latest()->paginate(10, ['*'], 'txnPage');
+        $transactions = app(VisibleTransactions::class)->paginate([
+            'vendor_id' => $vendor->id,
+        ], 10, $this->getPage('txnPage'), 'txnPage');
 
         $configuredRule = app(CommissionService::class)->configuredPayoutRule((int) $vendor->id);
 
@@ -322,11 +337,12 @@ class Show extends Component
             ->limit(5)
             ->get();
 
+        $txnCounts = app(VisibleTransactions::class)->summary(['vendor_id' => $vendor->id]);
         $txnSummary = [
-            'total' => $vendor->transactions()->count(),
-            'success' => $vendor->transactions()->where('status', 'success')->count(),
-            'failed' => $vendor->transactions()->where('status', 'failed')->count(),
-            'volume' => (float) $vendor->transactions()->where('status', 'success')->sum('amount'),
+            'total' => $txnCounts['total'],
+            'success' => $txnCounts['success'],
+            'failed' => $txnCounts['failed'],
+            'volume' => $txnCounts['volume'],
         ];
 
         $settlements = $vendor->settlements()->latest()->paginate(10, ['*'], 'setPage');
@@ -341,6 +357,10 @@ class Show extends Component
         $payoutCredential = $this->payoutProviderCode !== ''
             ? ApiCredential::forVendorProvider($vendor, $this->payoutProviderCode)
             : null;
+        $assignedProviderNames = collect(AssignedPayoutProviders::codes($vendor))
+            ->map(fn (string $code) => CommissionProviders::name($code))
+            ->filter()
+            ->implode(', ');
 
         return view('livewire.admin.vendors.show', compact(
             'vendor',
@@ -360,6 +380,7 @@ class Show extends Component
             'payoutProviders',
             'selectedPayoutProvider',
             'payoutCredential',
+            'assignedProviderNames',
         ))->layout('layouts.admin', ['title' => $vendor->business_name]);
     }
 
@@ -413,6 +434,32 @@ class Show extends Component
                 'bank' => $bank !== '' ? $bank : '—',
                 'mobile' => PayoutTransactions::maskMobileStatic($txn->beneficiary_mobile),
                 'provider' => CommissionProviders::name($txn->payout_provider) ?: '—',
+                'last_at' => $txn->created_at?->format('d M Y, h:i A') ?: '—',
+                'status' => $txn->status ?: null,
+            ];
+        }
+
+        $alliance = AlliancePePayout::query()
+            ->where('vendor_id', $vendorId)
+            ->whereNotNull('account_number')
+            ->where('account_number', '!=', '')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->get(['beneficiary_name', 'account_number', 'ifsc_code', 'bank_name', 'phone', 'status', 'created_at']);
+        foreach ($alliance as $txn) {
+            $account = strtoupper(trim((string) $txn->account_number));
+            $ifsc = strtoupper(trim((string) $txn->ifsc_code));
+            $key = $account.'|'.$ifsc;
+            if ($account === '' || isset($unique[$key])) {
+                continue;
+            }
+            $unique[$key] = [
+                'name' => $txn->beneficiary_name ?: '—',
+                'account' => PayoutTransactions::maskAccountStatic($txn->account_number),
+                'ifsc' => $txn->ifsc_code ?: '—',
+                'bank' => $txn->bank_name ?: '—',
+                'mobile' => PayoutTransactions::maskMobileStatic($txn->phone),
+                'provider' => CommissionProviders::name(CommissionProviders::ALLIANCEPE),
                 'last_at' => $txn->created_at?->format('d M Y, h:i A') ?: '—',
                 'status' => $txn->status ?: null,
             ];

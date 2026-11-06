@@ -1,8 +1,10 @@
 <?php
 namespace App\Livewire\Vendor;
 
+use App\Models\AlliancePePayout;
 use App\Models\Beneficiary;
 use App\Models\Transaction;
+use App\Support\AssignedPayoutProviders;
 use App\Support\CommissionProviders;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
@@ -29,12 +31,14 @@ class Beneficiaries extends Component {
     }
 
     public function openCreate(): void {
+        AssignedPayoutProviders::assertAny((int) Auth::guard('vendor')->id());
         $this->reset(['name','accountNumber','ifscCode','bankName','mobile','email','editId']);
         $this->editMode  = false;
         $this->showModal = true;
     }
 
     public function openEdit(int $id): void {
+        AssignedPayoutProviders::assertAny((int) Auth::guard('vendor')->id());
         $b = Auth::guard('vendor')->user()->beneficiaries()->findOrFail($id);
         $this->editId        = $id;
         $this->name          = $b->name;
@@ -48,6 +52,7 @@ class Beneficiaries extends Component {
     }
 
     public function save(): void {
+        AssignedPayoutProviders::assertAny((int) Auth::guard('vendor')->id());
         $this->validate([
             'name'          => 'required|string|max:100',
             'accountNumber' => 'required|string|min:8|max:20',
@@ -74,6 +79,7 @@ class Beneficiaries extends Component {
     }
 
     public function delete(int $id): void {
+        AssignedPayoutProviders::assertAny((int) Auth::guard('vendor')->id());
         Beneficiary::where('id',$id)->where('vendor_id',Auth::guard('vendor')->id())->delete();
     }
 
@@ -105,6 +111,7 @@ class Beneficiaries extends Component {
 
     public function render() {
         $vendorId = (int) Auth::guard('vendor')->id();
+        AssignedPayoutProviders::assertAny($vendorId);
         $rows = $this->payoutBeneficiaries($vendorId);
         $page = LengthAwarePaginator::resolveCurrentPage();
         $perPage = 15;
@@ -128,9 +135,17 @@ class Beneficiaries extends Component {
             ->get()
             ->keyBy(fn (Beneficiary $row) => $this->beneficiaryKey($row->account_number, $row->ifsc_code));
 
+        $allowed = AssignedPayoutProviders::codes($vendorId);
         $transactions = Transaction::query()
             ->where('vendor_id', $vendorId)
             ->where('type', 'payout')
+            ->when(! in_array(CommissionProviders::VIMOPAY, $allowed, true), function ($query) {
+                $query->where(function ($inner) {
+                    $inner->whereNull('payout_provider')
+                        ->orWhere('payout_provider', '')
+                        ->orWhereRaw('LOWER(payout_provider) <> ?', [CommissionProviders::VIMOPAY]);
+                });
+            })
             ->whereNotNull('account_number')
             ->where('account_number', '!=', '')
             ->orderByDesc('created_at')
@@ -160,6 +175,35 @@ class Beneficiaries extends Component {
                 'mobile' => $this->maskMobile($txn->beneficiary_mobile),
                 'mobile_search' => (string) $txn->beneficiary_mobile,
                 'provider' => CommissionProviders::name($txn->payout_provider) ?: '—',
+                'last_at' => $txn->created_at?->format('d M Y, h:i A') ?: '—',
+                'status' => $txn->status ?: null,
+            ];
+        }
+
+        $alliance = in_array(CommissionProviders::ALLIANCEPE, $allowed, true)
+            ? AlliancePePayout::query()
+            ->where('vendor_id', $vendorId)
+            ->whereNotNull('account_number')
+            ->where('account_number', '!=', '')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->get(['beneficiary_name', 'account_number', 'ifsc_code', 'bank_name', 'phone', 'status', 'created_at'])
+            : collect();
+        foreach ($alliance as $txn) {
+            $key = $this->beneficiaryKey($txn->account_number, $txn->ifsc_code);
+            if ($key === '|' || isset($unique[$key])) {
+                continue;
+            }
+            $unique[$key] = [
+                'beneficiary_id' => $saved->get($key)?->id,
+                'name' => $txn->beneficiary_name ?: '—',
+                'account' => $this->maskAccount($txn->account_number),
+                'account_search' => (string) $txn->account_number,
+                'ifsc' => $txn->ifsc_code ?: '—',
+                'bank' => $txn->bank_name ?: '—',
+                'mobile' => $this->maskMobile($txn->phone),
+                'mobile_search' => (string) $txn->phone,
+                'provider' => CommissionProviders::name(CommissionProviders::ALLIANCEPE) ?: '—',
                 'last_at' => $txn->created_at?->format('d M Y, h:i A') ?: '—',
                 'status' => $txn->status ?: null,
             ];

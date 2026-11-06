@@ -10,8 +10,11 @@
             <select wire:model.live="status" class="fi-input text-sm" aria-label="Status">
                 <option value="">Status</option>
                 <option value="pending">Pending</option>
+                <option value="processing">Processing</option>
                 <option value="success">Success</option>
+                <option value="completed">Completed</option>
                 <option value="failed">Failed</option>
+                <option value="cancelled">Cancelled</option>
             </select>
             <select wire:model.live="provider" class="fi-input text-sm" aria-label="Provider">
                 <option value="">All providers</option>
@@ -27,7 +30,7 @@
         <div class="mt-4 grid grid-cols-3 gap-3 text-sm">
             <div><p class="text-xs text-slate-400">Filtered payouts</p><p class="font-bold"><?php echo e(number_format($summary['count'])); ?></p></div>
             <div><p class="text-xs text-slate-400">Amount</p><p class="font-bold">₹<?php echo e($summary['amount']); ?></p></div>
-            <div><p class="text-xs text-slate-400">Charge</p><p class="font-bold">₹<?php echo e($summary['charge']); ?></p></div>
+            <div><p class="text-xs text-slate-400">FinPe commission</p><p class="font-bold">₹<?php echo e($summary['charge']); ?></p></div>
         </div>
     </div>
 
@@ -35,30 +38,39 @@
         <table class="min-w-full">
             <thead>
                 <tr>
-                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = ['FinPe reference','Vendor','Payout Provider','Amount','Payment mode','Beneficiary bank','Account','IFSC','Provider reference','Status','Created','']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $col): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = ['FinPe reference','Vendor','Payout Provider','Amount','FinPe commission','Total wallet debit','Payment mode','Beneficiary bank','Account','IFSC','Provider reference','Status','Failure reason','Created','']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $col): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                         <th class="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wider"><?php echo e($col); ?></th>
                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
                 <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__empty_1 = true; $__currentLoopData = $transactions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $txn): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
-                    <tr class="cursor-pointer hover:bg-slate-50" wire:click="show(<?php echo e($txn->id); ?>)">
+                    <tr class="cursor-pointer hover:bg-slate-50" wire:click="show(<?php echo e($txn->id); ?>, '<?php echo e($txn->source); ?>')">
                         <td class="px-3 py-3 text-sm font-semibold text-blue-700"><?php echo e($txn->reference); ?></td>
-                        <td class="px-3 py-3 text-sm text-slate-700"><?php echo e($txn->vendor->business_name ?? '—'); ?></td>
-                        <td class="px-3 py-3 text-sm font-semibold text-slate-900"><?php echo e($txn->type === 'payout' ? (\App\Support\CommissionProviders::name($txn->payout_provider) ?: '—') : '—'); ?></td>
+                        <td class="px-3 py-3 text-sm text-slate-700"><?php echo e($txn->vendor_name ?? '—'); ?></td>
+                        <td class="px-3 py-3 text-sm font-semibold text-slate-900"><?php echo e($txn->provider_name); ?></td>
                         <td class="px-3 py-3 text-sm text-slate-900">₹<?php echo e(number_format((float) $txn->amount, 2)); ?></td>
+                        <td class="px-3 py-3 text-sm text-slate-900">₹<?php echo e(number_format((float) $txn->commission_amount, 2)); ?></td>
+                        <td class="px-3 py-3 text-sm text-slate-900">₹<?php echo e(number_format((float) $txn->total_debited, 2)); ?></td>
                         <td class="px-3 py-3 text-sm text-slate-700"><?php echo e(strtoupper((string) $txn->service)); ?></td>
-                        <td class="px-3 py-3 text-sm text-slate-700"><?php echo e($txn->beneficiary_bank_code ?: ($txn->bank_name ?: '—')); ?></td>
+                        <td class="px-3 py-3 text-sm text-slate-700"><?php echo e($txn->bank_name ?: '—'); ?></td>
                         <td class="px-3 py-3 text-sm text-slate-700"><?php echo e($this->maskAccount($txn->account_number)); ?></td>
                         <td class="px-3 py-3 text-sm text-slate-700"><?php echo e($txn->ifsc_code ?: '—'); ?></td>
                         <td class="px-3 py-3 text-sm text-slate-700"><?php echo e($txn->bank_reference ?: '—'); ?></td>
                         <td class="px-3 py-3"><span class="inline-flex rounded-full px-2.5 py-1 text-xs font-bold ring-1 ring-inset <?php echo e($this->statusBadgeClass($txn->status)); ?>"><?php echo e(ucfirst((string) $txn->status)); ?></span></td>
+                        <td class="px-3 py-3 text-xs text-slate-600"><?php echo e($txn->failure_reason ?: '—'); ?></td>
                         <td class="px-3 py-3 text-xs text-slate-600"><?php echo e($txn->created_at?->format('d M Y, h:i A')); ?></td>
-                        <td class="px-3 py-3"><?php echo $__env->make('livewire.admin.partials.txn-actions', ['id' => $txn->id, 'reference' => $txn->reference, 'type' => $txn->type, 'livewire' => true], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?></td>
+                        <td class="px-3 py-3">
+                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($txn->source === 'transaction'): ?>
+                                <?php echo $__env->make('livewire.admin.partials.txn-actions', ['id' => $txn->id, 'reference' => $txn->reference, 'type' => 'payout', 'source' => $txn->source ?? 'transaction', 'livewire' => true], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+                            <?php else: ?>
+                                <button type="button" wire:click.stop="show(<?php echo e($txn->id); ?>, 'alliancepe')" class="fi-btn fi-btn-sm fi-btn-primary" style="width:auto; height:28px; padding:0 8px; font-size:11px;">View</button>
+                            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                        </td>
                     </tr>
                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                     <tr>
-                        <td colspan="12" class="px-5 py-16 text-center text-sm text-slate-500">No payout transactions yet.</td>
+                        <td colspan="15" class="px-5 py-16 text-center text-sm text-slate-500">No payout transactions yet.</td>
                     </tr>
                 <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
             </tbody>
@@ -73,7 +85,7 @@
     <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($detail): ?>
         <?php
             $charge = (float) $detail->payout_charge;
-            $total = round((float) $detail->amount + $charge, 2);
+            $total = (float) $detail->total_debited;
             $bank = trim(($detail->bank_name ?: '').($detail->bank_name && $detail->beneficiary_bank_code ? ' · ' : '').($detail->beneficiary_bank_code ?: ''));
         ?>
         <div class="fixed inset-0 flex items-center justify-center overflow-hidden bg-slate-950/55 px-3 sm:px-6" style="z-index: 100; padding-top: 4.75rem; padding-bottom: 1rem;" wire:click.self="$set('detailId', null)" wire:key="payout-detail-<?php echo e($detail->id); ?>">
@@ -118,9 +130,11 @@
                                 <p class="mt-0.5 text-sm font-semibold"><?php echo e($detail->created_at?->format('d M Y, h:i A') ?: '—'); ?></p>
                             </div>
                         </div>
+                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(($detail->source ?? 'transaction') === 'transaction'): ?>
                         <a href="<?php echo e(route('admin.payout-transactions.receipt', $detail->reference)); ?>" class="fi-btn fi-btn-sm fi-btn-primary" style="width:auto; align-self:flex-start; height:30px; padding:0 10px; font-size:12px; text-decoration:none;">
                             Download Receipt
                         </a>
+                        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                     </div>
                 </div>
 
@@ -131,11 +145,11 @@
                             <p class="mt-1 text-xl font-bold tracking-tight text-slate-900">₹<?php echo e(number_format((float) $detail->amount, 2)); ?></p>
                         </div>
                         <div class="px-2 py-2 lg:border-l lg:border-slate-100">
-                            <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Commission / charge</p>
+                            <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">FinPe commission</p>
                             <p class="mt-1 text-xl font-bold tracking-tight text-slate-900">₹<?php echo e(number_format($charge, 2)); ?></p>
                         </div>
                         <div class="rounded-xl bg-blue-50 px-3 py-2">
-                            <p class="text-[11px] font-semibold uppercase tracking-wider text-blue-700">Total debited</p>
+                            <p class="text-[11px] font-semibold uppercase tracking-wider text-blue-700">Total wallet debit</p>
                             <p class="mt-1 text-xl font-bold tracking-tight text-blue-900">₹<?php echo e(number_format($total, 2)); ?></p>
                         </div>
                         <div class="px-2 py-2 lg:border-l lg:border-slate-100">
@@ -153,14 +167,18 @@
                             <dl class="divide-y divide-slate-100">
                                 <div class="grid grid-cols-1 sm:grid-cols-2 sm:divide-x sm:divide-slate-100">
                                     <div class="px-4 py-3"><dt class="text-[11px] font-medium uppercase tracking-wider text-slate-500">Name</dt><dd class="mt-1 text-sm font-bold text-slate-900"><?php echo e($detail->beneficiary_name ?: '—'); ?></dd></div>
-                                    <div class="border-t border-slate-100 px-4 py-3 sm:border-t-0" x-data="{ open: false }">
+                                    <div class="border-t border-slate-100 px-4 py-3 sm:border-t-0"
+                                         x-data="{ value: <?php echo \Illuminate\Support\Js::from($this->maskAccount($detail->account_number))->toHtml() ?>, masked: <?php echo \Illuminate\Support\Js::from($this->maskAccount($detail->account_number))->toHtml() ?>, open: false }"
+                                         x-on:payout-sensitive-revealed.window="if ($event.detail.source === <?php echo \Illuminate\Support\Js::from($detail->source ?? 'transaction')->toHtml() ?> && Number($event.detail.id) === <?php echo e((int) $detail->id); ?> && $event.detail.field === 'account') { value = $event.detail.value; open = true }">
                                         <dt class="text-[11px] font-medium uppercase tracking-wider text-slate-500">Account</dt>
                                         <dd class="mt-1 flex items-center gap-1.5 font-mono text-sm font-bold tracking-wide text-slate-900">
-                                            <span x-text="open ? <?php echo \Illuminate\Support\Js::from($detail->account_number ?: '—')->toHtml() ?> : <?php echo \Illuminate\Support\Js::from($this->maskAccount($detail->account_number))->toHtml() ?>"><?php echo e($this->maskAccount($detail->account_number)); ?></span>
+                                            <span x-text="value"><?php echo e($this->maskAccount($detail->account_number)); ?></span>
                                             <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($detail->account_number): ?>
-                                                <button type="button" class="rounded p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700" @click="open = !open" :aria-label="open ? 'Hide account' : 'Show account'">
-                                                    <svg x-show="!open" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
-                                                    <svg x-show="open" x-cloak class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 10.6A3 3 0 0 0 12 15a3 3 0 0 0 2.4-4.4M9.9 5.2A10.8 10.8 0 0 1 12 5c6.5 0 10 7 10 7a18.2 18.2 0 0 1-3.2 4.2M6.1 6.1C3.6 7.8 2 12 2 12a18.4 18.4 0 0 0 4.2 5"/></svg>
+                                                <button type="button" class="rounded p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700" x-show="!open" wire:click="revealSensitive('account')" aria-label="Show account">
+                                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+                                                </button>
+                                                <button type="button" class="rounded p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700" x-show="open" x-cloak @click="value = masked; open = false" aria-label="Hide account">
+                                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 10.6A3 3 0 0 0 12 15a3 3 0 0 0 2.4-4.4M9.9 5.2A10.8 10.8 0 0 1 12 5c6.5 0 10 7 10 7a18.2 18.2 0 0 1-3.2 4.2M6.1 6.1C3.6 7.8 2 12 2 12a18.4 18.4 0 0 0 4.2 5"/></svg>
                                                 </button>
                                             <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                         </dd>
@@ -171,14 +189,18 @@
                                     <div class="border-t border-slate-100 px-4 py-3 sm:border-t-0"><dt class="text-[11px] font-medium uppercase tracking-wider text-slate-500">Bank</dt><dd class="mt-1 text-sm font-bold text-slate-900"><?php echo e($bank !== '' ? $bank : '—'); ?></dd></div>
                                 </div>
                                 <div class="grid grid-cols-1 sm:grid-cols-2 sm:divide-x sm:divide-slate-100">
-                                    <div class="px-4 py-3" x-data="{ open: false }">
+                                    <div class="px-4 py-3"
+                                         x-data="{ value: <?php echo \Illuminate\Support\Js::from($this->maskMobile($detail->beneficiary_mobile ?? $detail->mobile ?? null))->toHtml() ?>, masked: <?php echo \Illuminate\Support\Js::from($this->maskMobile($detail->beneficiary_mobile ?? $detail->mobile ?? null))->toHtml() ?>, open: false }"
+                                         x-on:payout-sensitive-revealed.window="if ($event.detail.source === <?php echo \Illuminate\Support\Js::from($detail->source ?? 'transaction')->toHtml() ?> && Number($event.detail.id) === <?php echo e((int) $detail->id); ?> && $event.detail.field === 'mobile') { value = $event.detail.value; open = true }">
                                         <dt class="text-[11px] font-medium uppercase tracking-wider text-slate-500">Mobile</dt>
                                         <dd class="mt-1 flex items-center gap-1.5 font-mono text-sm font-bold tracking-wide text-slate-900">
-                                            <span x-text="open ? <?php echo \Illuminate\Support\Js::from($detail->beneficiary_mobile ?: '—')->toHtml() ?> : <?php echo \Illuminate\Support\Js::from($this->maskMobile($detail->beneficiary_mobile))->toHtml() ?>"><?php echo e($this->maskMobile($detail->beneficiary_mobile)); ?></span>
-                                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($detail->beneficiary_mobile): ?>
-                                                <button type="button" class="rounded p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700" @click="open = !open" :aria-label="open ? 'Hide mobile' : 'Show mobile'">
-                                                    <svg x-show="!open" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
-                                                    <svg x-show="open" x-cloak class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 10.6A3 3 0 0 0 12 15a3 3 0 0 0 2.4-4.4M9.9 5.2A10.8 10.8 0 0 1 12 5c6.5 0 10 7 10 7a18.2 18.2 0 0 1-3.2 4.2M6.1 6.1C3.6 7.8 2 12 2 12a18.4 18.4 0 0 0 4.2 5"/></svg>
+                                            <span x-text="value"><?php echo e($this->maskMobile($detail->beneficiary_mobile ?? $detail->mobile ?? null)); ?></span>
+                                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($detail->beneficiary_mobile ?? $detail->mobile ?? null): ?>
+                                                <button type="button" class="rounded p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700" x-show="!open" wire:click="revealSensitive('mobile')" aria-label="Show mobile">
+                                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+                                                </button>
+                                                <button type="button" class="rounded p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700" x-show="open" x-cloak @click="value = masked; open = false" aria-label="Hide mobile">
+                                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 10.6A3 3 0 0 0 12 15a3 3 0 0 0 2.4-4.4M9.9 5.2A10.8 10.8 0 0 1 12 5c6.5 0 10 7 10 7a18.2 18.2 0 0 1-3.2 4.2M6.1 6.1C3.6 7.8 2 12 2 12a18.4 18.4 0 0 0 4.2 5"/></svg>
                                                 </button>
                                             <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                         </dd>
@@ -258,9 +280,11 @@
 
                 <div class="flex shrink-0 items-center justify-between gap-3 border-t border-slate-200 bg-white px-5 py-3.5 sm:px-6">
                     <button type="button" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" wire:click="$set('detailId', null)">Close</button>
+                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(($detail->source ?? 'transaction') === 'transaction'): ?>
                     <a href="<?php echo e(route('admin.payout-transactions.receipt', $detail->reference)); ?>" class="fi-btn fi-btn-sm fi-btn-primary" style="width:auto; height:30px; padding:0 10px; font-size:12px; text-decoration:none;">
                         Download Receipt
                     </a>
+                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                 </div>
             </div>
         </div>

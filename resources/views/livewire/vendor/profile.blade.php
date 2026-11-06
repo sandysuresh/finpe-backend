@@ -6,7 +6,7 @@
     </div>
 
     {{-- ── TABS ── --}}
-    <div class="mb-6 flex gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1">
+    <div class="mb-6 flex flex-wrap gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1">
         @foreach(['profile' => 'Profile', 'password' => 'Password', 'kyc' => 'KYC & Registration'] as $t => $label)
             <button wire:click="$set('tab','{{ $t }}')"
                     class="flex-1 rounded-lg py-2.5 text-sm font-semibold transition
@@ -14,6 +14,7 @@
                 {{ $label }}
             </button>
         @endforeach
+        <a href="{{ route('vendor.logo') }}" class="flex-1 rounded-lg py-2.5 text-center text-sm font-semibold text-slate-500 hover:text-slate-700">Upload Logo</a>
     </div>
 
     {{-- ── ALERTS ── --}}

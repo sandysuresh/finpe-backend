@@ -9,8 +9,16 @@ use Illuminate\Database\Eloquent\Builder;
 
 class RecordedCommission
 {
-    public static function amount(Transaction $transaction): ?float
+    public static function amount(object $transaction): ?float
     {
+        if (! $transaction instanceof Transaction) {
+            if (($transaction->source ?? '') !== 'alliancepe') {
+                return null;
+            }
+
+            return isset($transaction->recorded_commission) ? round((float) $transaction->recorded_commission, 2) : null;
+        }
+
         $entry = $transaction->relationLoaded('commissionEntry')
             ? $transaction->getRelation('commissionEntry')
             : $transaction->commissionEntry()->where('vendor_id', $transaction->vendor_id)->first();

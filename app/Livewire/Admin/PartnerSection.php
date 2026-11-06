@@ -5,9 +5,9 @@ namespace App\Livewire\Admin;
 use App\Models\CommissionEntry;
 use App\Models\CommissionRule;
 use App\Models\Settlement;
-use App\Models\Transaction;
 use App\Models\Vendor;
 use App\Services\CommissionService;
+use App\Support\VisibleTransactions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
@@ -86,14 +86,9 @@ class PartnerSection extends Component
                     });
                 })
                 ->latest()->paginate(15),
-            'transactions' => Transaction::query()->with(['vendor', 'commissionEntry'])
-                ->when($this->search !== '', function ($q) use ($term) {
-                    $q->where(function ($inner) use ($term) {
-                        $inner->where('reference', 'like', $term)
-                            ->orWhereHas('vendor', fn ($vendor) => $vendor->where('business_name', 'like', $term));
-                    });
-                })
-                ->latest()->paginate(15),
+            'transactions' => app(VisibleTransactions::class)->paginate([
+                'search' => $this->search,
+            ], 15, $this->getPage()),
             'settlement' => Settlement::query()->with('vendor')
                 ->when($this->search !== '', function ($q) use ($term) {
                     $q->where(function ($inner) use ($term) {

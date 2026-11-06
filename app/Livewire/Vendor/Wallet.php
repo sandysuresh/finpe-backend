@@ -1,10 +1,11 @@
 <?php
 namespace App\Livewire\Vendor;
 
-use App\Models\Transaction;
 use App\Models\VendorBankAccount;
 use App\Models\WalletTopupRequest;
 use App\Support\AdminNotify;
+use App\Support\AssignedPayoutProviders;
+use App\Support\VisibleTransactions;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Livewire\Component;
@@ -132,7 +133,9 @@ class Wallet extends Component
         // Ledger
         $ledger = null;
         if ($wallet) {
-            $q = $wallet->ledger()->latest();
+            $q = $wallet->ledger();
+            AssignedPayoutProviders::restrictLedger($q, $vendor);
+            $q->latest();
             if ($this->filterType) $q->where('type', $this->filterType);
             if ($this->filterFrom) $q->whereDate('created_at', '>=', $this->filterFrom);
             if ($this->filterTo)   $q->whereDate('created_at', '<=', $this->filterTo);
@@ -143,12 +146,7 @@ class Wallet extends Component
         if ($ledger && $ledger->isNotEmpty()) {
             $refs = $ledger->getCollection()->pluck('reference')->filter()->unique()->values();
             if ($refs->isNotEmpty()) {
-                $payoutByReference = Transaction::query()
-                    ->where('type', 'payout')
-                    ->where('vendor_id', $vendor->id)
-                    ->whereIn('reference', $refs)
-                    ->get(['id', 'reference', 'payout_provider', 'status', 'amount'])
-                    ->keyBy('reference');
+                $payoutByReference = app(VisibleTransactions::class)->payoutsByReference((int) $vendor->id, $refs, AssignedPayoutProviders::codes($vendor));
             }
         }
 

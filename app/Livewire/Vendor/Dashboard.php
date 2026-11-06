@@ -2,7 +2,10 @@
 
 namespace App\Livewire\Vendor;
 
-use App\Models\Transaction;
+use App\Models\AlliancePePayout;
+use App\Support\AssignedPayoutProviders;
+use App\Support\CommissionProviders;
+use App\Support\VisibleTransactions;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
@@ -74,13 +77,19 @@ class Dashboard extends Component
     private function loadTodayStats($vendor): void
     {
         $base = $vendor->transactions()->whereDate('created_at', today());
+        AssignedPayoutProviders::excludeUnassignedTransactions($base, $vendor);
+        $alliance = AssignedPayoutProviders::allows($vendor, CommissionProviders::ALLIANCEPE)
+            ? AlliancePePayout::query()->where('vendor_id', $vendor->id)->whereDate('created_at', today())
+            : null;
 
-        $this->todayTotal   = (clone $base)->count();
-        $this->todaySuccess = (clone $base)->where('status', 'success')->count();
-        $this->todayFailed  = (clone $base)->where('status', 'failed')->count();
-        $this->todayPending = (clone $base)->where('status', 'pending')->count();
+        $this->todayTotal   = (clone $base)->count() + ($alliance ? (clone $alliance)->count() : 0);
+        $this->todaySuccess = (clone $base)->where('status', 'success')->count() + ($alliance ? (clone $alliance)->where('status', 'completed')->count() : 0);
+        $this->todayFailed  = (clone $base)->where('status', 'failed')->count() + ($alliance ? (clone $alliance)->where('status', 'failed')->count() : 0);
+        $this->todayPending = (clone $base)->where('status', 'pending')->count() + ($alliance ? (clone $alliance)->whereIn('status', ['pending', 'processing'])->count() : 0);
         $this->todayVolume  = number_format(
-            (float) (clone $base)->where('status', 'success')->sum('amount'), 2
+            (float) (clone $base)->where('status', 'success')->sum('amount')
+            + ($alliance ? (float) (clone $alliance)->where('status', 'completed')->sum('amount') : 0),
+            2
         );
     }
 
@@ -90,15 +99,24 @@ class Dashboard extends Component
         $base = $vendor->transactions()
             ->whereMonth('created_at', now()->month)
             ->whereYear('created_at',  now()->year);
+        AssignedPayoutProviders::excludeUnassignedTransactions($base, $vendor);
+        $alliance = AssignedPayoutProviders::allows($vendor, CommissionProviders::ALLIANCEPE)
+            ? AlliancePePayout::query()
+                ->where('vendor_id', $vendor->id)
+                ->whereMonth('created_at', now()->month)
+                ->whereYear('created_at', now()->year)
+            : null;
 
-        $this->monthTotal  = (clone $base)->count();
+        $this->monthTotal  = (clone $base)->count() + ($alliance ? (clone $alliance)->count() : 0);
         $this->monthVolume = number_format(
-            (float) (clone $base)->where('status', 'success')->sum('amount'), 2
+            (float) (clone $base)->where('status', 'success')->sum('amount')
+            + ($alliance ? (float) (clone $alliance)->where('status', 'completed')->sum('amount') : 0),
+            2
         );
 
-        $success = (clone $base)->where('status', 'success')->count();
-        $failed  = (clone $base)->where('status', 'failed')->count();
-        $pending = (clone $base)->where('status', 'pending')->count();
+        $success = (clone $base)->where('status', 'success')->count() + ($alliance ? (clone $alliance)->where('status', 'completed')->count() : 0);
+        $failed  = (clone $base)->where('status', 'failed')->count() + ($alliance ? (clone $alliance)->where('status', 'failed')->count() : 0);
+        $pending = (clone $base)->where('status', 'pending')->count() + ($alliance ? (clone $alliance)->whereIn('status', ['pending', 'processing'])->count() : 0);
 
         $total = max($this->monthTotal, 1);
         $this->successRate = number_format($success / $total * 100, 1);
@@ -109,20 +127,21 @@ class Dashboard extends Component
     // ── Recent Transactions ───────────────────────────────────────────────────
     private function loadRecentTransactions($vendor): void
     {
-        $this->recentTransactions = $vendor->transactions()
-            ->with(['commissionEntry' => fn ($query) => $query->where('vendor_id', $vendor->id)])
-            ->latest()
-            ->limit(8)
-            ->get()
+        $this->recentTransactions = app(VisibleTransactions::class)
+            ->recent([
+                'vendor_id' => $vendor->id,
+                'allowed_providers' => AssignedPayoutProviders::codes($vendor),
+            ], 8)
             ->map(fn ($tx) => [
                 'id'               => $tx->id,
+                'source'           => $tx->source ?? 'transaction',
                 'reference'        => $tx->reference,
                 'raw_type'         => $tx->type,
                 'beneficiary_name' => $tx->beneficiary_name ?? '—',
                 'amount'           => number_format((float) $tx->amount, 2),
-                'commission'       => ($recorded = \App\Support\RecordedCommission::amount($tx)) === null ? null : number_format($recorded, 2),
+                'commission'       => ($tx->type ?? null) === 'payout' ? number_format((float) ($tx->payout_charge ?? 0), 2) : null,
                 'type'             => ucfirst($tx->type),
-                'service'          => strtoupper($tx->service),
+                'service'          => strtoupper((string) $tx->service),
                 'status'           => $tx->status,
                 'date'             => $tx->created_at->format('d M, h:i A'),
             ])
@@ -141,13 +160,31 @@ class Dashboard extends Component
         $start = now()->subDays(6)->startOfDay();
         $end = now()->endOfDay();
         $rows = $vendor->transactions()
-            ->whereBetween('created_at', [$start, $end])
-            ->get(['created_at', 'status']);
+            ->whereBetween('created_at', [$start, $end]);
+        AssignedPayoutProviders::excludeUnassignedTransactions($rows, $vendor);
+        $rows = $rows->get(['created_at', 'status']);
+        $allianceRows = AssignedPayoutProviders::allows($vendor, CommissionProviders::ALLIANCEPE)
+            ? AlliancePePayout::query()
+                ->where('vendor_id', $vendor->id)
+                ->whereBetween('created_at', [$start, $end])
+                ->get(['created_at', 'status'])
+            : collect();
 
         $grouped = [];
         foreach ($rows as $row) {
             $day = $row->created_at->format('Y-m-d');
             $status = (string) $row->status;
+            $grouped[$day][$status] = ($grouped[$day][$status] ?? 0) + 1;
+        }
+        foreach ($allianceRows as $row) {
+            $day = $row->created_at->format('Y-m-d');
+            $status = match ((string) $row->status) {
+                'completed' => 'success',
+                'processing' => 'pending',
+                'failed' => 'failed',
+                'pending' => 'pending',
+                default => 'other',
+            };
             $grouped[$day][$status] = ($grouped[$day][$status] ?? 0) + 1;
         }
 
@@ -180,7 +217,7 @@ class Dashboard extends Component
             'to' => $end->format('d M Y, h:i A'),
             'max' => $max,
             'days' => $days,
-            'count' => $rows->count(),
+            'count' => $rows->count() + $allianceRows->count(),
         ];
     }
 }

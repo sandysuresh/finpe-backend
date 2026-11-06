@@ -39,6 +39,7 @@
                         <option value="pending">Pending</option>
                         <option value="success">Success</option>
                         <option value="failed">Failed</option>
+                        <option value="reversed">Reversed</option>
                     </select>
                 @else
                     <select wire:model.live="ledgerType" class="fi-input text-sm" aria-label="Ledger type">
@@ -66,14 +67,14 @@
                 <table class="min-w-full">
                     <thead>
                         <tr>
-                            @foreach(['Date / time','FinPe reference','Merchant reference','Provider reference','RRN','Payout provider','Amount','Charge','Commission','Total debited','Beneficiary','Status',''] as $col)
+                            @foreach(['Date / time','FinPe reference','Merchant reference','Provider reference','RRN','Payout provider','Amount','FinPe commission','Total wallet debit','Beneficiary','Status',''] as $col)
                                 <th class="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">{{ $col }}</th>
                             @endforeach
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
                         @forelse($transactions as $txn)
-                            <tr class="cursor-pointer hover:bg-slate-50" wire:click="show({{ $txn->id }})">
+                            <tr class="cursor-pointer hover:bg-slate-50" wire:click="show({{ (int) $txn->id }}, '{{ $txn->source ?? 'transaction' }}')">
                                 <td class="px-3 py-3 text-xs text-slate-600">{{ $txn->created_at?->format('d M Y, h:i A') }}</td>
                                 <td class="px-3 py-3 text-sm font-semibold text-violet-700">{{ $txn->reference }}</td>
                                 <td class="px-3 py-3 text-sm text-slate-700">{{ $txn->merchant_ref ?: '—' }}</td>
@@ -82,18 +83,14 @@
                                 <td class="px-3 py-3 text-sm font-semibold text-slate-900">{{ $this->providerName($txn->payout_provider) }}</td>
                                 <td class="px-3 py-3 text-sm text-slate-900">₹{{ number_format((float) $txn->amount, 2) }}</td>
                                 <td class="px-3 py-3 text-sm text-slate-900">₹{{ number_format((float) $txn->payout_charge, 2) }}</td>
-                                <td class="px-3 py-3 text-sm text-slate-900">
-                                    @php $commission = \App\Support\RecordedCommission::amount($txn); @endphp
-                                    {{ $commission === null ? '—' : '₹'.number_format($commission, 2) }}
-                                </td>
-                                <td class="px-3 py-3 text-sm font-semibold text-slate-900">₹{{ number_format((float) $txn->amount + (float) $txn->payout_charge, 2) }}</td>
+                                <td class="px-3 py-3 text-sm font-semibold text-slate-900">₹{{ number_format((float) ($txn->total_debited ?? ((float) $txn->amount + (float) $txn->payout_charge)), 2) }}</td>
                                 <td class="px-3 py-3 text-sm text-slate-700">{{ $txn->beneficiary_name ?: '—' }} · {{ $this->maskAccount($txn->account_number) }}</td>
                                 <td class="px-3 py-3"><span class="inline-flex rounded-full px-2.5 py-1 text-xs font-bold ring-1 ring-inset {{ $this->statusBadgeClass($txn->status) }}">{{ ucfirst((string) $txn->status) }}</span></td>
-                                <td class="px-3 py-3">@include('livewire.vendor.partials.txn-actions', ['id' => $txn->id, 'reference' => $txn->reference, 'type' => $txn->type, 'livewire' => true])</td>
+                                <td class="px-3 py-3">@include('livewire.vendor.partials.txn-actions', ['id' => $txn->id, 'reference' => $txn->reference, 'type' => $txn->type, 'source' => $txn->source ?? 'transaction', 'livewire' => true])</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="13" class="px-5 py-16 text-center text-sm text-slate-500">No payout transactions yet.</td>
+                                <td colspan="12" class="px-5 py-16 text-center text-sm text-slate-500">No payout transactions yet.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -107,7 +104,7 @@
                 <table class="min-w-full">
                     <thead>
                         <tr>
-                            @foreach(['Date / time','Type','Wallet amount','Opening balance','Closing balance','Payout amount','Charge','FinPe reference','Payout provider','Status',''] as $col)
+                            @foreach(['Date / time','Type','Wallet amount','Opening balance','Closing balance','Payout amount','FinPe commission','FinPe reference','Payout provider','Status',''] as $col)
                                 <th class="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">{{ $col }}</th>
                             @endforeach
                         </tr>
@@ -132,7 +129,7 @@
                                         <span class="text-sm text-slate-400">—</span>
                                     @endif
                                 </td>
-                                <td class="px-3 py-3">@include('livewire.vendor.partials.txn-actions', ['id' => $payout?->id, 'reference' => $payout?->reference, 'type' => $payout ? 'payout' : null, 'livewire' => true])</td>
+                                <td class="px-3 py-3">@include('livewire.vendor.partials.txn-actions', ['id' => $payout?->id, 'reference' => $payout?->reference, 'type' => $payout ? 'payout' : null, 'source' => $payout->source ?? 'transaction', 'livewire' => true])</td>
                             </tr>
                         @empty
                             <tr>
@@ -154,7 +151,7 @@
     @if($enabled && $detail)
         @php
             $charge = (float) $detail->payout_charge;
-            $total = round((float) $detail->amount + $charge, 2);
+            $total = (float) ($detail->total_debited ?? round((float) $detail->amount + $charge, 2));
             $bank = trim(($detail->bank_name ?: '').($detail->bank_name && $detail->beneficiary_bank_code ? ' · ' : '').($detail->beneficiary_bank_code ?: ''));
         @endphp
         <div class="fixed inset-0 flex items-center justify-center overflow-hidden bg-slate-950/55 px-3 sm:px-6" style="z-index: 100; padding-top: 4.75rem; padding-bottom: 1rem;" wire:click.self="closeDetail" wire:key="vendor-payout-detail-{{ $detail->id }}">
@@ -192,16 +189,18 @@
                                 <p class="mt-0.5 text-sm font-semibold">{{ $detail->created_at?->format('d M Y, h:i A') ?: '—' }}</p>
                             </div>
                         </div>
+                        @if(($detail->source ?? 'transaction') !== 'alliancepe')
                         <a href="{{ route('vendor.payout-transactions.receipt', $detail->reference) }}" class="fi-btn fi-btn-sm fi-btn-primary" style="width:auto; align-self:flex-start; height:30px; padding:0 10px; font-size:12px; text-decoration:none;">
                             Download Receipt
                         </a>
+                        @endif
                     </div>
                 </div>
                 <div class="min-h-0 flex-1 overflow-y-auto bg-slate-50 px-5 py-5 sm:px-6">
                     <div class="grid grid-cols-2 gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm lg:grid-cols-4">
                         <div class="px-2 py-2"><p class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Payout amount</p><p class="mt-1 text-xl font-bold text-slate-900">₹{{ number_format((float) $detail->amount, 2) }}</p></div>
-                        <div class="px-2 py-2"><p class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Commission / charge</p><p class="mt-1 text-xl font-bold text-slate-900">₹{{ number_format($charge, 2) }}</p></div>
-                        <div class="rounded-xl bg-violet-50 px-3 py-2"><p class="text-[11px] font-semibold uppercase tracking-wider text-violet-700">Total debited</p><p class="mt-1 text-xl font-bold text-violet-950">₹{{ number_format($total, 2) }}</p></div>
+                        <div class="px-2 py-2"><p class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">FinPe commission</p><p class="mt-1 text-xl font-bold text-slate-900">₹{{ number_format($charge, 2) }}</p></div>
+                        <div class="rounded-xl bg-violet-50 px-3 py-2"><p class="text-[11px] font-semibold uppercase tracking-wider text-violet-700">Total wallet debit</p><p class="mt-1 text-xl font-bold text-violet-950">₹{{ number_format($total, 2) }}</p></div>
                         <div class="px-2 py-2"><p class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Status</p><p class="mt-2"><span class="inline-flex rounded-full px-2.5 py-1 text-xs font-bold ring-1 ring-inset {{ $this->statusBadgeClass($detail->status) }}">{{ ucfirst((string) $detail->status) }}</span></p></div>
                     </div>
                     <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -235,9 +234,11 @@
                 </div>
                 <div class="flex shrink-0 items-center justify-between gap-3 border-t border-slate-200 bg-white px-5 py-3.5 sm:px-6">
                     <button type="button" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" wire:click="closeDetail">Close</button>
+                    @if(($detail->source ?? 'transaction') !== 'alliancepe')
                     <a href="{{ route('vendor.payout-transactions.receipt', $detail->reference) }}" class="fi-btn fi-btn-sm fi-btn-primary" style="width:auto; height:30px; padding:0 10px; font-size:12px; text-decoration:none;">
                         Download Receipt
                     </a>
+                    @endif
                 </div>
             </div>
         </div>

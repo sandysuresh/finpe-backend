@@ -180,7 +180,7 @@
                                 <td class="whitespace-nowrap px-5 py-4 text-xs font-semibold text-slate-900">
                                     ₹{{ number_format((float)$entry->balance_after,2) }}
                                 </td>
-                                <td class="whitespace-nowrap px-5 py-4">@include('livewire.vendor.partials.txn-actions', ['id' => $payout?->id, 'reference' => $payout?->reference, 'type' => $payout ? 'payout' : null])</td>
+                                <td class="whitespace-nowrap px-5 py-4">@include('livewire.vendor.partials.txn-actions', ['id' => $payout?->id, 'reference' => $payout?->reference, 'type' => $payout ? 'payout' : null, 'source' => $payout->source ?? 'transaction'])</td>
                             </tr>
                         @endforeach
                     </tbody>

@@ -2,11 +2,13 @@
 
 namespace App\Livewire\Vendor;
 
+use App\Models\AlliancePePayout;
 use App\Models\Transaction;
 use App\Models\WalletLedger;
-use App\Services\Payout\PayoutProviderRegistry;
-use App\Support\RecordedCommission;
+use App\Support\AssignedPayoutProviders;
+use App\Support\CommissionProviders;
 use App\Support\SimpleXlsx;
+use App\Support\VisibleTransactions;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
@@ -77,11 +79,11 @@ class Reports extends Component
         $vendorId = $this->vendorId();
         $summary = $this->summary($vendorId);
         $ledger = $this->ledgerQuery($vendorId)->orderBy('created_at')->orderBy('id')->get();
-        $transactions = $this->transactionQuery($vendorId)->with($this->commissionWith($vendorId))->latest()->get();
-        $linked = $this->transactionsForLedger($vendorId, $ledger->pluck('reference'));
+        $transactions = app(VisibleTransactions::class)->collect($this->filters($vendorId));
+        $linked = app(VisibleTransactions::class)->payoutsByReference($vendorId, $ledger->pluck('reference'));
 
         $summaryRows = [
-            ['Opening balance', 'Credit', 'Debit', 'Closing balance', 'Transactions', 'Transaction amount', 'Charge', 'Recorded commission'],
+            ['Opening balance', 'Credit', 'Debit', 'Closing balance', 'Transactions', 'Transaction amount', 'FinPe commission'],
             [
                 $summary['opening'],
                 $summary['credit'],
@@ -90,13 +92,12 @@ class Reports extends Component
                 $summary['transactions'],
                 $summary['payout_amount'],
                 $summary['payout_charge'],
-                $summary['commission'],
             ],
         ];
 
         $ledgerRows = [[
             'Date', 'Reference', 'Description', 'Type', 'Amount',
-            'Balance before', 'Balance after', 'Payout amount', 'Payout charge', 'Payout status', 'Payout provider',
+            'Balance before', 'Balance after', 'Payout amount', 'FinPe commission', 'Payout status', 'Payout provider',
         ]];
         foreach ($ledger as $line) {
             $txn = $linked->get($line->reference);
@@ -117,11 +118,9 @@ class Reports extends Component
 
         $transactionRows = [[
             'Date', 'FinPe reference', 'Merchant reference', 'Type', 'Service', 'Status',
-            'Amount', 'Charge', 'Commission', 'Beneficiary', 'Provider', 'Provider reference', 'RRN',
+            'Amount', 'FinPe commission', 'Total wallet debit', 'Beneficiary', 'Provider', 'Provider reference', 'RRN', 'Failure reason',
         ]];
-        $providers = app(PayoutProviderRegistry::class);
         foreach ($transactions as $txn) {
-            $commission = RecordedCommission::amount($txn);
             $transactionRows[] = [
                 $txn->created_at?->format('Y-m-d H:i:s'),
                 $txn->reference,
@@ -130,12 +129,13 @@ class Reports extends Component
                 $txn->service,
                 $txn->status,
                 (float) $txn->amount,
-                (float) $txn->payout_charge,
-                $commission === null ? '' : $commission,
+                (float) ($txn->payout_charge ?? 0),
+                (float) ($txn->total_debited ?? $txn->amount),
                 $txn->beneficiary_name,
-                $providers->displayName($txn->payout_provider),
+                CommissionProviders::name($txn->payout_provider),
                 $txn->bank_reference,
                 $txn->rrn,
+                $txn->failure_reason,
             ];
         }
 
@@ -151,21 +151,28 @@ class Reports extends Component
     public function render()
     {
         $vendorId = $this->vendorId();
+        $feed = app(VisibleTransactions::class);
         $ledger = $this->ledgerQuery($vendorId)->latest()->paginate(15, pageName: 'ledgerPage');
-        $transactions = $this->transactionQuery($vendorId)->with($this->commissionWith($vendorId))->latest()->paginate(15, pageName: 'txnPage');
+        $transactions = $feed->paginate($this->filters($vendorId), 15, $this->getPage('txnPage'), 'txnPage');
+        $types = Transaction::query()
+            ->where('vendor_id', $vendorId)
+            ->whereNotNull('type')
+            ->distinct()
+            ->orderBy('type')
+            ->pluck('type');
+        if (AssignedPayoutProviders::allows($vendorId, CommissionProviders::ALLIANCEPE)
+            && AlliancePePayout::query()->where('vendor_id', $vendorId)->exists()
+            && ! $types->contains('payout')) {
+            $types->push('payout');
+        }
 
         return view('livewire.vendor.reports', [
             'summary' => $this->summary($vendorId),
             'ledger' => $ledger,
-            'payouts' => $this->transactionsForLedger($vendorId, $ledger->getCollection()->pluck('reference')),
+            'payouts' => $feed->payoutsByReference($vendorId, $ledger->getCollection()->pluck('reference'), AssignedPayoutProviders::codes($vendorId)),
             'transactions' => $transactions,
-            'providers' => $this->providerOptions($vendorId),
-            'txnTypes' => Transaction::query()
-                ->where('vendor_id', $vendorId)
-                ->whereNotNull('type')
-                ->distinct()
-                ->orderBy('type')
-                ->pluck('type'),
+            'providers' => $feed->providers($vendorId, AssignedPayoutProviders::codes($vendorId)),
+            'txnTypes' => $types,
         ])->layout('layouts.vendor', ['title' => 'Reports']);
     }
 
@@ -182,88 +189,46 @@ class Reports extends Component
 
     private function ledgerQuery(int $vendorId): Builder
     {
-        return WalletLedger::query()
-            ->where('vendor_id', $vendorId)
+        $query = WalletLedger::query()
+            ->where('vendor_id', $vendorId);
+        AssignedPayoutProviders::restrictLedger($query, $vendorId);
+
+        return $query
             ->when($this->dateFrom !== '', fn (Builder $query) => $query->whereDate('created_at', '>=', $this->dateFrom))
             ->when($this->dateTo !== '', fn (Builder $query) => $query->whereDate('created_at', '<=', $this->dateTo))
             ->when(in_array($this->ledgerType, ['credit', 'debit'], true), fn (Builder $query) => $query->where('type', $this->ledgerType))
-            ->when($this->status !== '' || $this->txnType !== '', function (Builder $query) use ($vendorId) {
-                $query->whereExists(function ($sub) use ($vendorId) {
-                    $sub->selectRaw('1')
-                        ->from('transactions')
-                        ->whereColumn('transactions.reference', 'wallet_ledger.reference')
-                        ->where('transactions.vendor_id', $vendorId)
-                        ->when($this->status !== '', fn ($inner) => $inner->where('transactions.status', $this->status))
-                        ->when($this->txnType !== '', fn ($inner) => $inner->where('transactions.type', $this->txnType));
-                });
-            });
-    }
-
-    private function transactionQuery(int $vendorId): Builder
-    {
-        return Transaction::query()
-            ->where('vendor_id', $vendorId)
-            ->when($this->dateFrom !== '', fn (Builder $query) => $query->whereDate('created_at', '>=', $this->dateFrom))
-            ->when($this->dateTo !== '', fn (Builder $query) => $query->whereDate('created_at', '<=', $this->dateTo))
-            ->when($this->status !== '', fn (Builder $query) => $query->where('status', $this->status))
-            ->when($this->txnType !== '', fn (Builder $query) => $query->where('type', $this->txnType))
-            ->when($this->provider !== '', fn (Builder $query) => $query->where('payout_provider', $this->provider))
-            ->when($this->search !== '', function (Builder $query) {
-                $term = '%'.$this->search.'%';
-                $query->where(function (Builder $inner) use ($term) {
-                    $inner->where('reference', 'like', $term)
-                        ->orWhere('merchant_ref', 'like', $term)
-                        ->orWhere('bank_reference', 'like', $term);
-                });
+            ->when($this->status !== '' || $this->txnType !== '', function (Builder $query) {
+                app(VisibleTransactions::class)->constrainLedger($query, $this->status, $this->txnType);
             });
     }
 
     /**
-     * @return array<string, callable>
+     * @return array{vendor_id: int, search: string, status: string, provider: string, date_from: string, date_to: string, type: string}
      */
-    private function commissionWith(int $vendorId): array
+    private function filters(int $vendorId): array
     {
-        return [
-            'commissionEntry' => fn ($query) => $query->where('vendor_id', $vendorId),
-        ];
-    }
-
-    /**
-     * @return list<array{code: string, name: string}>
-     */
-    private function providerOptions(int $vendorId): array
-    {
-        $providers = app(PayoutProviderRegistry::class);
-
-        return Transaction::query()
-            ->where('vendor_id', $vendorId)
-            ->whereNotNull('payout_provider')
-            ->where('payout_provider', '!=', '')
-            ->distinct()
-            ->orderBy('payout_provider')
-            ->pluck('payout_provider')
-            ->map(fn ($code) => ['code' => (string) $code, 'name' => $providers->displayName((string) $code)])
-            ->all();
-    }
-
-    private function transactionsForLedger(int $vendorId, $references)
-    {
-        $refs = collect($references)->filter()->unique()->values();
-        if ($refs->isEmpty()) {
-            return collect();
+        $allowed = AssignedPayoutProviders::codes($vendorId);
+        $provider = strtolower(trim($this->provider));
+        if ($provider !== '' && ! in_array($provider, $allowed, true)) {
+            $provider = '__unassigned__';
         }
 
-        return Transaction::query()
-            ->where('vendor_id', $vendorId)
-            ->whereIn('reference', $refs)
-            ->get()
-            ->keyBy('reference');
+        return [
+            'vendor_id' => $vendorId,
+            'search' => $this->search,
+            'status' => $this->status,
+            'provider' => $provider,
+            'date_from' => $this->dateFrom,
+            'date_to' => $this->dateTo,
+            'type' => $this->txnType,
+            'allowed_providers' => $allowed,
+        ];
     }
 
     private function summary(int $vendorId): array
     {
         $ledger = $this->ledgerQuery($vendorId);
-        $transactions = $this->transactionQuery($vendorId);
+        $counts = app(VisibleTransactions::class)->summary($this->filters($vendorId));
         $credit = (float) (clone $ledger)->where('type', 'credit')->sum('amount');
         $debit = (float) (clone $ledger)->where('type', 'debit')->sum('amount');
         $opening = $this->openingBalance($vendorId);
@@ -273,10 +238,9 @@ class Reports extends Component
             'credit' => $credit,
             'debit' => $debit,
             'closing' => round($opening + $credit - $debit, 2),
-            'transactions' => (clone $transactions)->count(),
-            'payout_amount' => (float) (clone $transactions)->sum('amount'),
-            'payout_charge' => (float) (clone $transactions)->sum('payout_charge'),
-            'commission' => RecordedCommission::total($transactions, $vendorId),
+            'transactions' => $counts['total'],
+            'payout_amount' => $counts['amount'],
+            'payout_charge' => $counts['charge'],
         ];
     }
 
@@ -284,18 +248,13 @@ class Reports extends Component
     {
         $walletScoped = $this->ledgerType === '' && $this->status === '' && $this->txnType === '';
         $prior = WalletLedger::query()
-            ->where('vendor_id', $vendorId)
+            ->where('vendor_id', $vendorId);
+        AssignedPayoutProviders::restrictLedger($prior, $vendorId);
+        $prior = $prior
             ->when($this->dateFrom !== '', fn (Builder $query) => $query->whereDate('created_at', '<', $this->dateFrom))
             ->when(in_array($this->ledgerType, ['credit', 'debit'], true), fn (Builder $query) => $query->where('type', $this->ledgerType))
-            ->when($this->status !== '' || $this->txnType !== '', function (Builder $query) use ($vendorId) {
-                $query->whereExists(function ($sub) use ($vendorId) {
-                    $sub->selectRaw('1')
-                        ->from('transactions')
-                        ->whereColumn('transactions.reference', 'wallet_ledger.reference')
-                        ->where('transactions.vendor_id', $vendorId)
-                        ->when($this->status !== '', fn ($inner) => $inner->where('transactions.status', $this->status))
-                        ->when($this->txnType !== '', fn ($inner) => $inner->where('transactions.type', $this->txnType));
-                });
+            ->when($this->status !== '' || $this->txnType !== '', function (Builder $query) {
+                app(VisibleTransactions::class)->constrainLedger($query, $this->status, $this->txnType);
             });
 
         if ($walletScoped && $this->dateFrom === '') {
