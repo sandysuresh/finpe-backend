@@ -59,7 +59,7 @@ class AlliancePeWebhookController extends Controller
                 'signature_result' => 'FAIL',
             ]);
 
-            return $this->finish($fields, 'rejected', response()->json(['success' => false, 'message' => 'Invalid webhook signature.'], 401));
+            return $this->finish($fields, 'signature_failed', response()->json(['success' => false, 'message' => 'Invalid webhook signature.'], 401));
         }
 
         $expected = hash_hmac('sha256', $raw, $secret);
@@ -72,7 +72,7 @@ class AlliancePeWebhookController extends Controller
                 'signature_result' => 'FAIL',
             ]);
 
-            return $this->finish($fields, 'rejected', response()->json(['success' => false, 'message' => 'Invalid webhook signature.'], 401));
+            return $this->finish($fields, 'signature_failed', response()->json(['success' => false, 'message' => 'Invalid webhook signature.'], 401));
         }
 
         $this->diag('info', $fields + [
@@ -123,7 +123,7 @@ class AlliancePeWebhookController extends Controller
                 $this->diag('info', $fields + ['stage' => 'transaction', 'transaction' => 'started']);
                 $existing = AlliancePeWebhookEvent::query()->where('webhook_id', $webhookId)->lockForUpdate()->first();
                 if ($existing) {
-                    $decision = $this->duplicateResult($existing, $data, $status, $merchantOrderId, $providerId);
+                    $decision = $this->classifyExisting($existing, $data, $event, $merchantOrderId, $providerId);
                     $stored = $this->lockedPayout(
                         (string) ($existing->merchant_order_id ?: $merchantOrderId),
                         (string) ($existing->provider_payout_id ?: $providerId),
@@ -134,7 +134,7 @@ class AlliancePeWebhookController extends Controller
                         'existing_event' => $existing->event,
                         'stored_status' => $stored?->status,
                         'incoming_status' => $status,
-                        'decision' => $decision === 'duplicate' ? 'duplicate' : 'continue_rejected',
+                        'decision' => $decision,
                     ]);
 
                     return $decision;
@@ -169,30 +169,30 @@ class AlliancePeWebhookController extends Controller
                 ]);
 
                 if ($merchantOrderId !== '' && $payout->merchant_order_id !== $merchantOrderId) {
-                    return 'mismatch';
+                    return 'reference_mismatch';
                 }
                 if ($providerId !== '' && $payout->provider_payout_id && $payout->provider_payout_id !== $providerId) {
-                    return 'mismatch';
+                    return 'reference_mismatch';
                 }
                 if (array_key_exists('amount', $data) && abs((float) $payout->amount - (float) $data['amount']) > 0.001) {
-                    return 'amount';
+                    return 'amount_mismatch';
+                }
+                if ($this->isStaleNonTerminal($payout->status, $status)) {
+                    $this->diag('info', $fields + [
+                        'stage' => 'status',
+                        'apply_called' => false,
+                        'before_status' => $payout->status,
+                        'incoming_status' => $status,
+                        'after_status' => $payout->status,
+                        'utr_updated' => false,
+                        'provider_reference_updated' => false,
+                        'result' => 'invalid_transition',
+                    ]);
+
+                    return 'stale';
                 }
 
-                $beforeStatus = $payout->status;
-                $beforeUtr = $payout->utr_number;
-                $beforeProvider = $payout->provider_payout_id;
-                $payouts->applyProviderStatus($payout, $data, null, 'webhook');
-                $fresh = $payout->fresh();
-                $this->diag('info', $fields + [
-                    'stage' => 'status',
-                    'apply_called' => true,
-                    'before_status' => $beforeStatus,
-                    'incoming_status' => $status,
-                    'after_status' => $fresh?->status,
-                    'utr_updated' => $fresh !== null && $fresh->utr_number !== $beforeUtr,
-                    'provider_reference_updated' => $fresh !== null && $fresh->provider_payout_id !== $beforeProvider,
-                ]);
-
+                $outcome = $this->applyAndLog($payouts, $payout, $data, $status, $fields);
                 AlliancePeWebhookEvent::query()->create([
                     'webhook_id' => $webhookId,
                     'event' => $event,
@@ -200,7 +200,7 @@ class AlliancePeWebhookController extends Controller
                     'merchant_order_id' => $merchantOrderId !== '' ? $merchantOrderId : $payout->merchant_order_id,
                 ]);
 
-                return 'applied';
+                return $outcome === 'unchanged' ? 'stale' : $outcome;
             });
             $this->diag('info', $fields + ['stage' => 'transaction', 'transaction' => 'committed']);
         } catch (QueryException $e) {
@@ -210,14 +210,15 @@ class AlliancePeWebhookController extends Controller
                 'transaction' => 'rolled_back',
                 'exception' => $e::class,
                 'sqlstate' => is_string($state) ? $state : null,
+                'result' => 'database_error',
             ]);
-            if (in_array($state, ['23000', '23505'], true) && $this->alreadyApplied($webhookId, $merchantOrderId, $providerId, $status)) {
+            if (in_array($state, ['23000', '23505'], true) && $this->alreadyApplied($webhookId, $data, $event, $merchantOrderId, $providerId)) {
                 return $this->finish($fields, 'duplicate', response()->json(['success' => true]));
             }
             $this->diag('error', $fields + [
                 'stage' => 'response',
                 'http_status' => 500,
-                'result' => 'error',
+                'result' => 'database_error',
             ]);
             throw $e;
         }
@@ -225,10 +226,12 @@ class AlliancePeWebhookController extends Controller
         return match ($result) {
             'duplicate' => $this->finish($fields, 'duplicate', response()->json(['success' => true])),
             'applied' => $this->finish($fields, 'applied', response()->json(['success' => true])),
-            'conflict' => $this->finish($fields, 'ignored', response()->json(['success' => false, 'message' => 'Webhook ID was already recorded for a different status.'], 409)),
+            'already_completed' => $this->finish($fields, 'already_completed', response()->json(['success' => true])),
+            'stale' => $this->finish($fields, 'invalid_transition', response()->json(['success' => true])),
+            'invalid_transition' => $this->finish($fields, 'invalid_transition', response()->json(['success' => false, 'message' => 'Webhook status conflicts with the recorded payout.'], 409)),
             'unknown' => $this->finish($fields, 'error', response()->json(['success' => false, 'message' => 'Unknown payout reference.'], 404)),
-            'amount' => $this->finish($fields, 'rejected', response()->json(['success' => false, 'message' => 'Amount mismatch.'], 422)),
-            default => $this->finish($fields, 'rejected', response()->json(['success' => false, 'message' => 'Payout reference mismatch.'], 422)),
+            'amount_mismatch' => $this->finish($fields, 'amount_mismatch', response()->json(['success' => false, 'message' => 'Amount mismatch.'], 422)),
+            default => $this->finish($fields, 'reference_mismatch', response()->json(['success' => false, 'message' => 'Payout reference mismatch.'], 422)),
         };
     }
 
@@ -289,24 +292,77 @@ class AlliancePeWebhookController extends Controller
         };
     }
 
-    private function duplicateResult(AlliancePeWebhookEvent $existing, array $data, string $status, string $merchantOrderId, string $providerId): string
+    /**
+     * @param  array<string, mixed>  $data
+     * @param  array<string, mixed>  $fields
+     */
+    private function applyAndLog(AlliancePePayoutService $payouts, AlliancePePayout $payout, array $data, string $status, array $fields): string
     {
-        $payout = $this->lockedPayout(
-            (string) ($existing->merchant_order_id ?: $merchantOrderId),
-            (string) ($existing->provider_payout_id ?: $providerId),
-        );
-        if (! $payout) {
+        $beforeStatus = $payout->status;
+        $beforeUtr = $payout->utr_number;
+        $beforeProvider = $payout->provider_payout_id;
+        $payouts->applyProviderStatus($payout, $data, null, 'webhook');
+        $fresh = $payout->fresh();
+        $this->diag('info', $fields + [
+            'stage' => 'status',
+            'apply_called' => true,
+            'before_status' => $beforeStatus,
+            'incoming_status' => $status,
+            'after_status' => $fresh?->status,
+            'utr_updated' => $fresh !== null && $fresh->utr_number !== $beforeUtr,
+            'provider_reference_updated' => $fresh !== null && $fresh->provider_payout_id !== $beforeProvider,
+        ]);
+        if ($beforeStatus === $status) {
+            return $status === 'completed' ? 'already_completed' : 'duplicate';
+        }
+        if ($fresh !== null && $fresh->status === $beforeStatus) {
+            return 'unchanged';
+        }
+
+        return 'applied';
+    }
+
+    private function isStaleNonTerminal(string $current, string $incoming): bool
+    {
+        $terminal = ['completed', 'failed', 'cancelled', 'rejected'];
+
+        return in_array($current, $terminal, true) && ! in_array($incoming, $terminal, true);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function classifyExisting(AlliancePeWebhookEvent $existing, array $data, string $event, string $merchantOrderId, string $providerId): string
+    {
+        $stored = $this->lockedPayout((string) ($existing->merchant_order_id ?: ''), (string) ($existing->provider_payout_id ?: ''));
+        $incoming = $this->lockedPayout($merchantOrderId, $providerId);
+        if ($stored && $incoming && $stored->id !== $incoming->id) {
+            return 'reference_mismatch';
+        }
+        $payout = $incoming ?: $stored;
+        if (! $payout || ! $payout->vendor()->exists()) {
             return 'unknown';
         }
-        $sameOrder = $merchantOrderId === '' || $payout->merchant_order_id === $merchantOrderId;
-        $sameProvider = $providerId === '' || $payout->provider_payout_id === null || $payout->provider_payout_id === '' || $payout->provider_payout_id === $providerId;
-        $sameAmount = ! array_key_exists('amount', $data) || abs((float) $payout->amount - (float) $data['amount']) <= 0.001;
-
-        if ($payout->status === $status && $sameOrder && $sameProvider && $sameAmount) {
-            return 'duplicate';
+        if ($merchantOrderId !== '' && $payout->merchant_order_id !== $merchantOrderId) {
+            return 'reference_mismatch';
+        }
+        if ($existing->merchant_order_id && $merchantOrderId !== '' && $existing->merchant_order_id !== $merchantOrderId) {
+            return 'reference_mismatch';
+        }
+        if ($providerId !== '' && $payout->provider_payout_id && $payout->provider_payout_id !== $providerId) {
+            return 'reference_mismatch';
+        }
+        if ($existing->provider_payout_id && $providerId !== '' && $existing->provider_payout_id !== $providerId) {
+            return 'reference_mismatch';
+        }
+        if (array_key_exists('amount', $data) && abs((float) $payout->amount - (float) $data['amount']) > 0.001) {
+            return 'amount_mismatch';
+        }
+        if ($existing->event !== $event) {
+            return 'invalid_transition';
         }
 
-        return 'conflict';
+        return 'duplicate';
     }
 
     private function lockedPayout(string $merchantOrderId, string $providerId): ?AlliancePePayout
@@ -321,17 +377,16 @@ class AlliancePeWebhookController extends Controller
         return $payout;
     }
 
-    private function alreadyApplied(string $webhookId, string $merchantOrderId, string $providerId, string $status): bool
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function alreadyApplied(string $webhookId, array $data, string $event, string $merchantOrderId, string $providerId): bool
     {
         $existing = AlliancePeWebhookEvent::query()->where('webhook_id', $webhookId)->first();
         if (! $existing) {
             return false;
         }
-        $payout = $this->lockedPayout(
-            (string) ($existing->merchant_order_id ?: $merchantOrderId),
-            (string) ($existing->provider_payout_id ?: $providerId),
-        );
 
-        return $payout !== null && $payout->status === $status;
+        return $this->classifyExisting($existing, $data, $event, $merchantOrderId, $providerId) === 'duplicate';
     }
 }
