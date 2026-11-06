@@ -64,18 +64,13 @@ class AlliancePeWebhookController extends Controller
         }
 
         try {
-            $result = DB::transaction(function () use ($payouts, $data, $event, $webhookId, $merchantOrderId, $providerId) {
-                if (AlliancePeWebhookEvent::query()->where('webhook_id', $webhookId)->lockForUpdate()->exists()) {
-                    return 'duplicate';
+            $result = DB::transaction(function () use ($payouts, $data, $event, $webhookId, $merchantOrderId, $providerId, $status) {
+                $existing = AlliancePeWebhookEvent::query()->where('webhook_id', $webhookId)->lockForUpdate()->first();
+                if ($existing) {
+                    return $this->duplicateResult($existing, $data, $status, $merchantOrderId, $providerId);
                 }
 
-                $byOrder = $merchantOrderId !== ''
-                    ? AlliancePePayout::query()->where('merchant_order_id', $merchantOrderId)->lockForUpdate()->first()
-                    : null;
-                $payout = $byOrder;
-                if (! $payout && $providerId !== '') {
-                    $payout = AlliancePePayout::query()->where('provider_payout_id', $providerId)->lockForUpdate()->first();
-                }
+                $payout = $this->lockedPayout($merchantOrderId, $providerId);
 
                 if (! $payout || ! $payout->vendor()->exists()) {
                     return 'unknown';
@@ -104,7 +99,7 @@ class AlliancePeWebhookController extends Controller
             });
         } catch (QueryException $e) {
             $state = $e->errorInfo[0] ?? '';
-            if (in_array($state, ['23000', '23505'], true)) {
+            if (in_array($state, ['23000', '23505'], true) && $this->alreadyApplied($webhookId, $merchantOrderId, $providerId, $status)) {
                 return response()->json(['success' => true]);
             }
             throw $e;
@@ -112,9 +107,56 @@ class AlliancePeWebhookController extends Controller
 
         return match ($result) {
             'duplicate', 'applied' => response()->json(['success' => true]),
+            'conflict' => response()->json(['success' => false, 'message' => 'Webhook ID was already recorded for a different status.'], 409),
             'unknown' => response()->json(['success' => false, 'message' => 'Unknown payout reference.'], 404),
             'amount' => response()->json(['success' => false, 'message' => 'Amount mismatch.'], 422),
             default => response()->json(['success' => false, 'message' => 'Payout reference mismatch.'], 422),
         };
+    }
+
+    private function duplicateResult(AlliancePeWebhookEvent $existing, array $data, string $status, string $merchantOrderId, string $providerId): string
+    {
+        $payout = $this->lockedPayout(
+            (string) ($existing->merchant_order_id ?: $merchantOrderId),
+            (string) ($existing->provider_payout_id ?: $providerId),
+        );
+        if (! $payout) {
+            return 'unknown';
+        }
+        $sameOrder = $merchantOrderId === '' || $payout->merchant_order_id === $merchantOrderId;
+        $sameProvider = $providerId === '' || $payout->provider_payout_id === null || $payout->provider_payout_id === '' || $payout->provider_payout_id === $providerId;
+        $sameAmount = ! array_key_exists('amount', $data) || abs((float) $payout->amount - (float) $data['amount']) <= 0.001;
+
+        if ($payout->status === $status && $sameOrder && $sameProvider && $sameAmount) {
+            return 'duplicate';
+        }
+
+        return 'conflict';
+    }
+
+    private function lockedPayout(string $merchantOrderId, string $providerId): ?AlliancePePayout
+    {
+        $payout = $merchantOrderId !== ''
+            ? AlliancePePayout::query()->where('merchant_order_id', $merchantOrderId)->lockForUpdate()->first()
+            : null;
+        if (! $payout && $providerId !== '') {
+            $payout = AlliancePePayout::query()->where('provider_payout_id', $providerId)->lockForUpdate()->first();
+        }
+
+        return $payout;
+    }
+
+    private function alreadyApplied(string $webhookId, string $merchantOrderId, string $providerId, string $status): bool
+    {
+        $existing = AlliancePeWebhookEvent::query()->where('webhook_id', $webhookId)->first();
+        if (! $existing) {
+            return false;
+        }
+        $payout = $this->lockedPayout(
+            (string) ($existing->merchant_order_id ?: $merchantOrderId),
+            (string) ($existing->provider_payout_id ?: $providerId),
+        );
+
+        return $payout !== null && $payout->status === $status;
     }
 }

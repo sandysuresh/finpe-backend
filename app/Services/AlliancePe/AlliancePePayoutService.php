@@ -96,6 +96,9 @@ class AlliancePePayoutService
             if (! $current) {
                 return;
             }
+            if ($this->wouldRegressTerminalStatus($current->status, $status)) {
+                return;
+            }
 
             $utr = $data['utrNumber'] ?? $data['utrId'] ?? null;
             $providerReference = $this->text($data['providerPayoutId'] ?? $data['payoutId'] ?? $data['id'] ?? null);
@@ -304,6 +307,13 @@ class AlliancePePayoutService
         $this->recordTimeline($payout, 'created');
 
         return $payout;
+    }
+
+    private function wouldRegressTerminalStatus(string $current, string $incoming): bool
+    {
+        $terminal = ['completed', 'failed', 'cancelled', 'rejected'];
+
+        return in_array($current, $terminal, true) && ! in_array($incoming, $terminal, true);
     }
 
     private function recordTimeline(AlliancePePayout $payout, string $source): void
